@@ -1,8 +1,8 @@
-from planner import Planner
-from graph import *
-from astar import *
+from .planner import Planner
+from .graph import *
+from .astar import *
 import numpy as np
-import bezier
+from . import bezier
 from numpy import linalg as LA
 import math
 import time
@@ -305,7 +305,7 @@ class Waypointer(Planner):
 
 		if self.debug:
 			self._print_trajectory(lane_points,[0,0,0,255],7)
-		print lane_points
+		print(lane_points)
 
 
 		#print ' THE CURVE POINTS '
@@ -432,8 +432,8 @@ class Waypointer(Planner):
 		node_target,target_ori = self.project_target(target)
 
 		#print ''
-		print node_source
-		print node_target
+		print(node_source)
+		print(node_target)
 		#print self.grid
 
 		# reach the goal

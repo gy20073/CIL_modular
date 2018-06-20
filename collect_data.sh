@@ -13,4 +13,4 @@ python chauffeur.py \
     --log \
     --debug \
     --path "./data" \
-    --driver-config "./drive_interfaces/configuration/9cam_agent_carla_acquire_rc_yang.py"
+    --driver-config "9cam_agent_carla_acquire_rc_yang"

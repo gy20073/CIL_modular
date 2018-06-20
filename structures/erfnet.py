@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.contrib.layers.python.layers import initializers
+
 slim = tf.contrib.slim
 
 '''
@@ -8,6 +8,7 @@ ErfNet: Efficient ConvNet for Real-time Semantic Segmentation
 =============================================================
 Based on the paper: http://www.robesafe.uah.es/personal/eduardo.romera/pdfs/Romera17iv.pdf
 '''
+
 
 def spatial_dropout(x, p, seed, scope, is_training=True):
     '''
@@ -44,14 +45,15 @@ def spatial_dropout(x, p, seed, scope, is_training=True):
 
     return x
 
+
 @slim.add_arg_scope
 def filter_scale(inputs, output_depth, is_training=True, scope='filter_scale'):
-
-    net = slim.conv2d(inputs, output_depth, [3,3], activation_fn=None, scope=scope+'_conv')
-    net = slim.batch_norm(net, is_training=is_training, fused=None, scope=scope+'_batch_norm')
-    net = tf.nn.relu(net, name=scope+'_relu')
+    net = slim.conv2d(inputs, output_depth, [3, 3], activation_fn=None, scope=scope + '_conv')
+    net = slim.batch_norm(net, is_training=is_training, fused=None, scope=scope + '_batch_norm')
+    net = tf.nn.relu(net, name=scope + '_relu')
 
     return net
+
 
 @slim.add_arg_scope
 def downsampler(inputs, output_depth, is_training=True, scope='downsampler'):
@@ -66,19 +68,21 @@ def downsampler(inputs, output_depth, is_training=True, scope='downsampler'):
     input_shape = inputs.get_shape().as_list()
     input_depth = input_shape[-1]
 
-    #Convolutional branch
-    net_conv = slim.conv2d(inputs, output_depth-input_depth, [3,3], stride=2, activation_fn=None, scope=scope+'_conv')
+    # Convolutional branch
+    net_conv = slim.conv2d(inputs, output_depth - input_depth, [3, 3], stride=2, activation_fn=None,
+                           scope=scope + '_conv')
 
-    #Max pool branch
-    net_pool = slim.max_pool2d(inputs, [2,2], stride=2, scope=scope+'_max_pool')
+    # Max pool branch
+    net_pool = slim.max_pool2d(inputs, [2, 2], stride=2, scope=scope + '_max_pool')
 
-    #Concatenated output
-    net = tf.concat([net_conv, net_pool], axis=3, name=scope+'_concat')
+    # Concatenated output
+    net = tf.concat([net_conv, net_pool], axis=3, name=scope + '_concat')
 
-    net = slim.batch_norm(net, is_training=is_training, fused=None, scope=scope+'_batch_norm')
-    net = tf.nn.relu(net, name=scope+'_relu')
+    net = slim.batch_norm(net, is_training=is_training, fused=None, scope=scope + '_batch_norm')
+    net = tf.nn.relu(net, name=scope + '_relu')
 
     return net
+
 
 @slim.add_arg_scope
 def upsampler(inputs, output_depth, is_training=True, scope='upsampler'):
@@ -91,22 +95,24 @@ def upsampler(inputs, output_depth, is_training=True, scope='upsampler'):
     - net_concatenated(Tensor): a 4D Tensor that contains the 
     '''
 
-    #Deconvolution
-    net_conv = slim.conv2d_transpose(inputs, output_depth, [3,3], stride=2, activation_fn=None, scope=scope+'_deconv')
-    net = slim.batch_norm(net_conv, is_training=is_training, fused=None, scope=scope+'_batch_norm')
-    net = tf.nn.relu(net, name=scope+'_relu')
+    # Deconvolution
+    net_conv = slim.conv2d_transpose(inputs, output_depth, [3, 3], stride=2, activation_fn=None,
+                                     scope=scope + '_deconv')
+    net = slim.batch_norm(net_conv, is_training=is_training, fused=None, scope=scope + '_batch_norm')
+    net = tf.nn.relu(net, name=scope + '_relu')
 
     return net
 
+
 @slim.add_arg_scope
 def non_bottleneck(inputs,
-               output_depth,
-               filter_size=3,
-               regularizer_prob=0.3,
-               seed=0,
-               is_training=True,
-               dilation_rate=None,
-               scope='non_bottleneck'):
+                   output_depth,
+                   filter_size=3,
+                   regularizer_prob=0.3,
+                   seed=0,
+                   is_training=True,
+                   dilation_rate=None,
+                   scope='non_bottleneck'):
     '''
     INPUTS:
     - inputs(Tensor): a 4D Tensor of the previous convolutional block of shape [batch_size, height, width, num_channels].
@@ -125,44 +131,44 @@ def non_bottleneck(inputs,
 
     '''
 
-    #============NON-BOTTLENECK 1D====================
-    #Check if dilation rate is given
+    # ============NON-BOTTLENECK 1D====================
+    # Check if dilation rate is given
     if not dilation_rate:
         raise ValueError('Dilation rate is not given.')
 
-    #Save the main branch for addition later
+    # Save the main branch for addition later
     net_main = inputs
 
-    #First conv block - asymmetric convolution
-    net = slim.conv2d(inputs, output_depth, [filter_size, 1], scope=scope+'_conv1a')
-    net = tf.nn.relu(net, name=scope+'_relu1a')
-    net = slim.conv2d(net, output_depth, [1,filter_size], scope=scope+'_conv1b')
-    net = slim.batch_norm(net, is_training=is_training, fused=None, scope=scope+'_batch_norm1')
-    net = tf.nn.relu(net, name=scope+'_relu1b')
+    # First conv block - asymmetric convolution
+    net = slim.conv2d(inputs, output_depth, [filter_size, 1], scope=scope + '_conv1a')
+    net = tf.nn.relu(net, name=scope + '_relu1a')
+    net = slim.conv2d(net, output_depth, [1, filter_size], scope=scope + '_conv1b')
+    net = slim.batch_norm(net, is_training=is_training, fused=None, scope=scope + '_batch_norm1')
+    net = tf.nn.relu(net, name=scope + '_relu1b')
 
-    #Second conv block - asymmetric + dilation convolution
-    net = slim.conv2d(net, output_depth, [filter_size, 1], rate=[dilation_rate,1], scope=scope+'_conv2a')
-    net = tf.nn.relu(net, name=scope+'_relu2a')
-    net = slim.conv2d(net, output_depth, [1,filter_size], rate=[1,dilation_rate], scope=scope+'_conv2b')
-    net = slim.batch_norm(net, is_training=is_training, fused=None, scope=scope+'_batch_norm2')
+    # Second conv block - asymmetric + dilation convolution
+    net = slim.conv2d(net, output_depth, [filter_size, 1], rate=[dilation_rate, 1], scope=scope + '_conv2a')
+    net = tf.nn.relu(net, name=scope + '_relu2a')
+    net = slim.conv2d(net, output_depth, [1, filter_size], rate=[1, dilation_rate], scope=scope + '_conv2b')
+    net = slim.batch_norm(net, is_training=is_training, fused=None, scope=scope + '_batch_norm2')
 
-    #Regularizer
-    net = spatial_dropout(net, p=regularizer_prob, seed=seed, scope=scope+'_spatial_dropout')
+    # Regularizer
+    net = spatial_dropout(net, p=regularizer_prob, seed=seed, scope=scope + '_spatial_dropout')
 
-    #Add the main branch
-    net = tf.add(net_main, net, name=scope+'_add_residual')
-    net = tf.nn.relu(net, name=scope+'_relu2b')
+    # Add the main branch
+    net = tf.add(net_main, net, name=scope + '_add_residual')
+    net = tf.nn.relu(net, name=scope + '_relu2b')
 
     return net
 
- 
-#Now actually start building the network
+
+# Now actually start building the network
 def ErfNet(inputs,
-         num_classes,
-         batch_size=12,
-         reuse=None,
-         is_training=True,
-         scope='ErfNet'):
+           num_classes,
+           batch_size=12,
+           reuse=None,
+           is_training=True,
+           scope='ErfNet'):
     '''
     The ErfNet model for real-time semantic segmentation!
 
@@ -178,43 +184,52 @@ def ErfNet(inputs,
     - net(Tensor): a 4D Tensor output of shape [batch_size, image_height, image_width, num_classes], where each pixel has a one-hot encoded vector
                       determining the label of the pixel.
     '''
-    #Set the shape of the inputs first to get the batch_size information
+    # Set the shape of the inputs first to get the batch_size information
     inputs_shape = inputs.get_shape().as_list()
-    inputs = tf.reshape(inputs,shape=(batch_size, inputs_shape[1], inputs_shape[2], inputs_shape[3]))
+    inputs = tf.reshape(inputs, shape=(batch_size, inputs_shape[1], inputs_shape[2], inputs_shape[3]))
 
     print(inputs.shape)
 
     with tf.variable_scope(scope, reuse=reuse):
-        #Set the primary arg scopes. Fused batch_norm is faster than normal batch norm.
-        with slim.arg_scope([downsampler, upsampler, non_bottleneck], is_training=is_training),\
+        # Set the primary arg scopes. Fused batch_norm is faster than normal batch norm.
+        with slim.arg_scope([downsampler, upsampler, non_bottleneck], is_training=is_training), \
              slim.arg_scope([slim.batch_norm], fused=True), \
-             slim.arg_scope([slim.conv2d, slim.conv2d_transpose], activation_fn=None): 
-            #=================START=================
+             slim.arg_scope([slim.conv2d, slim.conv2d_transpose], activation_fn=None):
+            # =================START=================
             net = downsampler(inputs, output_depth=16, is_training=True, scope='downsampler_1')
-	    net = downsampler(net, output_depth=64, is_training=True, scope='downsampler_2')
+            net = downsampler(net, output_depth=64, is_training=True, scope='downsampler_2')
 
-	    for i in range(3, 8):    #5 times
-	        net = non_bottleneck(net, output_depth = 64,filter_size=3,dilation_rate=1,regularizer_prob=0.03, scope='non_bottleneck_'+str(i))
+            for i in range(3, 8):  # 5 times
+                net = non_bottleneck(net, output_depth=64, filter_size=3, dilation_rate=1, regularizer_prob=0.03,
+                                     scope='non_bottleneck_' + str(i))
 
-	    net = downsampler(net, output_depth=128, is_training=True, scope='downsampler_8')
+            net = downsampler(net, output_depth=128, is_training=True, scope='downsampler_8')
 
-	    for i in range(0, 2):    #2 times
-	        net = non_bottleneck(net, output_depth = 128,filter_size=3,dilation_rate=2,regularizer_prob=0.3, scope='non_bottleneck_'+str(9+i*4))
-	        net = non_bottleneck(net, output_depth = 128,filter_size=3,dilation_rate=4,regularizer_prob=0.3, scope='non_bottleneck_'+str(10+i*4))
-	        net = non_bottleneck(net, output_depth = 128,filter_size=3,dilation_rate=8,regularizer_prob=0.3, scope='non_bottleneck_'+str(11+i*4))
-	        net = non_bottleneck(net, output_depth = 128,filter_size=3,dilation_rate=16,regularizer_prob=0.3, scope='non_bottleneck_'+str(12+i*4))
+            for i in range(0, 2):  # 2 times
+                net = non_bottleneck(net, output_depth=128, filter_size=3, dilation_rate=2, regularizer_prob=0.3,
+                                     scope='non_bottleneck_' + str(9 + i * 4))
+                net = non_bottleneck(net, output_depth=128, filter_size=3, dilation_rate=4, regularizer_prob=0.3,
+                                     scope='non_bottleneck_' + str(10 + i * 4))
+                net = non_bottleneck(net, output_depth=128, filter_size=3, dilation_rate=8, regularizer_prob=0.3,
+                                     scope='non_bottleneck_' + str(11 + i * 4))
+                net = non_bottleneck(net, output_depth=128, filter_size=3, dilation_rate=16, regularizer_prob=0.3,
+                                     scope='non_bottleneck_' + str(12 + i * 4))
 
-	    net = upsampler(net, output_depth=64, is_training=True, scope='upsampler_17')
-	    net = non_bottleneck(net, output_depth = 64,filter_size=3,dilation_rate=1,regularizer_prob=0, scope='non_bottleneck_18')
-	    net = non_bottleneck(net, output_depth = 64,filter_size=3,dilation_rate=1,regularizer_prob=0, scope='non_bottleneck_19')
+            net = upsampler(net, output_depth=64, is_training=True, scope='upsampler_17')
+            net = non_bottleneck(net, output_depth=64, filter_size=3, dilation_rate=1, regularizer_prob=0,
+                                 scope='non_bottleneck_18')
+            net = non_bottleneck(net, output_depth=64, filter_size=3, dilation_rate=1, regularizer_prob=0,
+                                 scope='non_bottleneck_19')
 
-	    net = upsampler(net, output_depth=16, is_training=True, scope='upsampler_20')
-	    net = non_bottleneck(net, output_depth = 16,filter_size=3,dilation_rate=1,regularizer_prob=0, scope='non_bottleneck_21')
-	    net = non_bottleneck(net, output_depth = 16,filter_size=3,dilation_rate=1,regularizer_prob=0, scope='non_bottleneck_22')
+            net = upsampler(net, output_depth=16, is_training=True, scope='upsampler_20')
+            net = non_bottleneck(net, output_depth=16, filter_size=3, dilation_rate=1, regularizer_prob=0,
+                                 scope='non_bottleneck_21')
+            net = non_bottleneck(net, output_depth=16, filter_size=3, dilation_rate=1, regularizer_prob=0,
+                                 scope='non_bottleneck_22')
 
-	    logits = upsampler(net, output_depth=num_classes, is_training=True, scope='upsampler_23')
+            logits = upsampler(net, output_depth=num_classes, is_training=True, scope='upsampler_23')
 
-            #=============END=============
+            # =============END=============
 
             probabilities = tf.nn.softmax(logits, name='logits_to_softmax')
 
@@ -222,11 +237,11 @@ def ErfNet(inputs,
 
 
 def ErfNet_Small(inputs,
-         num_classes,
-         batch_size,
-         reuse=None,
-         is_training=True,
-         scope='ErfNet_Small'):
+                 num_classes,
+                 batch_size,
+                 reuse=None,
+                 is_training=True,
+                 scope='ErfNet_Small'):
     '''
     The ErfNet model for real-time semantic segmentation!
 
@@ -242,46 +257,54 @@ def ErfNet_Small(inputs,
     - net(Tensor): a 4D Tensor output of shape [batch_size, image_height, image_width, num_classes], where each pixel has a one-hot encoded vector
                       determining the label of the pixel.
     '''
-    #Set the shape of the inputs first to get the batch_size information
+    # Set the shape of the inputs first to get the batch_size information
     inputs_shape = inputs.get_shape().as_list()
     inputs.set_shape(shape=(batch_size, inputs_shape[1], inputs_shape[2], inputs_shape[3]))
 
     with tf.variable_scope(scope, reuse=reuse):
-        #Set the primary arg scopes. Fused batch_norm is faster than normal batch norm.
-        with slim.arg_scope([downsampler, upsampler, non_bottleneck], is_training=is_training),\
+        # Set the primary arg scopes. Fused batch_norm is faster than normal batch norm.
+        with slim.arg_scope([downsampler, upsampler, non_bottleneck], is_training=is_training), \
              slim.arg_scope([slim.batch_norm], fused=True), \
-             slim.arg_scope([slim.conv2d, slim.conv2d_transpose], activation_fn=None): 
-            #=================START=================
+             slim.arg_scope([slim.conv2d, slim.conv2d_transpose], activation_fn=None):
+            # =================START=================
             net = downsampler(inputs, output_depth=16, is_training=True, scope='downsampler_1')
 
-	    for i in range(2, 7):    #5 times
-	        net = non_bottleneck(net, output_depth = 16,filter_size=3,dilation_rate=1,regularizer_prob=0.03, scope='non_bottleneck_'+str(i))
+            for i in range(2, 7):  # 5 times
+                net = non_bottleneck(net, output_depth=16, filter_size=3, dilation_rate=1, regularizer_prob=0.03,
+                                     scope='non_bottleneck_' + str(i))
 
-	    net = downsampler(net, output_depth=64, is_training=True, scope='downsampler_7')
+            net = downsampler(net, output_depth=64, is_training=True, scope='downsampler_7')
 
-	    net = non_bottleneck(net, output_depth = 64,filter_size=3,dilation_rate=2,regularizer_prob=0.3, scope='non_bottleneck_8')
-	    net = non_bottleneck(net, output_depth = 64,filter_size=3,dilation_rate=4,regularizer_prob=0.3, scope='non_bottleneck_9')
-	    net = non_bottleneck(net, output_depth = 64,filter_size=3,dilation_rate=8,regularizer_prob=0.3, scope='non_bottleneck_10')
-	    net = non_bottleneck(net, output_depth = 64,filter_size=3,dilation_rate=16,regularizer_prob=0.3, scope='non_bottleneck_11')
+            net = non_bottleneck(net, output_depth=64, filter_size=3, dilation_rate=2, regularizer_prob=0.3,
+                                 scope='non_bottleneck_8')
+            net = non_bottleneck(net, output_depth=64, filter_size=3, dilation_rate=4, regularizer_prob=0.3,
+                                 scope='non_bottleneck_9')
+            net = non_bottleneck(net, output_depth=64, filter_size=3, dilation_rate=8, regularizer_prob=0.3,
+                                 scope='non_bottleneck_10')
+            net = non_bottleneck(net, output_depth=64, filter_size=3, dilation_rate=16, regularizer_prob=0.3,
+                                 scope='non_bottleneck_11')
 
-	    net = upsampler(net, output_depth=16, is_training=True, scope='upsampler_12')
-	    net = non_bottleneck(net, output_depth = 16,filter_size=3,dilation_rate=1,regularizer_prob=0, scope='non_bottleneck_13')
-	    net = non_bottleneck(net, output_depth = 16,filter_size=3,dilation_rate=1,regularizer_prob=0, scope='non_bottleneck_14')
+            net = upsampler(net, output_depth=16, is_training=True, scope='upsampler_12')
+            net = non_bottleneck(net, output_depth=16, filter_size=3, dilation_rate=1, regularizer_prob=0,
+                                 scope='non_bottleneck_13')
+            net = non_bottleneck(net, output_depth=16, filter_size=3, dilation_rate=1, regularizer_prob=0,
+                                 scope='non_bottleneck_14')
 
-	    logits = upsampler(net, output_depth=num_classes, is_training=True, scope='upsampler_15')
+            logits = upsampler(net, output_depth=num_classes, is_training=True, scope='upsampler_15')
 
-            #=============END=============
+            # =============END=============
 
             probabilities = tf.nn.softmax(logits, name='logits_to_softmax')
 
         return logits, probabilities
 
+
 def ErfNet_NoDS(inputs,
-         num_classes,
-         batch_size,
-         reuse=None,
-         is_training=True,
-         scope='ErfNet'):
+                num_classes,
+                batch_size,
+                reuse=None,
+                is_training=True,
+                scope='ErfNet'):
     '''
     The ErfNet model for real-time semantic segmentation!
 
@@ -297,50 +320,58 @@ def ErfNet_NoDS(inputs,
     - net(Tensor): a 4D Tensor output of shape [batch_size, image_height, image_width, num_classes], where each pixel has a one-hot encoded vector
                       determining the label of the pixel.
     '''
-    #Set the shape of the inputs first to get the batch_size information
+    # Set the shape of the inputs first to get the batch_size information
     inputs_shape = inputs.get_shape().as_list()
     inputs.set_shape(shape=(batch_size, inputs_shape[1], inputs_shape[2], inputs_shape[3]))
 
     with tf.variable_scope(scope, reuse=reuse):
-        #Set the primary arg scopes. Fused batch_norm is faster than normal batch norm.
-        with slim.arg_scope([downsampler, upsampler, non_bottleneck], is_training=is_training),\
+        # Set the primary arg scopes. Fused batch_norm is faster than normal batch norm.
+        with slim.arg_scope([downsampler, upsampler, non_bottleneck], is_training=is_training), \
              slim.arg_scope([slim.batch_norm], fused=True), \
-             slim.arg_scope([slim.conv2d, slim.conv2d_transpose], activation_fn=None): 
-            #=================START=================
-            #net = downsampler(inputs, output_depth=16, is_training=True, scope='downsampler_1')
-	    #net = downsampler(net, output_depth=64, is_training=True, scope='downsampler_2')
-	    net = filter_scale(inputs, output_depth = 16, is_training=True, scope='filter_scale_1')
-	    net = filter_scale(net, output_depth = 64, is_training=True, scope='filter_scale_2')
+             slim.arg_scope([slim.conv2d, slim.conv2d_transpose], activation_fn=None):
+            # =================START=================
+            # net = downsampler(inputs, output_depth=16, is_training=True, scope='downsampler_1')
+            # net = downsampler(net, output_depth=64, is_training=True, scope='downsampler_2')
+            net = filter_scale(inputs, output_depth=16, is_training=True, scope='filter_scale_1')
+            net = filter_scale(net, output_depth=64, is_training=True, scope='filter_scale_2')
 
-	    for i in range(3, 8):    #5 times
-	        net = non_bottleneck(net, output_depth = 64,filter_size=3,dilation_rate=1,regularizer_prob=0.03, scope='non_bottleneck_'+str(i))
+            for i in range(3, 8):  # 5 times
+                net = non_bottleneck(net, output_depth=64, filter_size=3, dilation_rate=1, regularizer_prob=0.03,
+                                     scope='non_bottleneck_' + str(i))
 
-	    #net = downsampler(net, output_depth=128, is_training=True, scope='downsampler_8')
-	    net = filter_scale(net, output_depth = 128, is_training=True, scope='filter_scale_8')
+            # net = downsampler(net, output_depth=128, is_training=True, scope='downsampler_8')
+            net = filter_scale(net, output_depth=128, is_training=True, scope='filter_scale_8')
 
-	    for i in range(0, 2):    #2 times
-	        net = non_bottleneck(net, output_depth = 128,filter_size=3,dilation_rate=2,regularizer_prob=0.3, scope='non_bottleneck_'+str(9+i*4))
-	        net = non_bottleneck(net, output_depth = 128,filter_size=3,dilation_rate=4,regularizer_prob=0.3, scope='non_bottleneck_'+str(10+i*4))
-	        net = non_bottleneck(net, output_depth = 128,filter_size=3,dilation_rate=8,regularizer_prob=0.3, scope='non_bottleneck_'+str(11+i*4))
-	        net = non_bottleneck(net, output_depth = 128,filter_size=3,dilation_rate=16,regularizer_prob=0.3, scope='non_bottleneck_'+str(12+i*4))
+            for i in range(0, 2):  # 2 times
+                net = non_bottleneck(net, output_depth=128, filter_size=3, dilation_rate=2, regularizer_prob=0.3,
+                                     scope='non_bottleneck_' + str(9 + i * 4))
+                net = non_bottleneck(net, output_depth=128, filter_size=3, dilation_rate=4, regularizer_prob=0.3,
+                                     scope='non_bottleneck_' + str(10 + i * 4))
+                net = non_bottleneck(net, output_depth=128, filter_size=3, dilation_rate=8, regularizer_prob=0.3,
+                                     scope='non_bottleneck_' + str(11 + i * 4))
+                net = non_bottleneck(net, output_depth=128, filter_size=3, dilation_rate=16, regularizer_prob=0.3,
+                                     scope='non_bottleneck_' + str(12 + i * 4))
 
-	    #net = upsampler(net, output_depth=64, is_training=True, scope='upsampler_17')
-	    net = filter_scale(net, output_depth = 64, is_training=True, scope='filter_scale_17')
+            # net = upsampler(net, output_depth=64, is_training=True, scope='upsampler_17')
+            net = filter_scale(net, output_depth=64, is_training=True, scope='filter_scale_17')
 
-	    net = non_bottleneck(net, output_depth = 64,filter_size=3,dilation_rate=1,regularizer_prob=0, scope='non_bottleneck_18')
-	    net = non_bottleneck(net, output_depth = 64,filter_size=3,dilation_rate=1,regularizer_prob=0, scope='non_bottleneck_19')
+            net = non_bottleneck(net, output_depth=64, filter_size=3, dilation_rate=1, regularizer_prob=0,
+                                 scope='non_bottleneck_18')
+            net = non_bottleneck(net, output_depth=64, filter_size=3, dilation_rate=1, regularizer_prob=0,
+                                 scope='non_bottleneck_19')
 
-	    #net = upsampler(net, output_depth=16, is_training=True, scope='upsampler_20')
-	    net = filter_scale(net, output_depth=16, is_training=True, scope='filter_scale_20')
-	    net = non_bottleneck(net, output_depth = 16,filter_size=3,dilation_rate=1,regularizer_prob=0, scope='non_bottleneck_21')
-	    net = non_bottleneck(net, output_depth = 16,filter_size=3,dilation_rate=1,regularizer_prob=0, scope='non_bottleneck_22')
+            # net = upsampler(net, output_depth=16, is_training=True, scope='upsampler_20')
+            net = filter_scale(net, output_depth=16, is_training=True, scope='filter_scale_20')
+            net = non_bottleneck(net, output_depth=16, filter_size=3, dilation_rate=1, regularizer_prob=0,
+                                 scope='non_bottleneck_21')
+            net = non_bottleneck(net, output_depth=16, filter_size=3, dilation_rate=1, regularizer_prob=0,
+                                 scope='non_bottleneck_22')
 
-	    #logits = upsampler(net, output_depth=num_classes, is_training=True, scope='upsampler_23')
-	    logits = filter_scale(net, output_depth=num_classes, is_training=True, scope='filter_scale_23')
+            # logits = upsampler(net, output_depth=num_classes, is_training=True, scope='upsampler_23')
+            logits = filter_scale(net, output_depth=num_classes, is_training=True, scope='filter_scale_23')
 
-            #=============END=============
+            # =============END=============
 
             probabilities = tf.nn.softmax(logits, name='logits_to_softmax')
 
         return logits, probabilities
-

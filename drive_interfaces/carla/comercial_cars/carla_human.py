@@ -189,6 +189,7 @@ class CarlaHuman(Driver):
     def get_reset(self):
 
         if self._autopilot:
+            # if within auto pilot, reset if long enough or has collisions
             if time.time() - self._start_time > self._reset_period:
 
                 self._reset()
@@ -248,7 +249,7 @@ class CarlaHuman(Driver):
         return control
 
     def get_sensor_data(self, goal_pos=None, goal_ori=None):
-
+        # return the latest measurement and the next direction
         measurements = self.carla.getMeasurements()
         self._latest_measurements = measurements
         player_data = measurements['PlayerMeasurements']

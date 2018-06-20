@@ -8,7 +8,7 @@ from shutil import move
 def rename_folder(file_list,folder_name,initial_count=0):
 	count = initial_count
 	for filename in file_list:
-		print filename
+		print(filename)
 		if "data" in filename:
 			newfilename = folder_name+"/data_"+str(count).zfill(5) + ".h5"
 
@@ -25,17 +25,17 @@ def join_folders(src_path, folder_name_vec,dest_folder,per_val_files=0.10,use_di
 		#os.mkdir(dest_folder +  '/SeqVal')
 	count =0
 	with open('clean_results','w') as f:
-		for folder,number_files in folder_name_vec.iteritems():
+		for folder,number_files in folder_name_vec.items():
 			file_list = sorted(os.listdir(src_path+folder))
 			count_int=0
 			count_good_files=0
 			for filename in file_list:
 				if "data" in filename:
-					print filename
+					print(filename)
 
 					newfilename =  str(count)+"_data_"+str(count_int).zfill(5) + ".h5"
-					print folder +'/'+filename
-					print dest_folder +'/'+newfilename
+					print(folder +'/'+filename)
+					print(dest_folder +'/'+newfilename)
 					#if count_int > len(file_list)*per_val_files: 
 					#copyfile(folder_list[count] +'/'+filename,dest_folder+'/SeqTrain/'+newfilename)
 					#else:
@@ -119,7 +119,7 @@ folder_list ={'W1_1':90,'W1_N_1':45,'W1_pm5_1':90,'W1_pm5_N_1':45,'W1_pp5_1':90,
 'W12_1':90,'W12_N_1':45,'W12_pm5_1':90,'W12_pm5_N_1':45,'W12_pp5_1':90,'W12_pp5_N_1':45,'W12_w600_1':90,'W12_w700_1':90,'W12_w900_1':90,'W12_w1000_1':90,'W12_w1100_1':90,'W12_w1200_1':90,'W12_z50_1':90,'W12_z50_N_1':45,'W12_z150_1':90,'W12_z150_N_1':45,
 'W13_1':90,'W13_N_1':45,'W13_pm5_1':90,'W13_pm5_N_1':45,'W13_pp5_1':90,'W13_pp5_N_1':45,'W13_w600_1':90,'W13_w700_1':90,'W13_w900_1':90,'W13_w1000_1':90,'W13_w1100_1':90,'W13_w1200_1':90,'W13_z50_1':90,'W13_z50_N_1':45,'W13_z150_1':90,'W13_z150_N_1':45}
 
-print folder_list
+print(folder_list)
 
 
 join_folders(src_path, folder_list,'RC28_wpz_M_DR')

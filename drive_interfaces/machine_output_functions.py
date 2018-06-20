@@ -118,7 +118,7 @@ def goal(image_input,speed,goal_input,config,sess,train_manager):
   speed = speed.reshape((1,1))
 
   net = branches[0]
-  print " Inputing ",goal_input
+  print(" Inputing ",goal_input)
 
 
   feedDict = {x: image_input,input_speed:speed,input_goal:goal_input,dout: [1]*len(config.dropout) }
@@ -344,18 +344,18 @@ def single_branch_seg(image_input,speed,control_input,config,sess,train_manager)
   predicted_speed =  sess.run(branches[4], feed_dict=feedDict)
   predicted_speed = predicted_speed[0][0]
   real_speed = speed*config.speed_factor
-  print ' REAL PREDICTED ',predicted_speed*config.speed_factor
-  print ' acc ',predicted_acc
-  print ' REAL SPEED ',real_speed
+  print(' REAL PREDICTED ',predicted_speed*config.speed_factor)
+  print(' acc ',predicted_acc)
+  print(' REAL SPEED ',real_speed)
   real_predicted =predicted_speed*config.speed_factor
   if real_speed < 5.0 and real_predicted > 6.0:  # If (Car Stooped) and ( It should not have stoped)
-    print 'BOOSTING'
+    print('BOOSTING')
     predicted_acc =  1*(20.0/config.speed_factor -speed) + predicted_acc  #print "DURATION"
 
     predicted_brake=0.0
     predicted_acc = predicted_acc[0][0]
 
-  print predicted_steers,predicted_acc,predicted_brake
+  print(predicted_steers,predicted_acc,predicted_brake)
 
   return  predicted_steers,predicted_acc,predicted_brake
 
@@ -412,12 +412,12 @@ def single_branch(image_input,speed,control_input,config,sess,train_manager):
   predicted_speed =  sess.run(branches[4], feed_dict=feedDict)
   predicted_speed = predicted_speed[0][0]
   real_speed = speed*config.speed_factor
-  print ' REAL PREDICTED ',predicted_speed*config.speed_factor
+  print(' REAL PREDICTED ',predicted_speed*config.speed_factor)
 
-  print ' REAL SPEED ',real_speed
+  print(' REAL SPEED ',real_speed)
   real_predicted =predicted_speed*config.speed_factor
   if real_speed < 5.0 and real_predicted > 6.0:  # If (Car Stooped) and ( It should not have stoped)
-    print 'BOOSTING'
+    print('BOOSTING')
     predicted_acc =  1*(20.0/config.speed_factor -speed) + predicted_acc  #print "DURATION"
 
     predicted_brake=0.0
@@ -469,12 +469,12 @@ def single_branch_wp(image_input,speed,control_input,config,sess,train_manager):
   predicted_speed =  sess.run(branches[4], feed_dict=feedDict)
   predicted_speed = predicted_speed[0][0]
   real_speed = speed*config.speed_factor
-  print ' REAL PREDICTED ',predicted_speed*config.speed_factor
+  print(' REAL PREDICTED ',predicted_speed*config.speed_factor)
 
-  print ' REAL SPEED ',real_speed
+  print(' REAL SPEED ',real_speed)
   real_predicted =predicted_speed*config.speed_factor
   if real_speed < 5.0 and real_predicted > 6.0:  # If (Car Stooped) and ( It should not have stoped)
-    print 'BOOSTING'
+    print('BOOSTING')
     predicted_acc =  1*(20.0/config.speed_factor -speed) + predicted_acc  #print "DURATION"
 
     predicted_brake=0.0

@@ -26,7 +26,7 @@ def restore_session(sess,saver,models_path):
   
   ckpt = tf.train.get_checkpoint_state(models_path)
   if ckpt:
-    print 'Restoring from ',ckpt.model_checkpoint_path  
+    print('Restoring from ',ckpt.model_checkpoint_path)  
     saver.restore(sess,ckpt.model_checkpoint_path)
   else:
     ckpt = 0
@@ -40,7 +40,7 @@ def save_model(saver,sess,models_path,i):
 	os.mkdir(models_path)
 
   saver.save(sess, models_path + '/model.ckpt', global_step=i)
-  print ('Model saved at iteration:',i)
+  print(('Model saved at iteration:',i))
 
 
 def get_last_iteration(ckpt):
@@ -243,7 +243,7 @@ class TrainManager(object):
 				print("Optimizer: All variables")
 			else:
 				self._train_step = tf.train.AdamOptimizer(self._variable_learning).minimize(self._loss,var_list=train_vars)
-				print("Optimizer: Exclude variables from: ", str(self._config.segmentation_model_name))
+				print(("Optimizer: Exclude variables from: ", str(self._config.segmentation_model_name)))
 
 
 	def run_train_step(self,batch_tensor,sess,i):

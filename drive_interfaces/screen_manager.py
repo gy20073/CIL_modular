@@ -21,7 +21,7 @@ class  ScreenManager(object):
 		if load_steer:
 			self._wheel =cv2.imread('./drive_interfaces/wheel.png')#,cv2.IMREAD_UNCHANGED)
 			self._wheel=cv2.resize(self._wheel,(int(0.08*self._wheel.shape[0]),int(0.08*self._wheel.shape[1])))
-		print self._wheel.shape
+		print(self._wheel.shape)
 
 		# If we were to load the steering wheel load it 
 		

@@ -52,7 +52,7 @@ classes_join = {0:2,1:2,2:2,3:2,5:2,12:2,9:2,11:2,4:0,10:1,8:3,6:3,7:4}
 def join_classes(labels_image,join_dic):
   
   compressed_labels_image = np.copy(labels_image) 
-  for key,value in join_dic.iteritems():
+  for key,value in join_dic.items():
     compressed_labels_image[np.where(labels_image==key)] = value
 
 
@@ -89,7 +89,7 @@ if __name__ == "__main__":
   #for i in initial_positions:
   #  positions_to_test += range(i-1,i+2)
  
-  positions_to_test =  range(h5start,h5end+1)
+  positions_to_test =  list(range(h5start,h5end+1))
 
   screen = ScreenManager()
 
@@ -113,11 +113,11 @@ if __name__ == "__main__":
   
   for h_num in positions_to_test:
 
-    print " SEQUENCE NUMBER ",h_num
+    print(" SEQUENCE NUMBER ",h_num)
     try:
       data = h5py.File(path+'data_'+ str(h_num).zfill(5) +'.h5', "r")
     except Exception as e:
-      print e
+      print(e)
       continue
 
 
@@ -177,7 +177,7 @@ if __name__ == "__main__":
 
       direction = data['targets'][i][direction_position]
       #print direction
-      print 
+      print() 
       speed = data['targets'][i+2][speed_position]
       #print '[ ',data['targets'][i][27],',',data['targets'][i][28],'],[',data['targets'][i][29],',',data['targets'][i][30],']'
 

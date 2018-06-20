@@ -155,8 +155,8 @@ class LogManager(object):
 			terminal_draw_tool.draw_vector_n_col(4,vector_to_draw)
 
 		else:
-			print "Epoch: %s, Step: %s, Images/Sec: %s" % (str(self._epoch_number), str(i),str(self._current_velocity))
-			print "Best Train: %s, on iter: %s, Best Val: %s, on iter: %s, Last Loss: %s" % (str(self._lowest_error),str(self._lowest_iter),str(self._lowest_val_error),str(self._lowest_val_iter),str(self._last_train_error))
+			print("Epoch: %s, Step: %s, Images/Sec: %s" % (str(self._epoch_number), str(i),str(self._current_velocity)))
+			print("Best Train: %s, on iter: %s, Best Val: %s, on iter: %s, Last Loss: %s" % (str(self._lowest_error),str(self._lowest_iter),str(self._lowest_val_error),str(self._lowest_val_iter),str(self._last_train_error)))
 			
 
 	def write_energy_contrib(self):

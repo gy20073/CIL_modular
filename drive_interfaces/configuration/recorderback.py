@@ -4,9 +4,9 @@ import h5py
 import scipy
 import time
 from Pipe import Pipe
-from Queue import Queue
-from Queue import Empty
-from Queue import Full
+from queue import Queue
+from queue import Empty
+from queue import Full
 from threading import Thread
 from PIL import Image
 import numpy as np
@@ -82,7 +82,7 @@ class Recorder(object):
 		while True:
 			data = self._data_queue.get()
 			if self._data_queue.qsize() % 1000 == 0:
-				print "QSIZE:",self._data_queue.qsize()
+				print("QSIZE:",self._data_queue.qsize())
 			self._write_to_disk(data)
 
 	def _write_to_disk(self,data):

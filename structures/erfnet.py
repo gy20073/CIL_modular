@@ -182,7 +182,7 @@ def ErfNet(inputs,
     inputs_shape = inputs.get_shape().as_list()
     inputs = tf.reshape(inputs,shape=(batch_size, inputs_shape[1], inputs_shape[2], inputs_shape[3]))
 
-    print inputs.shape
+    print(inputs.shape)
 
     with tf.variable_scope(scope, reuse=reuse):
         #Set the primary arg scopes. Fused batch_norm is faster than normal batch norm.

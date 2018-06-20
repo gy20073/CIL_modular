@@ -26,7 +26,7 @@ class DatasetManager(object):
 
 
   def __init__(self,config):
-    print (config.train_db_path)
+    print((config.train_db_path))
 
     """ Read all hdf5_files """
     self._images_train, self._datasets_train = self.read_all_files(config.train_db_path,config.sensor_names,config.dataset_names)
@@ -60,13 +60,13 @@ class DatasetManager(object):
 
     
 
-    print max(max(max(self._splited_keys_train)))
-    print 'Min ID Train'
-    print min(min(min(self._splited_keys_train)))
+    print(max(max(max(self._splited_keys_train))))
+    print('Min ID Train')
+    print(min(min(min(self._splited_keys_train))))
 
-    print 'Max Id Val'
-    print max(max(max(self._splited_keys_val)))
-    print len(self._splited_keys_train[0][0]),len(self._splited_keys_train[0][1]),len(self._splited_keys_train[0][2])
+    print('Max Id Val')
+    print(max(max(max(self._splited_keys_val))))
+    print(len(self._splited_keys_train[0][0]),len(self._splited_keys_train[0][1]),len(self._splited_keys_train[0][2]))
 
 
     self.train = Dataset(self._splited_keys_train,self._images_train, self._datasets_train,config,config.augment)
@@ -113,9 +113,9 @@ class DatasetManager(object):
 
 
 
-    datasets_cat = [list([]) for _ in xrange(len(dataset_names))]
+    datasets_cat = [list([]) for _ in range(len(dataset_names))]
 
-    images_data_cat = [list([]) for _ in xrange(len(image_dataset_names))]
+    images_data_cat = [list([]) for _ in range(len(image_dataset_names))]
 
 
 
@@ -159,7 +159,7 @@ class DatasetManager(object):
         traceback.print_tb(exc_traceback,limit=1, file=sys.stdout)
         traceback.print_exception(exc_type, exc_value, exc_traceback,
                               limit=2, file=sys.stdout)
-        print "failed to open", cword
+        print("failed to open", cword)
 
 
 

@@ -31,11 +31,11 @@ class Spliter(object):
 		#print len(steerings)
 		#print steerings
 		max_steer = min(0.6,max(steerings)) # SUPER HACKY MEGA WARNING
-		print 'Max Steer'
-		print max_steer
+		print('Max Steer')
+		print(max_steer)
 		min_steer = max(-0.5,min(steerings))
-		print 'Min Steer'
-		print min_steer
+		print('Min Steer')
+		print(min_steer)
 		#print steerings
 
 
@@ -56,9 +56,9 @@ class Spliter(object):
 				iter_index=i
 				iter_value = iter_value + steerinterval
 
-				print 'split on ', i
-				print len(splited_keys)
-				print len(splited_keys[-1])
+				print('split on ', i)
+				print(len(splited_keys))
+				print(len(splited_keys[-1]))
 
 
 
@@ -79,7 +79,7 @@ class Spliter(object):
 		for i in range(1,len(self._steering_bins_perc)):
 			quad_vec.append(quad_vec[-1]+self._steering_bins_perc[i])
 
-		print quad_vec
+		print(quad_vec)
 
 		for i in range(0,len(steerings)):
 
@@ -91,13 +91,13 @@ class Spliter(object):
 				iter_index=i
 				quad_pos += 1
 
-				print 'split on ', i,'with ',steerings[i]
-				print len(splited_keys)
-				print len(splited_keys[-1])
+				print('split on ', i,'with ',steerings[i])
+				print(len(splited_keys))
+				print(len(splited_keys[-1]))
 
 
 		
-		print 'Finished splitting'
+		print('Finished splitting')
 
 		return splited_keys
 
@@ -157,7 +157,7 @@ class Spliter(object):
 
 			keys_to_delete = self.select_data_sequence(labels,selected_data[j])
 			#print got_keys_for_divison
-			keys_for_this_part = range(0,len(labels)-self._sequence_size,self._sequence_stride)
+			keys_for_this_part = list(range(0,len(labels)-self._sequence_size,self._sequence_stride))
 
 
 			keys_for_this_part = list(set(keys_for_this_part) - set(keys_to_delete))

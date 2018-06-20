@@ -90,7 +90,7 @@ if __name__ == "__main__":
   #range(3198,3201) + range(3874,3876) + range(7579,7581)
   #positions_to_test = [2,3,4,5,6,7]
   #positions_to_test = [30,31,32,33,34,48,49,71,99,155,164,352,325,237,258,228,292]
-  positions_to_test =  range(0,100)
+  positions_to_test =  list(range(0,100))
   #positions_to_test = [93,104,170,173,229,245,283,397,413,425,565,581,591]
   #positions_to_test = range(0,660)
   #positions_to_test = [617,618,619,620,622,623,624,636,637,638,639]
@@ -103,7 +103,7 @@ if __name__ == "__main__":
   #data_matrix = np.loadtxt(open(path + "outputsTest1.csv", "rb"), delimiter=",", skiprows=0)
   for h_num in positions_to_test:
 
-    print " SEQUENCE NUMBER ",h_num
+    print(" SEQUENCE NUMBER ",h_num)
     data = h5py.File(path+'data_'+ str(h_num).zfill(5) +'.h5', "r")
 
     #redata = h5py.File('/media/adas/012B4138528FF294/NewGTA/redata_'+ str(h_num).zfill(5) +'.h5', "r")

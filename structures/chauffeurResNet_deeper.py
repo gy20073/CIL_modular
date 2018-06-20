@@ -29,11 +29,11 @@ def create_structure(tf, input_image,input_data, input_size,dropout,config):
 
 	""" reshape """
 	x =  tf.reshape(xc, [-1, int(np.prod(xc.get_shape()[1:]))],name = 'reshape')
-	print x
+	print(x)
 
 	""" fc1 """
 	x = network_manager.fc_block(x,512)
-	print x
+	print(x)
 	""" fc2 """
 	x = network_manager.fc_block(x,512)
 
@@ -69,7 +69,7 @@ def create_structure(tf, input_image,input_data, input_size,dropout,config):
 
 		
 
-		print branch_output
+		print(branch_output)
 
 
 	weights = network_manager.get_weigths_dict()
@@ -77,7 +77,7 @@ def create_structure(tf, input_image,input_data, input_size,dropout,config):
 	features = network_manager.get_feat_tensors_dict()
 	vis_images = input_image[:,:,:,0:1]
 	#vis_images = network_manager.get_vbp_images(xc)
-	print vis_images
+	print(vis_images)
 
 	#print vis_images.get_shape(tf.slice(x))
 

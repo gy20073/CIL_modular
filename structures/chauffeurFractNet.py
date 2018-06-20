@@ -15,26 +15,26 @@ def create_structure(tf, input_image,input_data, input_size,dropout,config):
 
 	"""conv1"""
 	xc = network_manager.conv_block(x,5,2,32,padding_in='VALID')
-	print xc
+	print(xc)
 
 	res1 = network_manager.fc(tf.reshape(xc, [-1, int(np.prod(xc.get_shape()[1:]))],name = 'reshape_res1'),512)
 
 	"""conv2"""
 	xc = network_manager.conv_block(xc,3,2,64,padding_in='VALID')
-	print xc
+	print(xc)
 
 	res2 = network_manager.fc(tf.reshape(xc, [-1, int(np.prod(xc.get_shape()[1:]))],name = 'reshape_res2'),512)
 
 
 	"""conv3"""
 	xc = network_manager.conv_block(xc,3,2,128,padding_in='VALID')
-	print xc
+	print(xc)
 	res3 = network_manager.fc(tf.reshape(xc, [-1, int(np.prod(xc.get_shape()[1:]))],name = 'reshape_res3'),512)
 
 
 	"""conv4"""
 	xc = network_manager.conv_block(xc,3,2,256,padding_in='VALID')
-	print xc
+	print(xc)
 	res4 = network_manager.fc(tf.reshape(xc, [-1, int(np.prod(xc.get_shape()[1:]))],name = 'reshape_res4'),512)
 
 	"""mp3 (default values)""" 
@@ -42,11 +42,11 @@ def create_structure(tf, input_image,input_data, input_size,dropout,config):
 
 	""" reshape """
 	x =  tf.reshape(xc, [-1, int(np.prod(xc.get_shape()[1:]))],name = 'reshape')
-	print x
+	print(x)
 
 	""" fc1 """
 	x = network_manager.fc(x,512)
-	print x
+	print(x)
 	# Sum residuals
 	x = network_manager.activation(x + res1 + res2 + res3 +res4)
 
@@ -84,7 +84,7 @@ def create_structure(tf, input_image,input_data, input_size,dropout,config):
 
 		
 
-		print branch_output
+		print(branch_output)
 
 
 	weights = network_manager.get_weigths_dict()
@@ -92,9 +92,9 @@ def create_structure(tf, input_image,input_data, input_size,dropout,config):
 	features = network_manager.get_feat_tensors_dict()
 	
 	vis_images = network_manager.get_vbp_images(xc)
-	print vis_images
+	print(vis_images)
 
-	print vis_images.get_shape()
+	print(vis_images.get_shape())
 
 	#vis_images = tf.div(vis_images  -tf.reduce_min(vis_images),tf.reduce_max(vis_images) -tf.reduce_min(vis_images))
 

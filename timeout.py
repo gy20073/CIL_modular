@@ -137,7 +137,7 @@ child was killed by signal N. """
 
         try:
             self.subprocess.wait()
-        except OSError, e:
+        except OSError as e:
             
             # If the child times out, the wait() syscall can get
             # interrupted by the SIGALRM. We should then only need to
@@ -160,7 +160,7 @@ child was killed by signal N. """
 (default: SIGKILL)"""
         try:
             os.killpg( self.pgid, deathsig )
-        except OSError, e:
+        except OSError as e:
             if e.errno == errno.ESRCH:
                 # We end up here if the process group has already exited, so it's safe to
                 # ignore the error
@@ -174,15 +174,15 @@ child was killed by signal N. """
 
 if __name__ == "__main__":
     if len(sys.argv) <= 2:
-        print "Usage:", sys.argv[0], "TIMEOUT COMMAND..."
-        print
+        print("Usage:", sys.argv[0], "TIMEOUT COMMAND...")
+        print()
 
         descrip = """Runs COMMAND for up to TIMEOUT seconds, sending COMMAND a SIGKILL if it
 attempts to run longer. Exits sooner if COMMAND does so, passing along COMMAND's
 exit code.
 All of COMMAND's children run in a new process group, and the entire group is
 SIGKILL'ed when the timeout expires. """
-        print descrip
+        print(descrip)
 
         sys.exit( 0 )
         pass

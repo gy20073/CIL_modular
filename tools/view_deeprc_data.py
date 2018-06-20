@@ -57,7 +57,7 @@ if __name__ == "__main__":
   steering_pred =[]
   steering_gt =[]
 
-  positions_to_test =  range(0,2060)
+  positions_to_test =  list(range(0,2060))
   #positions_to_test = [93,104,170,173,229,245,283,397,413,425,565,581,591]
   #positions_to_test = range(0,660)
   #positions_to_test = [617,618,619,620,622,623,624,636,637,638,639]
@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
   for h_num in positions_to_test:
 
-    print " SEQUENCE NUMBER ",h_num
+    print(" SEQUENCE NUMBER ",h_num)
     data = h5py.File(path+'data_'+ str(h_num).zfill(5) +'.h5', "r+")
 
     #redata = h5py.File('/media/adas/012B4138528FF294/NewGTA/redata_'+ str(
@@ -140,7 +140,7 @@ if __name__ == "__main__":
       #actions[1].steer +=0.318
       #actions[2].steer +=0.318
 
-      print actions[1].steer 
+      print(actions[1].steer) 
 
       #print data['targets'][i][9]
 
@@ -180,7 +180,7 @@ if __name__ == "__main__":
       #img = img*255
       #print img
 
-  plt.plot(range(0,len(speed_list)),speed_list)
+  plt.plot(list(range(0,len(speed_list))),speed_list)
   
   plt.show()
   #save_gta_surface(gta_surface)

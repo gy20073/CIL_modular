@@ -17,23 +17,23 @@ with open(csv_file, 'wb') as csvfile:
 
 	for fname in file_list:
 	    if fname_filter in fname:
-		print 'Processing:', fname
+		print('Processing:', fname)
 		with open(os.path.join(src_path, fname)) as f:
 		    content = f.readlines()
 		    # you may also want to remove whitespace characters like `\n` at the end of each line
 		    content = [x.strip() for x in content] 
 
 		    success = content[3][35:40]
-		    print content[3][16:25], success
+		    print(content[3][16:25], success)
 
 		    trespass = content[13][29:38]
-		    print content[13][19:27], trespass
+		    print(content[13][19:27], trespass)
 
 		    collision = content[14][30:39]
-		    print content[14][19:28], collision
+		    print(content[14][19:28], collision)
 
 		    infraction = content[15][31:40]
-		    print content[15][19:29], infraction
+		    print(content[15][19:29], infraction)
 
 		    writer.writerow([fname, success, trespass, collision, infraction])
 

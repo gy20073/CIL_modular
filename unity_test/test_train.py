@@ -17,7 +17,7 @@ def restore_session(sess,saver,models_path):
   
   ckpt = tf.train.get_checkpoint_state(models_path)
   if ckpt:
-    print 'Restoring from ',ckpt.model_checkpoint_path  
+    print('Restoring from ',ckpt.model_checkpoint_path)  
     saver.restore(sess,ckpt.model_checkpoint_path)
   else:
     ckpt = 0
@@ -31,7 +31,7 @@ def restore_session(sess,saver,models_path):
 def save_model(saver,sess,models_path,i):
 
   saver.save(sess, models_path + 'model.ckpt', global_step=i)
-  print 'Model saved.'
+  print('Model saved.')
 
 
 def get_last_iteration(ckpt):

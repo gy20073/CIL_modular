@@ -118,7 +118,7 @@ def read_all_files(file_names):
 
 
   dataset_names = ['targets']
-  datasets_cat = [list([]) for _ in xrange(len(dataset_names))]
+  datasets_cat = [list([]) for _ in range(len(dataset_names))]
 
 
 
@@ -127,8 +127,8 @@ def read_all_files(file_names):
   #print file_names
   for cword in file_names:
     try:
-        print cword
-        print count
+        print(cword)
+        print(count)
         dset = h5py.File(cword, "r")  
 
 
@@ -164,7 +164,7 @@ def read_all_files(file_names):
       traceback.print_tb(exc_traceback,limit=1, file=sys.stdout)
       traceback.print_exception(exc_type, exc_value, exc_traceback,
                             limit=2, file=sys.stdout)
-      print "failed to open", cword
+      print("failed to open", cword)
 
 
 
@@ -195,14 +195,14 @@ if __name__ == "__main__":
 
 
 
-  print targets.shape[1]
+  print(targets.shape[1])
   angles =[]
   for i in range(targets.shape[1]):
     angles.append(get_target_ori((targets[8][i],targets[9][i],22)))
 
   #print angles
   angles = np.array(angles)
-  print angles.shape
+  print(angles.shape)
   intersections = np.zeros(angles.shape)
   # Get all indexes where  angle is equal to 6.28
   intersections[np.where(angles>=6.2)] = 1.0
@@ -211,7 +211,7 @@ if __name__ == "__main__":
 
   border = intersections[:-1] != intersections[1:]
   borderIndexes = np.where(border==True)
-  print borderIndexes[0].shape[0]
+  print(borderIndexes[0].shape[0])
 
   direction = np.ones(angles.shape)*2.0
   # Go n points after and n points before and get the medium to detect the direction
@@ -222,8 +222,8 @@ if __name__ == "__main__":
 
 
 
-    print 'angle init', angles[init-1]
-    print 'angle end', angles[end+1]
+    print('angle init', angles[init-1])
+    print('angle end', angles[end+1])
     difference = angles[init-1] - angles[end+1]
     if (difference > 0 and difference < 3.0) or difference <-3.0: 
       inter = 3.0
@@ -231,10 +231,10 @@ if __name__ == "__main__":
       inter =4.0
     else:
       inter=5.0
-    print inter
+    print(inter)
 
-    print 'init ',init
-    print 'end ',end
+    print('init ',init)
+    print('end ',end)
     
     N = min(100,init-1-last_end) + random.randint(0,max(1,init-1-last_end -100))
     direction[((init-1)-N):((end+1)+10)] = inter
@@ -248,10 +248,10 @@ if __name__ == "__main__":
   # Apply the direction to N points before the border index
 
   # Now go again over all files and change the direction   
-  sequence_num = range(0,4788)
+  sequence_num = list(range(0,4788))
   for h_num in sequence_num:
     try:
-      print " SEQUENCE NUMBER ",h_num
+      print(" SEQUENCE NUMBER ",h_num)
       data = h5py.File(path+'data_'+ str(h_num).zfill(5) +'.h5', "r")
 
       #redata = h5py.File('/media/adas/012B
@@ -278,7 +278,7 @@ if __name__ == "__main__":
 
 
 
-  plt.plot(range(0,direction.shape[0]),direction,'g')#range(0,len(speed_list)),speed_list_noise,'b',range(0,len(speed_list)),just_noise,'r')
+  plt.plot(list(range(0,direction.shape[0])),direction,'g')#range(0,len(speed_list)),speed_list_noise,'b',range(0,len(speed_list)),just_noise,'r')
   
   plt.show()
   #save_gta_surface(gta_surface)

@@ -113,7 +113,7 @@ def get_target_ori(target_pos):
 def read_all_files(file_names):
  
   dataset_names = ['targets']
-  datasets_cat = [list([]) for _ in xrange(len(dataset_names))]
+  datasets_cat = [list([]) for _ in range(len(dataset_names))]
 
 
   lastidx = 0
@@ -121,8 +121,8 @@ def read_all_files(file_names):
   #print file_names
   for cword in file_names:
     try:
-        print cword
-        print count
+        print(cword)
+        print(count)
         dset = h5py.File(cword, "r")  
 
         for i in range(len(dataset_names)):
@@ -154,7 +154,7 @@ def read_all_files(file_names):
       traceback.print_tb(exc_traceback,limit=1, file=sys.stdout)
       traceback.print_exception(exc_type, exc_value, exc_traceback,
                             limit=2, file=sys.stdout)
-      print "failed to open", cword
+      print("failed to open", cword)
 
   for i in range(len(dataset_names)):     
     datasets_cat[i] = np.concatenate(datasets_cat[i], axis=0)
@@ -266,15 +266,15 @@ if __name__ == "__main__":
   #print ("Max Magnitude: ", np.sort(wp1_mag)[-500:])
 
   num_idx_check = 1500
-  print ("Max Magnitude: ", np.sort(wp1_mag)[-num_idx_check:]) 
+  print(("Max Magnitude: ", np.sort(wp1_mag)[-num_idx_check:])) 
   exception_list = set(np.argsort(wp1_mag)[-num_idx_check:]/200)
   print (exception_list)
 
-  print	('Avg Angle: ', np.mean(wp4_angle))
-  print	('Avg Magnitude: ', np.mean(wp4_mag))
+  print(('Avg Angle: ', np.mean(wp4_angle)))
+  print(('Avg Magnitude: ', np.mean(wp4_mag)))
 
-  print ('Input shape: ',targets.shape)
-  print ('Extra shape: ', wp_vectors.shape)
+  print(('Input shape: ',targets.shape))
+  print(('Extra shape: ', wp_vectors.shape))
 # Compute all angles
 
   angles =[]
@@ -283,7 +283,7 @@ if __name__ == "__main__":
 
   #print angles
   angles = np.array(angles)
-  print angles.shape
+  print(angles.shape)
   intersections = np.zeros(angles.shape)
   # Get all indexes where  angle is equal to 6.28
   intersections[np.where(angles>=6.2)] = 1.0
@@ -291,7 +291,7 @@ if __name__ == "__main__":
   # Get the border indexes
   border = intersections[:-1] != intersections[1:]
   borderIndexes = np.where(border==True)
-  print borderIndexes[0].shape[0]
+  print(borderIndexes[0].shape[0])
 
   direction = np.ones(angles.shape)*2.0
   # Go n points after and n points before and get the medium to detect the direction
@@ -323,13 +323,13 @@ if __name__ == "__main__":
   # Apply the direction to N points before the border index
 
   # Now go again over all files and change the direction   
-  sequence_num = range(0,h5_last+1)
+  sequence_num = list(range(0,h5_last+1))
 
   for h_num in sequence_num:
 
 
     if (not(h_num in exception_list)):
-	    print " SEQUENCE NUMBER ",h_num
+	    print(" SEQUENCE NUMBER ",h_num)
 	    data = h5py.File(path+'data_'+ str(h_num).zfill(5) +'.h5', "r")
 	    if (addWPs): #Add waypoints or just update them
 	      num_data_entry = data['targets'][0].shape[0]
@@ -365,10 +365,10 @@ if __name__ == "__main__":
 	      
 	      new_data['targets'][i] = target_array
     else:
-	      print " SEQUENCE NUMBER ", h_num, " was skipped"
+	      print(" SEQUENCE NUMBER ", h_num, " was skipped")
 
 
-  plt.plot(range(0,direction.shape[0]),direction,'g')#range(0,len(speed_list)),speed_list_noise,'b',range(0,len(speed_list)),just_noise,'r')
+  plt.plot(list(range(0,direction.shape[0])),direction,'g')#range(0,len(speed_list)),speed_list_noise,'b',range(0,len(speed_list)),just_noise,'r')
   
   plt.show()
   #save_gta_surface(gta_surface)

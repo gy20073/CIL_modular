@@ -3,52 +3,52 @@ import numpy as np
 
 
 def one_hot_to_image(x):
-    print 'ONE HOT TO IMAGE'
-    print x
+    print('ONE HOT TO IMAGE')
+    print(x)
     number_labels = x.get_shape().as_list()[3]
-    print ('Number of Labels:', number_labels)
+    print(('Number of Labels:', number_labels))
     # classes_values =tf.constant([x*int(255.0/(float(number_labels)-1)) for x in range(number_labels) ])
 
     prediction=tf.argmax(x,-1)
-    print prediction
+    print(prediction)
     gray_x = tf.scalar_mul(int(255.0/(float(number_labels)-1)),prediction)
 
     #multiplied_classes = tf.multiply(classes_values,x)
     #print multiplied_classes
     # gray_x = tf.reduce_max(multiplied_classes,axis=3,keep_dims=True)
-    print gray_x
+    print(gray_x)
     gray_x =  tf.cast(gray_x,dtype=tf.float32)
     gray_x = tf.scalar_mul(1.0/255.0,gray_x)
 
-    print gray_x
+    print(gray_x)
     return gray_x
 
 
 def image_to_one_hot(x,number_labels):
-    print 'IMAGE TO ONE HOT'
-    print x
+    print('IMAGE TO ONE HOT')
+    print(x)
 
     one_hot = tf.squeeze(tf.scalar_mul(number_labels,x))  
-    print one_hot
+    print(one_hot)
 
     one_hot =  tf.cast(one_hot,dtype=tf.int32)
     one_hot = tf.one_hot(one_hot,number_labels)
-    print one_hot    
+    print(one_hot)    
 
     one_hot = tf.reshape(one_hot,[-1,x.get_shape().as_list()[1],x.get_shape().as_list()[2],number_labels])
 
     return one_hot
 
 def label_to_one_hot(x,number_labels):
-    print 'LABEL TO ONE HOT'   
-    print x
+    print('LABEL TO ONE HOT')   
+    print(x)
 
     one_hot = tf.squeeze(x)
-    print one_hot
+    print(one_hot)
 
     one_hot =  tf.cast(one_hot,dtype=tf.int32)
     one_hot = tf.one_hot(one_hot,number_labels)
-    print one_hot    
+    print(one_hot)    
 
     one_hot = tf.reshape(one_hot,[-1,x.get_shape().as_list()[1],x.get_shape().as_list()[2],number_labels])
 
@@ -147,7 +147,7 @@ class Network(object):
 
 
     def dropout(self,x):
-        print "Dropout", self._count_dropouts
+        print("Dropout", self._count_dropouts)
         self._count_dropouts+=1
         output = tf.nn.dropout(x, self._dropout_vec[self._count_dropouts-1],name='dropout'+str(self._count_dropouts))
         
@@ -175,15 +175,15 @@ class Network(object):
         filters_in_x = x.get_shape()[-1]
         filters_in_h = h.get_shape()[-1]
 
-        print x
-        print h
-        print output_size
-        print filters_in_x
+        print(x)
+        print(h)
+        print(output_size)
+        print(filters_in_x)
 
         x_vec = tf.split(0, self._config.batch_size,x)
         h_vec = tf.split(0, self._config.batch_size,h)
         y_vec =[]
-        print x_vec
+        print(x_vec)
         for i in range(0,len(x_vec)):
             y_vec.append(tf.reshape(tf.matmul(tf.transpose(x_vec[i]),h_vec[i]),[1,-1]))
 
@@ -197,8 +197,8 @@ class Network(object):
         y_shape = y.get_shape()[-1]
         shape = [y_shape,output_size]
 
-        print y
-        print shape
+        print(y)
+        print(shape)
 
 
         weights = weight_xavi_init(shape,'W_fc_gate' +str(self._count_fc))
@@ -235,7 +235,7 @@ class Network(object):
 
 
     def conv_block(self,x,kernel_size,stride,output_size,padding_in='SAME'):
-        print " === Conv", self._count_conv, "  :  ", kernel_size, stride, output_size
+        print(" === Conv", self._count_conv, "  :  ", kernel_size, stride, output_size)
         with tf.name_scope("conv_block" +str(self._count_conv)):
             x = self.conv(x,kernel_size,stride,output_size,padding_in=padding_in)
             x = self.bn(x)
@@ -244,7 +244,7 @@ class Network(object):
             return  self.activation(x)
 
     def fc_block(self,x,output_size):
-        print " === FC", self._count_fc, "  :  ", output_size
+        print(" === FC", self._count_fc, "  :  ", output_size)
         with tf.name_scope("fc" +str(self._count_fc+1)):
 
             x = self.fc(x,output_size)
@@ -310,22 +310,22 @@ class Network(object):
     def  get_vbp_images(self,xc):
        
         with tf.name_scope('vbp'):
-            for i in reversed(range(self._count_conv)): # reversely go through the feature maps
+            for i in reversed(list(range(self._count_conv))): # reversely go through the feature maps
 
                 if i == self._count_conv-1:
                     feature_map = xc
                 else:
                     feature_map = self._features['conv_block'+str(i)]  # Get this one
 
-                print feature_map
+                print(feature_map)
                 feature_map = tf.reduce_mean(feature_map,3,keep_dims=True) # Apply average of all feature maps.
-                print feature_map
+                print(feature_map)
 
 
-                print i
-                print len(self._conv_kernels)
-                print self._conv_kernels
-                print self._conv_strides
+                print(i)
+                print(len(self._conv_kernels))
+                print(self._conv_kernels)
+                print(self._conv_strides)
                 if i != 0:
                     next_shape = tf.shape(self._features['conv_block'+str(i-1)])
                 else:
@@ -340,7 +340,7 @@ class Network(object):
                 deconv_weights = weight_ones([self._conv_kernels[i],self._conv_kernels[i], 1, 1],'const_deconv'+str(i))
 
   
-                print i 
+                print(i) 
                 if i == self._count_conv-1:
                     feature_map_up = tf.nn.conv2d_transpose(feature_map,deconv_weights,\
                   output_shape_tensor, [1, self._conv_strides[i],self._conv_strides[i], 1],\
@@ -355,5 +355,5 @@ class Network(object):
                 padding='VALID', name='deconv'+str(i))   # apply a deconvolution
 
 
-                print vbp_image
+                print(vbp_image)
         return vbp_image

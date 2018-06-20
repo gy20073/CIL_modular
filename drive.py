@@ -51,7 +51,7 @@ def get_camera_dict(ini_file):
 	cameras =  config['CARLA/SceneCapture']['Cameras']
 	camera_dict = {}
 	cameras = cameras.split(',')
-	print cameras
+	print(cameras)
 	for i in range(len(cameras)):
 
 		angle = config['CARLA/SceneCapture/' + cameras[i]]['CameraRotationYaw']
@@ -106,12 +106,12 @@ def get_instance(drive_config,experiment_name,drivers_name,memory_use):
 			driver = DeepRCMachine("0",experiment_name,drive_config,memory_use)	
 
 	else:
-		print " Not valid interface is set "
+		print(" Not valid interface is set ")
 
 	if hasattr(drive_config, 'carla_config'):
 		camera_dict = get_camera_dict(drive_config.carla_config)
-		print " Camera Dict "
-		print camera_dict
+		print(" Camera Dict ")
+		print(camera_dict)
 
 	folder_name = str(datetime.datetime.today().year) + str(datetime.datetime.today().month) + str(datetime.datetime.today().day)
 	
@@ -140,7 +140,7 @@ def drive(experiment_name,drive_config,name = None,memory_use=1.0):
 
 	noiser = Noiser(drive_config.noise)
 
-	print 'before starting'
+	print('before starting')
 	driver.start()
 	first_time = True
 	if drive_config.show_screen:
@@ -202,7 +202,7 @@ def drive(experiment_name,drive_config,name = None,memory_use=1.0):
 			if drive_config.show_screen:
 				if drive_config.interface == "Carla" or drive_config.interface == "VirtualElektra":
 					#for i in range(drive_config.aspect_ratio[0]*drive_config.aspect_ratio[1]):
-					print 'fps',1.0/(time.time() - capture_time)
+					print('fps',1.0/(time.time() - capture_time))
 
 					#print measurements['BGRA'][drive_config.middle_camera].shape
 					image = measurements['BGRA'][drive_config.middle_camera][drive_config.image_cut[0]:drive_config.image_cut[1],:,:]
@@ -240,7 +240,7 @@ def drive(experiment_name,drive_config,name = None,memory_use=1.0):
 					screen_manager.plot_camera_steer(image,actions[0].steer,[0,0])
 
 				else:
-					print "Not supported interface"
+					print("Not supported interface")
 					pass
 
 			

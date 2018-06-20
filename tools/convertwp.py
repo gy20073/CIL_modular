@@ -68,13 +68,13 @@ if __name__ == "__main__":
   wp2_x_ind = 29
   wp2_y_ind = 30
 
-  sequence_num = range(0,h5_last+1)
+  sequence_num = list(range(0,h5_last+1))
 
   for h_num in sequence_num:
 
 
     if (not(h_num in exception_list)):
-	    print " SEQUENCE NUMBER ",h_num
+	    print(" SEQUENCE NUMBER ",h_num)
 	    data = h5py.File(path+'data_'+ str(h_num).zfill(5) +'.h5', "r")
 	    if (addWPs): #Add waypoints or just update them
 	      num_data_entry = data['targets'][0].shape[0]
@@ -128,7 +128,7 @@ if __name__ == "__main__":
 	      
 	      new_data['targets'][i] = target_array
     else:
-	      print " SEQUENCE NUMBER ", h_num, " was skipped"
+	      print(" SEQUENCE NUMBER ", h_num, " was skipped")
 
 
 

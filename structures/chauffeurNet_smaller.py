@@ -15,28 +15,28 @@ def create_structure(tf, input_image,input_data, input_size,dropout,config):
 
 	"""conv1""" #kernel sz, stride, num feature maps
 	xc = network_manager.conv_block(x,5,2,20,padding_in='VALID')
-	print xc
+	print(xc)
 
 	"""conv2"""
 	xc = network_manager.conv_block(xc,3,2,24,padding_in='VALID')
-	print xc
+	print(xc)
 
 	"""conv3"""
 	xc = network_manager.conv_block(xc,3,2,28,padding_in='VALID')
-	print xc
+	print(xc)
 
 	"""conv4"""
 	xc = network_manager.conv_block(xc,3,1,32,padding_in='VALID')
-	print xc
+	print(xc)
 
 
 	""" reshape """
 	x =  tf.reshape(xc, [-1, int(np.prod(xc.get_shape()[1:]))],name = 'reshape')
-	print x
+	print(x)
 
 	""" fc1 """
 	x = network_manager.fc_block(x,256)
-	print x
+	print(x)
 	""" fc2 """
 	x = network_manager.fc_block(x,256)
 
@@ -70,7 +70,7 @@ def create_structure(tf, input_image,input_data, input_size,dropout,config):
 
 		
 
-		print branch_output
+		print(branch_output)
 
 
 	weights = network_manager.get_weigths_dict()
@@ -78,9 +78,9 @@ def create_structure(tf, input_image,input_data, input_size,dropout,config):
 	features = network_manager.get_feat_tensors_dict()
 	
 	vis_images = network_manager.get_vbp_images(xc)
-	print vis_images
+	print(vis_images)
 
-	print vis_images.get_shape()
+	print(vis_images.get_shape())
 
 	#vis_images = tf.div(vis_images  -tf.reduce_min(vis_images),tf.reduce_max(vis_images) -tf.reduce_min(vis_images))
 

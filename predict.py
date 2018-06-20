@@ -65,7 +65,7 @@ def predict(experiment_name,drive_config,name = None,memory_use=1.0):
 
 	noiser = Noiser(drive_config.noise)
 
-	print 'before starting'
+	print('before starting')
 	driver.start()
 	first_time = True
 	if drive_config.show_screen:
@@ -78,7 +78,7 @@ def predict(experiment_name,drive_config,name = None,memory_use=1.0):
 
 	direction = 2
 
-	positions_to_test =  range(0,300)
+	positions_to_test =  list(range(0,300))
 
 	images= [np.array([200,88,3]),np.array([200,88,3]),np.array([200,88,3])]
 	actions = [0,0,0]
@@ -100,7 +100,7 @@ def predict(experiment_name,drive_config,name = None,memory_use=1.0):
 
 				img_3 = np.array(data['images_center'][i+2]).astype(np.uint8)
 
-				print int(data['targets'][i][49])
+				print(int(data['targets'][i][49]))
 
 
 
@@ -158,12 +158,12 @@ def predict(experiment_name,drive_config,name = None,memory_use=1.0):
 							,rewards.speed,0,0,None,rewards.reseted,driver.get_number_completions(),dist_to_goal,0) #
 
 					elif drive_config.interface == "DeepRC":
-						for key,value in drive_config.cameras_to_plot.iteritems():
+						for key,value in drive_config.cameras_to_plot.items():
 							screen_manager.plot_driving_interface( capture_time,np.copy(images[key]),\
 								actions[key],actions_pred[key],data['targets'][i+2][8],0,\
 								0,0,data['targets'][i][51],0,0,value) #
 					else:
-						print "Not supported interface"
+						print("Not supported interface")
 						pass
 
 				

@@ -69,7 +69,7 @@ def draw_line_val(line_number,var_values,color_vec,spacing=1):
 
 def draw_vector_four_col(initial_line,var_values1,var_values2,var_values3,var_values4):
 	ScreenH, ScreenW = stdscr.getmaxyx()
-	print ScreenH
+	print(ScreenH)
 	for i in range(0,min(var_values1.shape[0],ScreenH-4)):
 
 		draw_line_val(initial_line + i,[str(var_values1[i]),str(var_values2[i]),str(var_values3[i]),str(var_values4[i])],[1,2,3,1])
@@ -77,7 +77,7 @@ def draw_vector_four_col(initial_line,var_values1,var_values2,var_values3,var_va
 
 def draw_vector_five_col(initial_line,var_values1,var_values2,var_values3,var_values4,var_values5):
 	ScreenH, ScreenW = stdscr.getmaxyx()
-	print ScreenH
+	print(ScreenH)
 	for i in range(0,min(var_values1.shape[0],ScreenH-4)):
 
 		draw_line_val(initial_line + i,[str(var_values1[i]),str(var_values2[i]),str(var_values3[i]),str(var_values4[i]),str(var_values5[i])],[1,2,3,1,1])
@@ -86,7 +86,7 @@ def draw_vector_five_col(initial_line,var_values1,var_values2,var_values3,var_va
 
 def draw_vector_six_col(initial_line,var_values1,var_values2,var_values3,var_values4,var_values5,var_values6):
 	ScreenH, ScreenW = stdscr.getmaxyx()
-	print ScreenH
+	print(ScreenH)
 	for i in range(0,min(var_values1.shape[0],ScreenH-4)):
 
 		draw_line_val(initial_line + i,[str(var_values1[i]),str(var_values2[i]),str(var_values3[i]),str(var_values4[i]),str(var_values5[i]),str(var_values6[i])],[1,2,3,1,1,1])

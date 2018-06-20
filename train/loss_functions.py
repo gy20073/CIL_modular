@@ -13,7 +13,7 @@ def mse_input(network_outputs,ground_truths,control_input,config):
 
 	energy_vec =[]
 
-	print network_outputs
+	print(network_outputs)
 	for i in range(len(branches_configuration)):
 
 		energy_branch =[]
@@ -22,20 +22,20 @@ def mse_input(network_outputs,ground_truths,control_input,config):
 		#if network_outputs[i].get_shape()[1] == 1: # Size 1 cannot be splited
 		#	network_outputs_split = network_outputs[i]
 		#else:
-		print network_outputs[i]
+		print(network_outputs[i])
 		network_outputs_split =tf.split(network_outputs[i],network_outputs[i].get_shape()[1],1 )
 
 
-		print branches_configuration[i]
+		print(branches_configuration[i])
 		for j in range(len(branches_configuration[i])):
 
-			print 'split'
-			print network_outputs_split[j]
+			print('split')
+			print(network_outputs_split[j])
 
 			# Get the name of the target data to be taken
 			target_name = branches_configuration[i][j] # name of the target
 			# Get the target gt ( TODO: This should be a dictionary, I think it is more logical)
-			print target_name
+			print(target_name)
 
 
 
@@ -44,20 +44,20 @@ def mse_input(network_outputs,ground_truths,control_input,config):
 				branch_selection = tf.reshape(control_input[:,i],tf.shape(ground_truths[0]))
 			else:
 				branch_selection =tf.ones(tf.shape(target_gt))
-			print target_gt
+			print(target_gt)
 			squared_dist = tf.pow(tf.subtract(target_gt, network_outputs_split[j]),2)
 			dist =tf.abs(tf.subtract(target_gt,  network_outputs_split[j])) *branch_selection
 			error_branch.append(dist)
-			print 'dist'
-			print dist
+			print('dist')
+			print(dist)
 
 
 
 			variable_loss =squared_dist * branch_selection
 
 
-			print 'loss'
-			print variable_loss
+			print('loss')
+			print(variable_loss)
 			energy_branch.append(variable_loss)
 			if i==0 and j==0:
 				loss_function = variable_loss*config.branch_loss_weight[i]*config.variable_weight[target_name]
@@ -86,7 +86,7 @@ def mse_branched(network_outputs,ground_truths,control_input,config):
 
 	energy_vec =[]
 
-	print network_outputs
+	print(network_outputs)
 	for i in range(len(branches_configuration)):
 
 		energy_branch =[]
@@ -95,20 +95,20 @@ def mse_branched(network_outputs,ground_truths,control_input,config):
 		#if network_outputs[i].get_shape()[1] == 1: # Size 1 cannot be splited
 		#	network_outputs_split = network_outputs[i]
 		#else:
-		print network_outputs[i]
+		print(network_outputs[i])
 		network_outputs_split =tf.split(network_outputs[i],network_outputs[i].get_shape()[1],1 )
 
 
-		print branches_configuration[i]
+		print(branches_configuration[i])
 		for j in range(len(branches_configuration[i])):
 
-			print 'split'
-			print network_outputs_split[j]
+			print('split')
+			print(network_outputs_split[j])
 
 			# Get the name of the target data to be taken
 			target_name = branches_configuration[i][j] # name of the target
 			# Get the target gt ( TODO: This should be a dictionary, I think it is more logical)
-			print target_name
+			print(target_name)
 
 
 			target_gt = ground_truths[config.targets_names.index(target_name)]
@@ -116,19 +116,19 @@ def mse_branched(network_outputs,ground_truths,control_input,config):
 				branch_selection = tf.reshape(control_input[:,i],tf.shape(ground_truths[0]))
 			else:
 				branch_selection =tf.ones(tf.shape(target_gt))
-			print target_gt
+			print(target_gt)
 			squared_dist = tf.pow(tf.subtract(target_gt, network_outputs_split[j]),2)
 			dist =tf.abs(tf.subtract(target_gt,  network_outputs_split[j])) * branch_selection
 			error_branch.append(dist)
-			print 'dist'
-			print dist
+			print('dist')
+			print(dist)
 
 
 			variable_loss =squared_dist * branch_selection
 
 
-			print 'loss'
-			print variable_loss
+			print('loss')
+			print(variable_loss)
 			energy_branch.append(variable_loss)
 			if i==0 and j==0:
 				loss_function = variable_loss*config.branch_loss_weight[i]*config.variable_weight[target_name]
@@ -157,7 +157,7 @@ def mse_branched_variational_weights(network_outputs,ground_truths,control_input
 
 	energy_vec =[]
 
-	print network_outputs
+	print(network_outputs)
 	for i in range(len(branches_configuration)):
 
 		energy_branch =[]
@@ -166,20 +166,20 @@ def mse_branched_variational_weights(network_outputs,ground_truths,control_input
 		#if network_outputs[i].get_shape()[1] == 1: # Size 1 cannot be splited
 		#	network_outputs_split = network_outputs[i]
 		#else:
-		print network_outputs[i]
+		print(network_outputs[i])
 		network_outputs_split =tf.split(network_outputs[i],network_outputs[i].get_shape()[1],1 )
 
 
-		print branches_configuration[i]
+		print(branches_configuration[i])
 		for j in range(len(branches_configuration[i])):
 
-			print 'split'
-			print network_outputs_split[j]
+			print('split')
+			print(network_outputs_split[j])
 
 			# Get the name of the target data to be taken
 			target_name = branches_configuration[i][j] # name of the target
 			# Get the target gt ( TODO: This should be a dictionary, I think it is more logical)
-			print target_name
+			print(target_name)
 
 
 
@@ -188,12 +188,12 @@ def mse_branched_variational_weights(network_outputs,ground_truths,control_input
 				branch_selection = tf.reshape(control_input[:,i],tf.shape(ground_truths[0]))
 			else:
 				branch_selection =tf.ones(tf.shape(target_gt))
-			print target_gt
+			print(target_gt)
 			squared_dist = tf.pow(tf.subtract(target_gt, network_outputs_split[j]),2)
 			dist =tf.abs(tf.subtract(target_gt,  network_outputs_split[j])) * branch_selection
 			error_branch.append(dist)
-			print 'dist'
-			print dist
+			print('dist')
+			print(dist)
 
 
 
@@ -201,8 +201,8 @@ def mse_branched_variational_weights(network_outputs,ground_truths,control_input
 			variable_loss = squared_dist * branch_selection
 			variable_loss = (1/(2*tf.exp(variance*variance)) )*variable_loss + variance*variance
 
-			print 'loss'
-			print variable_loss
+			print('loss')
+			print(variable_loss)
 			energy_branch.append(variable_loss)
 			if i==0 and j==0:
 				loss_function = variable_loss
@@ -241,7 +241,7 @@ def mse_seg_branched(network_outputs,seg_output,ground_truths,image_seg_ground_t
 
 	energy_vec =[]
 
-	print network_outputs
+	print(network_outputs)
 	for i in range(len(branches_configuration)):
 
 		energy_branch =[]
@@ -250,20 +250,20 @@ def mse_seg_branched(network_outputs,seg_output,ground_truths,image_seg_ground_t
 		#if network_outputs[i].get_shape()[1] == 1: # Size 1 cannot be splited
 		#	network_outputs_split = network_outputs[i]
 		#else:
-		print network_outputs[i]
+		print(network_outputs[i])
 		network_outputs_split =tf.split(network_outputs[i],network_outputs[i].get_shape()[1],1 )
 
 
-		print branches_configuration[i]
+		print(branches_configuration[i])
 		for j in range(len(branches_configuration[i])):
 
-			print 'split'
-			print network_outputs_split[j]
+			print('split')
+			print(network_outputs_split[j])
 
 			# Get the name of the target data to be taken
 			target_name = branches_configuration[i][j] # name of the target
 			# Get the target gt ( TODO: This should be a dictionary, I think it is more logical)
-			print target_name
+			print(target_name)
 
 
 
@@ -272,12 +272,12 @@ def mse_seg_branched(network_outputs,seg_output,ground_truths,image_seg_ground_t
 				branch_selection = tf.reshape(control_input[:,i],tf.shape(ground_truths[0]))
 			else:
 				branch_selection =tf.ones(tf.shape(target_gt))
-			print target_gt
+			print(target_gt)
 			squared_dist = tf.pow(tf.subtract(target_gt, network_outputs_split[j]),2)
 			dist =tf.abs(tf.subtract(target_gt,  network_outputs_split[j])) * branch_selection
 			error_branch.append(dist)
-			print 'dist'
-			print dist
+			print('dist')
+			print(dist)
 
 
 
@@ -285,8 +285,8 @@ def mse_seg_branched(network_outputs,seg_output,ground_truths,image_seg_ground_t
 			variable_loss =squared_dist * branch_selection
 
 
-			print 'loss'
-			print variable_loss
+			print('loss')
+			print(variable_loss)
 			energy_branch.append(variable_loss)
 			if i==0 and j==0:
 				loss_function = variable_loss*config.branch_loss_weight[i]*config.variable_weight[target_name] + image_loss

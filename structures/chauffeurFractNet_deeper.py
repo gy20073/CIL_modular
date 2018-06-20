@@ -15,7 +15,7 @@ def create_structure(tf, input_image,input_data, input_size,dropout,config):
 
 	"""conv1"""
 	xc = network_manager.conv_block(x,5,2,32,padding_in='VALID')
-	print xc
+	print(xc)
 
 	res1 = network_manager.fc(tf.reshape(xc, [-1, int(np.prod(xc.get_shape()[1:]))],name = 'reshape_res1'),256)
 
@@ -28,13 +28,13 @@ def create_structure(tf, input_image,input_data, input_size,dropout,config):
 
 	"""conv3"""
 	xc = network_manager.conv_block(xc,3,2,64,padding_in='VALID')
-	print xc
+	print(xc)
 
 	res3 = network_manager.fc(tf.reshape(xc, [-1, int(np.prod(xc.get_shape()[1:]))],name = 'reshape_res3'),256)
 
 	"""conv4"""
 	xc = network_manager.conv_block(xc,3,1,64,padding_in='VALID')
-	print xc
+	print(xc)
 
 	res4 = network_manager.fc(tf.reshape(xc, [-1, int(np.prod(xc.get_shape()[1:]))],name = 'reshape_res4'),256)
 
@@ -42,34 +42,34 @@ def create_structure(tf, input_image,input_data, input_size,dropout,config):
 
 	"""conv5"""
 	xc = network_manager.conv_block(xc,3,2,128,padding_in='VALID')
-	print xc
+	print(xc)
 	res5 = network_manager.fc(tf.reshape(xc, [-1, int(np.prod(xc.get_shape()[1:]))],name = 'reshape_res5'),256)
 	"""conv6"""
 	xc = network_manager.conv_block(xc,3,1,128,padding_in='VALID')
-	print xc
+	print(xc)
 	res6 = network_manager.fc(tf.reshape(xc, [-1, int(np.prod(xc.get_shape()[1:]))],name = 'reshape_res6'),256)
 
 
 
 	"""conv7"""
 	xc = network_manager.conv_block(xc,3,1,256,padding_in='VALID')
-	print xc
+	print(xc)
 	res7 = network_manager.fc(tf.reshape(xc, [-1, int(np.prod(xc.get_shape()[1:]))],name = 'reshape_res7'),256)
 
 	"""conv8"""
 	xc = network_manager.conv_block(xc,3,1,256,padding_in='VALID')
-	print xc
+	print(xc)
 	res8 = network_manager.fc(tf.reshape(xc, [-1, int(np.prod(xc.get_shape()[1:]))],name = 'reshape_res8'),256)
 	"""mp3 (default values)""" 
 
 
 	""" reshape """
 	x =  tf.reshape(xc, [-1, int(np.prod(xc.get_shape()[1:]))],name = 'reshape')
-	print x
+	print(x)
 
 	""" fc1 """
 	x = network_manager.fc(x,256)
-	print x
+	print(x)
 	# Sum residuals
 	x = network_manager.activation(x + res1 + res2 + res3 +res4 + res5 + res6 + res7 +res8)
 
@@ -107,7 +107,7 @@ def create_structure(tf, input_image,input_data, input_size,dropout,config):
 
 		
 
-		print branch_output
+		print(branch_output)
 
 
 	weights = network_manager.get_weigths_dict()
@@ -115,9 +115,9 @@ def create_structure(tf, input_image,input_data, input_size,dropout,config):
 	features = network_manager.get_feat_tensors_dict()
 	
 	vis_images = network_manager.get_vbp_images(xc)
-	print vis_images
+	print(vis_images)
 
-	print vis_images.get_shape()
+	print(vis_images.get_shape())
 
 	#vis_images = tf.div(vis_images  -tf.reduce_min(vis_images),tf.reduce_max(vis_images) -tf.reduce_min(vis_images))
 

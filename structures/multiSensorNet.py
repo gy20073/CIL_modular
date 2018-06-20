@@ -15,38 +15,38 @@ def create_structure(tf, input_sensors,input_data, input_size,dropout,config):
 
 		"""conv1"""
 		sc = network_manager.conv_block(s,5,2,32,padding_in='VALID')
-		print sc
+		print(sc)
 		sc = network_manager.conv_block(sc,3,1,32,padding_in='VALID')
-		print xc
+		print(xc)
 
 
 		"""conv2"""
 		sc = network_manager.conv_block(sc,3,2,64,padding_in='VALID')
-		print sc
+		print(sc)
 		sc = network_manager.conv_block(sc,3,1,64,padding_in='VALID')
-		print sc
+		print(sc)
 
 		"""conv3"""
 		sc = network_manager.conv_block(sc,3,2,128,padding_in='VALID')
-		print sc
+		print(sc)
 		sc = network_manager.conv_block(sc,3,1,128,padding_in='VALID')
-		print sc
+		print(sc)
 
 		"""conv4"""
 		sc = network_manager.conv_block(sc,3,1,256,padding_in='VALID')
-		print sc
+		print(sc)
 		sc = network_manager.conv_block(sc,3,1,256,padding_in='VALID')
-		print sc
+		print(sc)
 		"""mp3 (default values)""" 
 
 
 		""" reshape """
 		s =  tf.reshape(sc, [-1, int(np.prod(sc.get_shape()[1:]))],name = 'reshape')
-		print s
+		print(s)
 
 		""" fc1 """
 		s = network_manager.fc_block(s,512)
-		print s
+		print(s)
 		""" fc2 """
 		s = network_manager.fc_block(s,512)
 
@@ -82,7 +82,7 @@ def create_structure(tf, input_sensors,input_data, input_size,dropout,config):
 
 		
 
-		print branch_output
+		print(branch_output)
 
 
 	weights = network_manager.get_weigths_dict()
@@ -90,9 +90,9 @@ def create_structure(tf, input_sensors,input_data, input_size,dropout,config):
 	features = network_manager.get_feat_tensors_dict()
 	
 	vis_images = network_manager.get_vbp_images(xc)
-	print vis_images
+	print(vis_images)
 
-	print vis_images.get_shape()
+	print(vis_images.get_shape())
 
 	#vis_images = tf.div(vis_images  -tf.reduce_min(vis_images),tf.reduce_max(vis_images) -tf.reduce_min(vis_images))
 

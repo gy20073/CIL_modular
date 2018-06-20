@@ -37,13 +37,13 @@ def test_input(gpu_number):
     #print batch[0][0]
     count = 1
     for j in range(len(config.targets_names)):
-      print config.targets_names[j]
-      print batch[count][0:20]
+      print(config.targets_names[j])
+      print(batch[count][0:20])
       count +=1
 
 
     for j in range(len(config.inputs_names)):
-      print config.inputs_names[j]
-      print batch[count][0:20]
+      print(config.inputs_names[j])
+      print(batch[count][0:20])
       count +=1
 

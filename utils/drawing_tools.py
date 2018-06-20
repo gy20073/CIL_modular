@@ -56,7 +56,7 @@ def generate_ncolors(num_colors):
 def get_average_over_interval(vector,interval):
 
 	avg_vector = []
-	print 'interval',interval
+	print('interval',interval)
 	for i in range(0,len(vector),interval):
 
 		initial_train =i
@@ -72,7 +72,7 @@ def get_average_over_interval(vector,interval):
 def  get_average_over_interval_stride(vector,interval,stride):
 
   avg_vector = []
-  print 'interval',interval
+  print('interval',interval)
   for i in range(0,len(vector)-interval,stride):
 
     initial_train =i
@@ -151,7 +151,7 @@ def draw_bar_on(img,bar_intensity,y_pos,color=(0,0,255)):
       img[y_pos, x ] = tuple([j/2 for j in color])
       img[y_pos+1, x ] = tuple([j/2 for j in color])
       img[y_pos+2, x ] = tuple([j/2 for j in color])
-      print img[y_pos+2, x ]
+      print(img[y_pos+2, x ])
 
 
 def draw_vbar_on(img,bar_intensity,x_pos,color=(0,0,255)):

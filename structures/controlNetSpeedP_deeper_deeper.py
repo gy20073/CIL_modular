@@ -13,39 +13,39 @@ def create_structure(tf, x,input_data, input_size,dropout,config):
 
 	"""conv1"""
 	x = network_manager.conv_block(x,5,2,32,padding_in='VALID')
-	print x
+	print(x)
 	x = network_manager.conv_block(x,3,1,32,padding_in='VALID')
-	print x
+	print(x)
 
 
 	"""conv2"""
 	x = network_manager.conv_block(x,3,2,64,padding_in='VALID')
-	print x
+	print(x)
 	x = network_manager.conv_block(x,3,1,64,padding_in='VALID')
-	print x
+	print(x)
 
-	print x
+	print(x)
 	"""conv3"""
 	x = network_manager.conv_block(x,3,2,128,padding_in='VALID')
-	print x
+	print(x)
 	x = network_manager.conv_block(x,3,1,128,padding_in='VALID')
-	print x
+	print(x)
 
 	"""conv4"""
 	x = network_manager.conv_block(x,3,2,256,padding_in='VALID')
-	print x
+	print(x)
 	x = network_manager.conv_block(x,3,1,256,padding_in='VALID')
-	print x
+	print(x)
 	"""mp3 (default values)""" 
 
 
 	""" reshape """
 	x =  tf.reshape(x, [-1, int(np.prod(x.get_shape()[1:]))],name = 'reshape')
-	print x
+	print(x)
 
 	""" fc1 """
 	x = network_manager.fc_block(x,512)
-	print x
+	print(x)
 	""" fc2 """
 	x = network_manager.fc_block(x,512)
 
@@ -84,7 +84,7 @@ def create_structure(tf, x,input_data, input_size,dropout,config):
 
 		
 
-		print branch_output
+		print(branch_output)
 
 
 	weights = network_manager.get_weigths_dict()

@@ -412,7 +412,7 @@ def ENet_Small(inputs,
     inputs_shape = inputs.get_shape().as_list()
     inputs = tf.reshape(inputs,shape=(batch_size, inputs_shape[1], inputs_shape[2], inputs_shape[3]))
 
-    print inputs.shape
+    print(inputs.shape)
     
 
     with tf.variable_scope(scope, reuse=reuse):
@@ -421,7 +421,7 @@ def ENet_Small(inputs,
              slim.arg_scope([slim.batch_norm], fused=True), \
              slim.arg_scope([slim.conv2d, slim.conv2d_transpose], activation_fn=None): 
             #=================INITIAL BLOCK=================
-            for i in xrange(1, max(num_initial_blocks, 1) + 1):
+            for i in range(1, max(num_initial_blocks, 1) + 1):
                 net = initial_block(inputs, scope='initial_block_' + str(i))
 
             #Save for skip connection later

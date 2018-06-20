@@ -203,6 +203,6 @@ if __name__ == '__main__':
 		time.sleep(0.01)
 		noise_input.append(noisy_action.steer)
 
-	plt.plot(range(500),human_input,'g',range(500),noise_input,'r')
+	plt.plot(list(range(500)),human_input,'g',list(range(500)),noise_input,'r')
 	plt.show()
 

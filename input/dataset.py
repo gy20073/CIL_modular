@@ -20,7 +20,7 @@ def join_classes(labels_image,labels_mapping):
 
   compressed_labels_image = np.copy(labels_image) 
 
-  for key,value in labels_mapping.iteritems():
+  for key,value in labels_mapping.items():
     compressed_labels_image[np.where(labels_image==key)] = value
 
   return compressed_labels_image
@@ -38,7 +38,7 @@ class Dataset(object):
     self._images = images
     self._variables = np.concatenate(tuple(datasets), axis=0)  # Cat the datasets
 
-    self._positions_to_train = range(0,config_input.number_steering_bins) # WARNING THIS NEED TO BE A MULTIPLE OF THE NUMBER OF CLIPS
+    self._positions_to_train = list(range(0,config_input.number_steering_bins)) # WARNING THIS NEED TO BE A MULTIPLE OF THE NUMBER OF CLIPS
 
     self._iteration =0
 
@@ -66,10 +66,10 @@ class Dataset(object):
       self._queue_shapes.append([self._config.inputs_sizes[i]])
 
 
-    print [tf.float32]*(len(self._config.targets_names)+len(self._config.inputs_names))
+    print([tf.float32]*(len(self._config.targets_names)+len(self._config.inputs_names)))
 
     
-    print [self._queue_image_input] + self._queue_targets + self._queue_inputs 
+    print([self._queue_image_input] + self._queue_targets + self._queue_inputs) 
 
     self._queue = tf.FIFOQueue(capacity=config_input.queue_capacity, dtypes=[tf.float32]*(len(self._config.targets_names)+len(self._config.inputs_names) + 1), \
                       shapes= self._queue_shapes)
@@ -141,7 +141,7 @@ class Dataset(object):
     sample_positions = []
     splited_list =[]
     if len(self._positions_to_train) ==0:
-      self._positions_to_train=range(0,self._config.number_steering_bins)
+      self._positions_to_train=list(range(0,self._config.number_steering_bins))
 
     for i in range(0,3):
       position = i*(len(self._positions_to_train)/3)
@@ -170,7 +170,7 @@ class Dataset(object):
           break
 
         if len(self._positions_to_train) ==0:
-          self._positions_to_train = range(0,self._number_steering_levels)
+          self._positions_to_train = list(range(0,self._number_steering_levels))
           splited_list =[]
           for i in range(0,3):
             position = i*(len(self._positions_to_train)/3)
@@ -191,7 +191,7 @@ class Dataset(object):
           break
         
         if len(self._positions_to_train) ==0:
-          self._positions_to_train = range(0,self._config.number_steering_bins)
+          self._positions_to_train = list(range(0,self._config.number_steering_bins))
           splited_list =[]
           for i in range(0,3):
             position = i*(len(self._positions_to_train)/3)
@@ -211,7 +211,7 @@ class Dataset(object):
           break
 
         if len(self._positions_to_train) ==0:
-          self._positions_to_train = range(0,self._config.number_steering_bins)
+          self._positions_to_train = list(range(0,self._config.number_steering_bins))
           splited_list =[]
           for i in range(0,3):
             position = i*(len(self._positions_to_train)/3)

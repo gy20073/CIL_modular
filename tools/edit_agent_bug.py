@@ -45,7 +45,7 @@ classes_join = {0:2,1:2,2:2,3:2,5:2,12:2,9:2,11:2,4:0,10:1,8:3,6:3,7:4}
 def join_classes(labels_image,join_dic):
   
   compressed_labels_image = np.copy(labels_image) 
-  for key,value in join_dic.iteritems():
+  for key,value in join_dic.items():
     compressed_labels_image[np.where(labels_image==key)] = value
 
 
@@ -77,8 +77,8 @@ if __name__ == "__main__":
 
 
 
-  positions_to_test =  range(0,len([name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))]))
-  print positions_to_test
+  positions_to_test =  list(range(0,len([name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))])))
+  print(positions_to_test)
 
 
   path_clean =path
@@ -90,18 +90,18 @@ if __name__ == "__main__":
 
   for h_num in positions_to_test:
 
-    print " SEQUENCE NUMBER ",h_num
+    print(" SEQUENCE NUMBER ",h_num)
     try:
       data = h5py.File(path+'data_'+ str(h_num).zfill(5) +'.h5', "r+")
     except Exception as e:
-      print e
+      print(e)
       continue
 
 
 
     
     if np.amax(data['labels'][0]) < 32:
-      print 'BAD DATA'
+      print('BAD DATA')
 
       #redata = h5py.File('/media/adas/012B
       #new_data = h5py.File(path_clean+'data_'+ str(h_num).zfill(5) +'.h5', "w")
@@ -132,7 +132,7 @@ if __name__ == "__main__":
             target_array[direction_position] =random.sample([3.0,4.0,5.0], 1)[0]
 
         if target_array[0] > 0.65 or target_array[0] < -0.65:
-          print 'WARNING : WEIRD STEERING'
+          print('WARNING : WEIRD STEERING')
           os.remove(path_clean+'data_'+ str(h_num).zfill(5) +'.h5')
           break
 

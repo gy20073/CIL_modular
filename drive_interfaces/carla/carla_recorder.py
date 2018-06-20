@@ -1,9 +1,9 @@
 import h5py
 import scipy
 import time
-from Queue import Queue
-from Queue import Empty
-from Queue import Full
+from queue import Queue
+from queue import Empty
+from queue import Full
 from threading import Thread
 from PIL import Image
 import numpy as np

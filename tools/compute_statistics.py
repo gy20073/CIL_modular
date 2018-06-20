@@ -236,7 +236,7 @@ if __name__ == '__main__':
 
 
 		completed_episodes = sum(data_matrix[:,2])/data_matrix.shape[0]
-		print 'completions', completed_episodes
+		print('completions', completed_episodes)
 
 		#completions = task_complete_percentages(data_matrix)
 
@@ -249,13 +249,13 @@ if __name__ == '__main__':
 		colisions = get_colisions(reward_matrix)
 
 
-		print 'KM drove ',km_run
+		print('KM drove ',km_run)
 		lane_road = get_out_of_road_lane(reward_matrix)
 		infractions = [lane_road[0]/km_run,lane_road[1]/km_run,colisions[0]/km_run,colisions[1]/km_run,colisions[2]/km_run]
 		infractions_vec = [sum(x) for x in zip(infractions, infractions_vec)] 
-		print 'Non_Colisions/Km', (infractions[1]+  infractions[0])/2.0 ,'Lane Cross/Km ',infractions[0],'Side Cross/Km ',infractions[1],'Col Gen /Km ',infractions[2]\
+		print('Non_Colisions/Km', (infractions[1]+  infractions[0])/2.0 ,'Lane Cross/Km ',infractions[0],'Side Cross/Km ',infractions[1],'Col Gen /Km ',infractions[2]\
 		,'Col Ped /Km ',infractions[3],'Col Ped /Km ',infractions[4], 'Acidents/Km ', (infractions[4] +infractions[2] + infractions[3])/3,\
-		'total', 1/((infractions[4] +infractions[2] + infractions[3] + infractions[1] + infractions[0])/5.0)
+		'total', 1/((infractions[4] +infractions[2] + infractions[3] + infractions[1] + infractions[0])/5.0))
 
 			
 

@@ -96,7 +96,7 @@ def train(gpu_number, experiment_name,path,memory_fraction,port):
 
   if  config.segmentation_model != None:
     exclude = ['global_step']
-    print (config.segmentation_model_name)
+    print((config.segmentation_model_name))
     variables_to_restore = slim.get_variables(scope=str(config.segmentation_model_name))#config.segmentation_model_name
 
     saver = tf.train.Saver(variables_to_restore,max_to_keep=0)

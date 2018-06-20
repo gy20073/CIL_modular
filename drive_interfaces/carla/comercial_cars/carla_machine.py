@@ -8,13 +8,13 @@ import re
 from PIL import Image
 import math
 
-from Queue import Queue
-from Queue import Empty
-from Queue import Full
+from queue import Queue
+from queue import Empty
+from queue import Full
 from threading import Thread
 import tensorflow as tf
 import time
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 
 import math
 import pygame
@@ -52,7 +52,7 @@ classes_join = {0:2,1:2,2:2,3:2,5:2,12:2,9:2,11:2,4:0,10:1,8:3,6:3,7:4}
 def join_classes(labels_image,labels_mapping):
   
   compressed_labels_image = np.copy(labels_image) 
-  for key,value in labels_mapping.iteritems():
+  for key,value in labels_mapping.items():
     compressed_labels_image[np.where(labels_image==key)] = value
   return compressed_labels_image
 
@@ -66,7 +66,7 @@ def restore_session(sess,saver,models_path):
   
   ckpt = tf.train.get_checkpoint_state(models_path)
   if ckpt:
-    print 'Restoring from ',ckpt.model_checkpoint_path  
+    print('Restoring from ',ckpt.model_checkpoint_path)  
     saver.restore(sess,ckpt.model_checkpoint_path)
   else:
     ckpt = 0
@@ -375,8 +375,8 @@ class CarlaMachine(Runnable,Driver):
     #ori =(rewards.ori_x,rewards.ori_y,rewards.ori_z)
     #pos,point = self.planner.get_defined_point(pos,ori,(target[0],target[1],22),(1.0,0.02,-0.001),self._select_goal)
     #direction = convert_to_car_coord(point[0],point[1],pos[0],pos[1],ori[0],ori[1])
-    print measurements['PlayerMeasurements'].forward_speed
-    print direction
+    print(measurements['PlayerMeasurements'].forward_speed)
+    print(direction)
     sensors = []
     for name in self._config.sensor_names:
       if name =='rgb':
@@ -398,7 +398,7 @@ class CarlaMachine(Runnable,Driver):
 
     sensor_pack =[]
     for i in range(len(self._config.sensor_names)): #sensors
-      print ('Number of sensors: %s' %(len(self._config.sensor_names)))
+      print(('Number of sensors: %s' %(len(self._config.sensor_names))))
       sensor = sensors[i]
 
       if self._config.sensor_names[i] =='rgb':
@@ -432,13 +432,13 @@ class CarlaMachine(Runnable,Driver):
     
     if len(sensor_pack) > 1:
 
-      print sensor_pack[0].shape
-      print sensor_pack[1].shape
+      print(sensor_pack[0].shape)
+      print(sensor_pack[1].shape)
       image_input =  np.concatenate((sensor_pack[0],sensor_pack[1]),axis=2)
 
     else:
       image_input = sensor_pack[0]
-      print sensor_pack[0].shape
+      print(sensor_pack[0].shape)
     
 
     image_input = image_input.astype(np.float32)
@@ -480,7 +480,7 @@ class CarlaMachine(Runnable,Driver):
 
         steer = max(steer,-1)
 
-      print('Predicted Steering: ',steer_pred, ' Waypoint Steering: ', steer)
+      print(('Predicted Steering: ',steer_pred, ' Waypoint Steering: ', steer))
 
     else:
       steer,acc,brake = self._control_function(image_input,speed,direction,self._config,self._sess,self._train_manager)
@@ -528,9 +528,9 @@ class CarlaMachine(Runnable,Driver):
 
         self._reset()
 
-      print 'Selected Position ',self.episode_config[1],'from len ', len(self.positions)
+      print('Selected Position ',self.episode_config[1],'from len ', len(self.positions))
       direction,_ = self.planner.get_next_command(pos,ori,[self.positions[self.episode_config[1]].location.x,self.positions[self.episode_config[1]].location.y,22],(1,0,0))
-      print direction 
+      print(direction) 
     else:
       direction = 2.0
 

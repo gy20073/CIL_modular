@@ -54,7 +54,7 @@ if __name__ == "__main__":
   steering_pred =[]
   steering_gt =[]
 
-  positions_to_test =  range(0,28)
+  positions_to_test =  list(range(0,28))
   #positions_to_test = [93,104,170,173,229,245,283,397,413,425,565,581,591]
   #positions_to_test = range(0,660)
   #positions_to_test = [617,618,619,620,622,623,624,636,637,638,639]
@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
   for h_num in positions_to_test:
 
-    print " SEQUENCE NUMBER ",h_num
+    print(" SEQUENCE NUMBER ",h_num)
     data = h5py.File(path+'data_'+ str(h_num).zfill(5) +'.h5', "r")
 
     #redata = h5py.File('/media/adas/012B4138528FF294/NewGTA/redata_'+ str(h_num).zfill(5) +'.h5', "r")
@@ -152,10 +152,10 @@ if __name__ == "__main__":
       car_lenght = 6
       actions[0].steer +=min(4*(math.atan((0.26*car_lenght)/(time_use*speed+0.05)))/3.1415,0.2)
       actions[2].steer -=min(4*(math.atan((0.26*car_lenght)/(time_use*speed+0.05)))/3.1415,0.2)
-      print " Steer Left MIDDLE Right "
-      print actions[0].steer
-      print actions[1].steer
-      print actions[2].steer
+      print(" Steer Left MIDDLE Right ")
+      print(actions[0].steer)
+      print(actions[1].steer)
+      print(actions[2].steer)
 
       for j in range(1):
         screen.plot3camrcnoise( images[j],\
@@ -176,11 +176,11 @@ if __name__ == "__main__":
       #img = img*255
       #print img
 
-  print speed_list
-  print speed_list_noise
-  print just_noise
-  print ts
-  plt.plot(range(0,len(speed_list)),speed_list,'g',range(0,len(speed_list)),speed_list_noise,'b',range(0,len(speed_list)),just_noise,'r')
+  print(speed_list)
+  print(speed_list_noise)
+  print(just_noise)
+  print(ts)
+  plt.plot(list(range(0,len(speed_list))),speed_list,'g',list(range(0,len(speed_list))),speed_list_noise,'b',list(range(0,len(speed_list))),just_noise,'r')
   
   plt.show()
   #save_gta_surface(gta_surface)

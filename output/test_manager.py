@@ -46,7 +46,7 @@ class TestManager(object):
 				,driver_conf=driver_conf,session =sess,config_input=self._config_input)
 
 		else:
-			print " We only Suport carla"
+			print(" We only Suport carla")
 		
 
 		self._train_writer = tf.summary.FileWriter(self._config_input.test_path_write,self._sess.graph)
@@ -290,16 +290,16 @@ class TestManager(object):
 		ped_per_km,car_per_km,number_of_completions,average_speed):
 		# Write on a tensorboard topic this result
 
-		print "Writing:"
-		print iteration
-		print "Avg Com ",average_completion
-		print "Acc per KM ",accidents_per_km
-		print "Sidewalk time ",sidewalk
-		print "lane ",lane
-		print "Ped Per Km ",ped_per_km
-		print "car per km ",car_per_km
-		print " Number of comp ",number_of_completions
-		print "Avg Speed ",average_speed
+		print("Writing:")
+		print(iteration)
+		print("Avg Com ",average_completion)
+		print("Acc per KM ",accidents_per_km)
+		print("Sidewalk time ",sidewalk)
+		print("lane ",lane)
+		print("Ped Per Km ",ped_per_km)
+		print("car per km ",car_per_km)
+		print(" Number of comp ",number_of_completions)
+		print("Avg Speed ",average_speed)
 
 		outfile = open(self._exp_name + '.csv','a+')
 		outfile.write("%d,%f,%f,%f,%f,%f,%f,%f,%f\n" %(iteration,average_completion,accidents_per_km,sidewalk,lane,\

@@ -224,19 +224,19 @@ def print_infractions(infractions,km_run):
 	if (infractions[0]+infractions[1]+infractions[2]+infractions[3]+infractions[4]) > 0:
 		any_inf = 1.0/(infractions[0]+infractions[1]+infractions[2]+infractions[3]+infractions[4])
 
-	print '		Kilometers Without Going to Sidewalk - > ',sid_tre
-	print '		Kilometers Without Crossing Lane - > ', lan_tre
-	print '		Kilometers Without Pedestrians Collision - > ', ped_col
-	print '		Kilometers Without Car Collision - > ', car_col
-	print '		Kilometers Without Other Collision - > ', oth_col
-	print '		----------------------------------------------------'
-	print '		Kilometers Without Trespass ', any_tre
-	print '		Kilometers Without Collision ', any_col
-	print '		Kilometers Without Infraction ', any_inf
-	print '		----------------------------------------------------'
-	print '		Average Kilometers Per Trespass ', (sid_tre+lan_tre)/2
-	print '		Average Kilometers Per Collision', (ped_col+car_col+oth_col)/3
-	print '		Average Kilometers Per Infraction', (sid_tre+lan_tre+ped_col+car_col+oth_col)/5
+	print('		Kilometers Without Going to Sidewalk - > ',sid_tre)
+	print('		Kilometers Without Crossing Lane - > ', lan_tre)
+	print('		Kilometers Without Pedestrians Collision - > ', ped_col)
+	print('		Kilometers Without Car Collision - > ', car_col)
+	print('		Kilometers Without Other Collision - > ', oth_col)
+	print('		----------------------------------------------------')
+	print('		Kilometers Without Trespass ', any_tre)
+	print('		Kilometers Without Collision ', any_col)
+	print('		Kilometers Without Infraction ', any_inf)
+	print('		----------------------------------------------------')
+	print('		Average Kilometers Per Trespass ', (sid_tre+lan_tre)/2)
+	print('		Average Kilometers Per Collision', (ped_col+car_col+oth_col)/3)
+	print('		Average Kilometers Per Infraction', (sid_tre+lan_tre+ped_col+car_col+oth_col)/5)
 
 
 if __name__ == '__main__':
@@ -271,13 +271,13 @@ if __name__ == '__main__':
 		header= header.split(',')
 		header[-1] = header[-1][:-2]
 		f.close()
-		print header
+		print(header)
 		f = open(path + file + '_rewards_file', "rb")
 		header_rewards = f.readline()
 		header_rewards= header_rewards.split(',')
 		header_rewards[-1] = header_rewards[-1][:-2]
 		f.close()
-		print header_rewards
+		print(header_rewards)
 		data_matrix = np.loadtxt(open(path + file, "rb"), delimiter=",", skiprows=1)
 
 		tasks = np.unique(data_matrix[:,header.index('exp_id')])
@@ -297,10 +297,10 @@ if __name__ == '__main__':
 					task_reward_matrix =reward_matrix[np.logical_and(reward_matrix[:,header_rewards.index('exp_id')]== float(t), reward_matrix[:,header_rewards.index('weather')]== float(w))]
 
 				completed_episodes = sum(task_data_matrix[:,header.index('result')])/task_data_matrix.shape[0]
-				print 'Task ',t , 'Weather', w
+				print('Task ',t , 'Weather', w)
 
-				print '		Entire Episodes Completed (%) - > ', completed_episodes
-				print ''
+				print('		Entire Episodes Completed (%) - > ', completed_episodes)
+				print('')
 
 				#completions_acc = [sum(x) for x in zip(completions, completions_acc)]
 
@@ -310,10 +310,10 @@ if __name__ == '__main__':
 						summaries[sw]['num_weathers'] += 1
 
 				if compute_infractions:
-					print '		==== Infraction Related ====='
+					print('		==== Infraction Related =====')
 					km_run = get_distance_traveled(task_reward_matrix,header_rewards)
 					km_run_all = km_run_all + km_run
-					print '		Drove (KM) - > ', km_run
+					print('		Drove (KM) - > ', km_run)
 					lane_road = get_out_of_road_lane(task_reward_matrix,header_rewards)
 					colisions = get_colisions(task_reward_matrix,header_rewards)
 					infractions = [lane_road[0]/km_run,lane_road[1]/km_run,colisions[0]/km_run,colisions[1]/km_run,colisions[2]/km_run]
@@ -325,13 +325,13 @@ if __name__ == '__main__':
 							# print infractions
 							summaries[sw]['infractions'] += np.array(infractions)
 
-			print '\n\n >>> Task', t, 'summary <<<\n\n'
+			print('\n\n >>> Task', t, 'summary <<<\n\n')
 			for sw in summary_weathers:
-				print sw, summary_weathers[sw]
-				print 'Num weathers', summaries[sw]['num_weathers']
-				print 'Drove (KM) - > ', km_run_all
-				print 'Avg completion', summaries[sw]['completion']/summaries[sw]['num_weathers']
-				print 'Avg infractions'
+				print(sw, summary_weathers[sw])
+				print('Num weathers', summaries[sw]['num_weathers'])
+				print('Drove (KM) - > ', km_run_all)
+				print('Avg completion', summaries[sw]['completion']/summaries[sw]['num_weathers'])
+				print('Avg infractions')
 				print_infractions(summaries[sw]['infractions']/summaries[sw]['num_weathers'],km_run_all)
 				#
 				#

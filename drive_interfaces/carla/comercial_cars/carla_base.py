@@ -57,7 +57,7 @@ class CarlaBase(object):
 		
 		joystick_count = pygame.joystick.get_count()
 		if joystick_count >1:
-			print "Please Connect Just One Joystick"
+			print("Please Connect Just One Joystick")
 			raise 
 
 

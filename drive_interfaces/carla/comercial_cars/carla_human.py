@@ -19,10 +19,10 @@ from carla import Planner
 import numpy as np
 sldist = lambda c1, c2: math.sqrt((c2[0] - c1[0])**2 + (c2[1] - c1[1])**2)
 import time
-from ConfigParser import ConfigParser
-from Queue import Queue
-from Queue import Empty
-from Queue import Full
+from configparser import ConfigParser
+from queue import Queue
+from queue import Empty
+from queue import Full
 from threading import Thread
 from contextlib import contextmanager
 import sys, os
@@ -41,13 +41,13 @@ def find_valid_episode_position(positions,waypointer):
             continue
 
 
-        print (' TESTING (',index_start,',',index_goal,')')
+        print((' TESTING (',index_start,',',index_goal,')'))
         goals_pos =positions[index_goal]  
         if not waypointer.test_position((goals_pos.location.x,goals_pos.location.y,22),\
             (goals_pos.orientation.x,goals_pos.orientation.y,goals_pos.orientation.z)):
             continue
         if sldist([start_pos.location.x,start_pos.location.y],[goals_pos.location.x,goals_pos.location.y]) < 25000.0:
-            print ('COntinued on distance ', sldist([start_pos.location.x,start_pos.location.y],[goals_pos.location.x,goals_pos.location.y]))
+            print(('COntinued on distance ', sldist([start_pos.location.x,start_pos.location.y],[goals_pos.location.x,goals_pos.location.y])))
             
             continue
 
@@ -114,7 +114,7 @@ class CarlaHuman(Driver):
 		
 			joystick_count = pygame.joystick.get_count()
 			if joystick_count >1:
-				print "Please Connect Just One Joystick"
+				print("Please Connect Just One Joystick")
 				raise 
 
 			self.joystick = pygame.joystick.Joystick(0)
@@ -148,7 +148,7 @@ class CarlaHuman(Driver):
 
 		self.carla.newEpisode(self.episode_config[0])
 
-		print 'RESET ON POSITION ',self.episode_config[0]
+		print('RESET ON POSITION ',self.episode_config[0])
 		self._dist_to_activate = 300
 		# Set 10 frames to skip
 		self._skiped_frames = 0
@@ -303,9 +303,9 @@ class CarlaHuman(Driver):
 
 				self._reset()
 
-			print 'Selected Position ',self.episode_config[1],'from len ', len(self.positions)
+			print('Selected Position ',self.episode_config[1],'from len ', len(self.positions))
 			direction,_ = self.planner.get_next_command(pos,ori,[self.positions[self.episode_config[1]].location.x,self.positions[self.episode_config[1]].location.y,22],(1,0,0))
-			print direction	
+			print(direction)	
 		else:
 			direction = 2.0
 

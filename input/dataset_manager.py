@@ -135,7 +135,7 @@ class DatasetManager(object):
                 lastidx += old_shape
                 dset.flush()
                 count += 1
-                dset.close()
+                #dset.close()
 
             except IOError:
                 import traceback

@@ -8,7 +8,7 @@ from configparser import ConfigParser
 from pygame.locals import *
 
 sys.path.append('../train')
-
+sldist = lambda c1, c2: math.sqrt((c2[0] - c1[0])**2 + (c2[1] - c1[1])**2)
 from carla import CARLA
 from carla import Measurements
 from carla import Control
@@ -464,7 +464,7 @@ class CarlaMachine(Runnable, Driver):
                player_data.transform.orientation.z]
 
         if self.use_planner:
-
+            # TODO: bug Yang, it's not clear where the episode_config come from, disable use_planner for now
             if sldist([player_data.transform.location.x, player_data.transform.location.y],
                       [self.positions[self.episode_config[1]].location.x,
                        self.positions[self.episode_config[1]].location.y]) < self._dist_to_activate:

@@ -76,7 +76,7 @@ class configMain:
         # self.extra_augment_factor = 6.0
 
         # Yang: reproduce the segmentation model
-        self.segmentation_model = '/data/yang/code/aws/scratch/CIL_modular_data/erfnet_small_cityscapes_aug'
+        self.segmentation_model = '/data/yang/code/aws/scratch/CIL_modular_data/matthias_data/erfnet_small_cityscapes_aug'
         self.segmentation_model_name = "ErfNet_Small"
 
 
@@ -118,8 +118,8 @@ class configInput(configMain):
 
         self.dataset_name = 'Carla'
 
-        train_path = "/data/yang/code/aws/scratch/CIL_modular_data/RC025Val/fake_train"
-        val_path = "/data/yang/code/aws/scratch/CIL_modular_data/RC025Val/fake_val"
+        train_path = "/data/yang/code/aws/scratch/CIL_modular_data/matthias_data/RC025Val/fake_train"
+        val_path = "/data/yang/code/aws/scratch/CIL_modular_data/matthias_data/RC025Val/fake_val"
         print(train_path)
 
         self.train_db_path = [os.path.join(train_path, f) for f in glob.glob1(train_path, "data_*.h5")]

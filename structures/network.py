@@ -24,6 +24,8 @@ def one_hot_to_image(x):
 
 
 def image_to_one_hot(x, number_labels):
+    # multiply the number_labels and then convert to one hot
+    # the original x should be between 0 and 1.0, otherwise not make sense
     print('IMAGE TO ONE HOT')
     print(x)
 
@@ -40,6 +42,7 @@ def image_to_one_hot(x, number_labels):
 
 
 def label_to_one_hot(x, number_labels):
+    # directly to one hot, without multiplying
     print('LABEL TO ONE HOT')
     print(x)
 

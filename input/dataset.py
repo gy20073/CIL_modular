@@ -22,6 +22,7 @@ class Dataset(object):
 
         self._splited_keys = splited_keys
         self._images = images
+        # The shape is #total dim * batch
         self._variables = np.concatenate(tuple(datasets), axis=0)  # Cat the datasets
 
         self._positions_to_train = list(
@@ -42,11 +43,13 @@ class Dataset(object):
         self._queue_inputs = []
         self._queue_shapes = [[config_input.image_size[0], config_input.image_size[1], config_input.image_size[2]]]
 
+        # config.targets_names: ['wp1_angle', 'wp2_angle', 'Steer', 'Gas', 'Brake', 'Speed']
         for i in range(len(self._config.targets_names)):
             self._queue_targets.append(
                 tf.placeholder(tf.float32, shape=[config_input.batch_size, self._config.targets_sizes[i]]))
             self._queue_shapes.append([self._config.targets_sizes[i]])
 
+        # self.inputs_names = ['Control', 'Speed']
         for i in range(len(self._config.inputs_names)):
             self._queue_inputs.append(
                 tf.placeholder(tf.float32, shape=[config_input.batch_size, self._config.inputs_sizes[i]]))
@@ -78,6 +81,7 @@ class Dataset(object):
     def get_batch_tensor(self):
         return self._batch_tensor
 
+    # Not used!!!
     def get_data_by_ids(self, generated_ids, batch_size):
 
         X_batch = np.zeros((batch_size, 1, self._input_size[0], self._input_size[1], self._input_size[2]),
@@ -103,9 +107,13 @@ class Dataset(object):
             count += 1
         return X_batch
 
+    # Used by datagen
     def sample_positions_to_train(self, number_of_samples):
-        def sample_from_vec(vector):
+        # sample equal number of data from _config.number_steering_bins in 3 parts.
+        # TODO: I'm wondering why not just uniformly sample from the sequence, since that will also guarantee the result
 
+        def sample_from_vec(vector):
+            # random sample an element from the vector, and remove it in the vector as well as _positions_to_train
             sample_number = random.choice(vector)
 
             # Remove the sampled position from the main list and the splited_list
@@ -119,15 +127,19 @@ class Dataset(object):
         # Divide it into 3 equal parts
         sample_positions = []
         splited_list = []
+        # self.steering_bins_perc = [0.05, 0.05, 0.1, 0.3, 0.3, 0.1, 0.05, 0.05]
+        # self.number_steering_bins = len(self.steering_bins_perc)
         if len(self._positions_to_train) == 0:
             self._positions_to_train = list(range(0, self._config.number_steering_bins))
 
+        # split the self._positions_to_train into 3 equal parts, which are stored into splited_list
         for i in range(0, 3):
-            position = i * (len(self._positions_to_train) / 3)
+            position = i * int(len(self._positions_to_train) // 3)
             if i == 2:
                 splited_list.append(self._positions_to_train[position:])
             else:
-                splited_list.append(self._positions_to_train[position:position + len(self._positions_to_train) / 3])
+                # for debugging
+                splited_list.append(self._positions_to_train[position: (position + len(self._positions_to_train) // 3)])
         # splited_list[2].append(splited_list[3][0])
         # del splited_list[3]
         # print splited_list
@@ -152,12 +164,12 @@ class Dataset(object):
                     self._positions_to_train = list(range(0, self._number_steering_levels))
                     splited_list = []
                     for i in range(0, 3):
-                        position = i * (len(self._positions_to_train) / 3)
+                        position = i * (len(self._positions_to_train) // 3)
                         if i == 2:
                             splited_list.append(self._positions_to_train[position:])
                         else:
                             splited_list.append(
-                                self._positions_to_train[position:position + len(self._positions_to_train) / 3])
+                                self._positions_to_train[position:position + len(self._positions_to_train) // 3])
 
             # Sample Left
 
@@ -173,12 +185,12 @@ class Dataset(object):
                     self._positions_to_train = list(range(0, self._config.number_steering_bins))
                     splited_list = []
                     for i in range(0, 3):
-                        position = i * (len(self._positions_to_train) / 3)
+                        position = i * (len(self._positions_to_train) // 3)
                         if i == 2:
                             splited_list.append(self._positions_to_train[position:])
                         else:
                             splited_list.append(
-                                self._positions_to_train[position:position + len(self._positions_to_train) / 3])
+                                self._positions_to_train[position:position + len(self._positions_to_train) // 3])
 
             # Sample Right
             if len(splited_list[2]) > 0:
@@ -193,19 +205,23 @@ class Dataset(object):
                     self._positions_to_train = list(range(0, self._config.number_steering_bins))
                     splited_list = []
                     for i in range(0, 3):
-                        position = i * (len(self._positions_to_train) / 3)
+                        position = i * (len(self._positions_to_train) // 3)
                         if i == 2:
                             splited_list.append(self._positions_to_train[position:])
                         else:
                             splited_list.append(
-                                self._positions_to_train[position:position + len(self._positions_to_train) / 3])
+                                self._positions_to_train[position:position + len(self._positions_to_train) // 3])
 
         return sample_positions
 
+    # Used by next_batch, for each of the control block,
     def datagen(self, time_len, batch_size, number_control_divisions):
+        # The goal of this function is to uniformly select from different control signals (group), different steering percentiles.
+        # which might not be able to achieve due to the underlying bug in spliter.split_by_output
 
         sensors_batch = []
         for i in range(len(self._images)):
+            # typical config.sensors_size = [(88, 200, 3)]
             sensors_batch.append(np.zeros((batch_size, self._config.sensors_size[i][0], \
                                            self._config.sensors_size[i][1], self._config.sensors_size[i][2]),
                                           dtype='uint8'))
@@ -219,7 +235,10 @@ class Dataset(object):
                 start = time.time()
                 for control_part in range(0, number_control_divisions):
 
-                    sampled_positions = self.sample_positions_to_train(int(batch_size / 3))
+                    # TODO: potential bug why divide by 3? Rather than divide by number_control_divisions
+                    # This is a potential bug, but the configuration always use number_control_divisions==3, so that's
+                    # practically not a bug.
+                    sampled_positions = self.sample_positions_to_train(int(batch_size // 3))
 
                     for outer_n in sampled_positions:
 
@@ -247,7 +266,13 @@ class Dataset(object):
 
     """Return the next `batch_size` examples from this data set."""
 
+    # Used by enqueue
     def next_batch(self):
+        # generate unbiased samples;
+        # apply augmentation on sensors and segmentation labels
+        # normalize images
+        # fill in targets and inputs. with reasonable valid condition checking
+        # 2 extra augmentation on steerings
 
         batch_size = self._batch_size
 
@@ -270,7 +295,7 @@ class Dataset(object):
                 if self._augmenter[i] != None:
                     sensors[i][np.where(sensors[i] == 0)] = 6
                     sensors[i] = self._augmenter[i].augment_images(sensors[i])
-                    sensors[i][np.where(sensors[i] == 0)] = 2 * (255 / 4)
+                    sensors[i][np.where(sensors[i] == 0)] = 2 * (255 // 4)
                     sensors[i][np.where(sensors[i] == 6)] = 0
 
             elif self._augmenter[i] != None:
@@ -278,6 +303,7 @@ class Dataset(object):
 
             sensors[i] = sensors[i].astype(np.float32)
 
+        # self._variables is the targets variables concatenated
         # Get the targets
         float_data = self._variables[:, generated_ids]
         targets = []
@@ -299,19 +325,25 @@ class Dataset(object):
 
             count = 0
             for j in range(len(self._config.targets_names)):
+                # Yang: This is assuming that all target names has size 1
                 k = self._config.variable_names.index(self._config.targets_names[j])
                 targets[count][i] = float_data[k, i]
 
                 if self._config.targets_names[j] == "Speed":
+                    # Yang: speed_factor is normalizing the speed
                     targets[count][i] /= self._config.speed_factor
 
                 if self._config.targets_names[j] == "Gas":
+                    # Yang: require Gas >=0
                     targets[count][i] = max(0, targets[count][i])
 
                 if self._config.targets_names[j] == "Brake":
+                    # Yang: require 0<=Brake<=1
                     targets[count][i] = min(1.0, max(0, targets[count][i]))
 
                 if hasattr(self._config, 'extra_augment_factor') and self._config.targets_names[j] == "Steer":
+                    # Yang: extra augmentation on the steering, some augmentation might based on car angle and car length
+
                     camera_pos = self._config.variable_names.index('Camera')
                     speed_pos = self._config.variable_names.index('Speed')
 
@@ -332,6 +364,8 @@ class Dataset(object):
                         math.atan((angle * car_lenght) / (time_use * speed + 0.05))) / 3.1415, 0.3)
 
                 if hasattr(self._config, 'saturated_factor') and self._config.targets_names[j] == "Steer":
+                    # bang bang control of steering
+
                     angle = float_data[self._config.variable_names.index('Angle'), i]
                     # print angle
                     #########Augmentation!!!!
@@ -386,6 +420,7 @@ class Dataset(object):
             except:  # We have RGB
                 return sensors[self._config.sensor_names.index('rgb')], targets, inputs
 
+    # Used by enqueue
     def process_run(self, sess, data_loaded):
 
         queue_feed_dict = {self._queue_image_input: data_loaded[0]}  # images we already put by default
@@ -399,12 +434,15 @@ class Dataset(object):
         # print queue_feed_dict
         sess.run(self._enqueue_op, feed_dict=queue_feed_dict)
 
+    # the main entrance from other process
     def enqueue(self, sess):
 
         while True:
             # print("starting to write into queue")
             queue_time = time.time()
 
+            # data_loaded[0] is the images, [1] is the target_names [2] is the input names
             data_loaded = self.next_batch()
 
+            # process run enqueue the prepared dict
             self.process_run(sess, data_loaded)

@@ -6,7 +6,8 @@ class Spliter(object):
         self._steering_bins_perc = steering_bins_perc
 
     def order_sequence(self, steerings, keys_sequence):
-
+        # select the subset based on the keys_sequence and
+        # return a list of indexes that sorts the steers, the selected steers (in original order)
         sequence_average = []
         # print 'keys'
         # print keys_sequence
@@ -24,11 +25,11 @@ class Spliter(object):
         # print len(steerings)
         # print steerings
         max_steer = min(0.6, max(steerings))  # SUPER HACKY MEGA WARNING
-        print 'Max Steer'
-        print max_steer
+        print('Max Steer')
+        print(max_steer)
         min_steer = max(-0.5, min(steerings))
-        print 'Min Steer'
-        print min_steer
+        print('Min Steer')
+        print(min_steer)
         # print steerings
 
 
@@ -49,13 +50,14 @@ class Spliter(object):
                 iter_index = i
                 iter_value = iter_value + steerinterval
 
-                print 'split on ', i
-                print len(splited_keys)
-                print len(splited_keys[-1])
+                print('split on ', i)
+                print(len(splited_keys))
+                print(len(splited_keys[-1]))
 
         return splited_keys
 
     def partition_keys_by_steering_quad(self, steerings, keys):
+        # split the keys based on the percentage defined by self._steering_bins_perc, as well as len(steerings)
 
         iter_index = 0
         quad_pos = 0
@@ -66,7 +68,7 @@ class Spliter(object):
         for i in range(1, len(self._steering_bins_perc)):
             quad_vec.append(quad_vec[-1] + self._steering_bins_perc[i])
 
-        print quad_vec
+        print(quad_vec)
 
         for i in range(0, len(steerings)):
 
@@ -78,11 +80,11 @@ class Spliter(object):
                 iter_index = i
                 quad_pos += 1
 
-                print 'split on ', i, 'with ', steerings[i]
-                print len(splited_keys)
-                print len(splited_keys[-1])
+                print('split on ', i, 'with ', steerings[i])
+                print(len(splited_keys))
+                print(len(splited_keys[-1]))
 
-        print 'Finished splitting'
+        print('Finished splitting')
 
         return splited_keys
 
@@ -124,6 +126,8 @@ class Spliter(object):
     """ Split the outputs keys with respect to the labels. The selected labels represents how it is going to be split """
 
     def divide_keys_by_labels(self, labels, selected_data):
+        # example input to this function: labels: a sequence of control variables;
+        # selected_data: [[0, 2, 5], [3], [4]]
 
         new_splited_array = []
         keys_for_divison = []  # The set of all possible keys for each division
@@ -138,6 +142,7 @@ class Spliter(object):
 
             keys_for_divison.append(keys_for_this_part)
 
+        # returns a list, where each entry is the ids with the current selected_data[i] removed
         return keys_for_divison
 
     def split_by_output(self, output_to_split, divided_keys):
@@ -145,16 +150,22 @@ class Spliter(object):
         splited_keys = []
         for i in range(len(divided_keys)):
             # We use this keys to grab the steerings we want... divided into groups
+            # TODO: revisit here.
             keys_ordered, average_outputs = self.order_sequence(output_to_split, divided_keys[i])
             # we get new keys and order steering, each steering group
+            # the sorted subset of the steers
             sorted_outputs = [average_outputs[j] for j in keys_ordered]
 
             # We split each group...
             if len(keys_ordered) > 0:
+                # TODO: potential buggy code here, since this output does not depend on the actual content of sorted_outputs
+                # TODO: instead, it only depend on the length of it, which is just len(keys_ordered)==len(divided_keys[i])
                 splited_keys_part = self.partition_keys_by_steering_quad(sorted_outputs,
                                                                          divided_keys[i])  # config.balances_train)
             else:
                 splited_keys_part = []
+            # as a result, each of the splited_keys_part is a division of the divided_keys[i], in its original order,
+            # into several bins, defined by self._steering_bins_perc
             splited_keys.append(splited_keys_part)
 
         return splited_keys

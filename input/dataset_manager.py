@@ -21,6 +21,9 @@ class DatasetManager(object):
         print((config.train_db_path))
 
         """ Read all hdf5_files """
+        # train_db_path is all data*.h5 files
+        # config.sensor_names are: ['rgb']
+        # config.dataset_names are: ['targets']
         self._images_train, self._datasets_train = self.read_all_files(config.train_db_path, config.sensor_names,
                                                                        config.dataset_names)
 
@@ -34,9 +37,12 @@ class DatasetManager(object):
         spliter = Spliter(1, 1, config.steering_bins_perc)
 
         # print self._datasets_train[0][config.variable_names.index("Steer")][:]
+        #self.labels_per_division = [[0, 2, 5], [3], [4]]
         divided_keys_train = spliter.divide_keys_by_labels(
             self._datasets_train[0][config.variable_names.index("Control")][:], config.labels_per_division)
 
+        # The structure is: self._splited_keys_train[i_labels_per_division][i__steering_bins_perc][a list of keys]
+        # In theory should be sharded instance ids by those two criterions
         self._splited_keys_train = spliter.split_by_output(
             self._datasets_train[0][config.variable_names.index("Steer")][:], divided_keys_train)
         # np.set_printoptions(threshold=np.nan)
@@ -129,6 +135,7 @@ class DatasetManager(object):
                 lastidx += old_shape
                 dset.flush()
                 count += 1
+                dset.close()
 
             except IOError:
                 import traceback
@@ -143,4 +150,7 @@ class DatasetManager(object):
             datasets_cat[i] = np.concatenate(datasets_cat[i], axis=0)
             datasets_cat[i] = datasets_cat[i].transpose((1, 0))
 
+        # images_data_cat is a list for each of the variables, each of them is a list of (start_index, end_index, x) tuples
+        # datasets is a list for each of the variables, variable across batch are concatenated together and transposed to
+        #       have size dim*batch
         return images_data_cat, datasets_cat

@@ -85,4 +85,5 @@ def create_structure(tf, input_image, input_data, input_size, dropout, config):
 
     # vis_images = tf.div(vis_images  -tf.reduce_min(vis_images),tf.reduce_max(vis_images) -tf.reduce_min(vis_images))
 
+    # branches: each of them is a vector of the output(all vars you care) conditioned on that input control signal
     return branches, vis_images, features, weights

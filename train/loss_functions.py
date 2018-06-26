@@ -98,6 +98,7 @@ def mse_branched(network_outputs, ground_truths, control_input, config):
             print(target_name)
 
             target_gt = ground_truths[config.targets_names.index(target_name)]
+            # Yang: control branch is in the front, and the latter targets are not branched
             if i < config.inputs_sizes[config.inputs_names.index('Control')]:
                 branch_selection = tf.reshape(control_input[:, i], tf.shape(ground_truths[0]))
             else:
@@ -115,6 +116,7 @@ def mse_branched(network_outputs, ground_truths, control_input, config):
             print(variable_loss)
             energy_branch.append(variable_loss)
             if i == 0 and j == 0:
+                # Yang: branch_loss_weight, variable_weight are two dimensional weighting parameters
                 loss_function = variable_loss * config.branch_loss_weight[i] * config.variable_weight[target_name]
             else:
                 loss_function = tf.add(

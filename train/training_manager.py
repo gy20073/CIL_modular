@@ -15,7 +15,7 @@ from network import one_hot_to_image, image_to_one_hot, label_to_one_hot
 def restore_session(sess, saver, models_path):
     ckpt = 0
     if not os.path.exists(models_path):
-        os.mkdir(models_path)
+        os.makedirs(models_path)
         os.mkdir(models_path + "/train/")
         os.mkdir(models_path + "/val/")
 
@@ -107,6 +107,7 @@ class TrainManager(object):
                                                                                                            self._config)
 
     def build_seg_network_gt_one_hot_join(self):
+        # label to one hot
 
         """ Depends on the actual input """
 
@@ -122,6 +123,7 @@ class TrainManager(object):
             self._gray = tf.expand_dims(self._gray, -1)
 
     def build_seg_network_gt_one_hot(self):
+        # image to one hot
 
         """ Depends on the actual input """
 
@@ -318,6 +320,7 @@ class TrainManager(object):
 
     def get_network_output(self):
         if self._config.branched_output:
+            # this is not used anywhere
             self._output_network = tf.concat(1, [self._output_network1, self._output_network2])
 
         return self._output_network

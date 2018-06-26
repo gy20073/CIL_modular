@@ -395,6 +395,8 @@ class CarlaMachine(Runnable, Driver):
 
         if (self._train_manager._config.control_mode == 'single_branch_wp'):
 
+            # Yang: use the waypoints to predict the steer, in theory PID controller, but in reality just P controller
+            # TODO: ask, only the regression target is different, others are the same
             steer, acc, brake, wp1angle, wp2angle = self._control_function(image_input, speed, direction, self._config,
                                                                            self._sess, self._train_manager)
 

@@ -51,7 +51,7 @@ class ValidationManager(object):
         outfile = open(self._config.val_path_write + 'variable_errors_val', 'a+')
         # outfile_clean = open(self._config.val_path_write +'variable_errors_val_clean', 'a+')
 
-        number_of_batches = self._config.number_images_val / (self._config.batch_size_val)
+        number_of_batches = self._config.number_images_val // (self._config.batch_size_val)
 
         super_batch = [
             np.zeros((number_of_batches * self._config.batch_size_val, self._config.image_size[0],

@@ -1,6 +1,8 @@
 import glob
 import os
 
+from imgaug import augmenters as iaa
+
 
 #
 # This is a config file, with three parts: Input, Training, Output, which are then joined in Main
@@ -13,12 +15,12 @@ class configMain:
         # the [-1,1] interval is split into so many equal intervals
         # when we need to sample a mini-batch, we sample bins and then sample inside the bins
 
-        # Yang: this is the percentage
+
         self.steering_bins_perc = [0.05, 0.05, 0.1, 0.3, 0.3, 0.1, 0.05, 0.05]
         self.number_steering_bins = len(self.steering_bins_perc)
         self.batch_size = self.number_steering_bins * 15
         self.batch_size_val = self.number_steering_bins * 15
-        self.number_images_val = self.batch_size_val * 20  # Number of images used in a validation Section
+        self.number_images_val = self.batch_size_val  # Number of images used in a validation Section - Default: 20*
 
         # self.input_size = (227,227,3)
         # self.manager_name = 'control_speed'
@@ -36,7 +38,6 @@ class configMain:
 
         self.sensor_names = ['rgb']
         self.sensors_size = [(88, 200, 3)]
-        # normalize is divide by 255.0
         self.sensors_normalize = [True]
 
         # CHANGE THIS FOR A DICTIONARY FOR GOD SAKE
@@ -67,51 +68,58 @@ class configMain:
 
         self.number_iterations = 501000  # 500k
 
+        # Not used anywhere
         self.pre_train_experiment = None
         # Control the execution of simulation testing during training
         self.perform_simulation_test = False
         self.output_is_on = True
         # self.extra_augment_factor = 6.0
-        self.segmentation_model = None
+
+        # Yang: reproduce the segmentation model
+        self.segmentation_model = '/data/yang/code/aws/scratch/CIL_modular_data/matthias_data/erfnet_small_cityscapes_aug'
+        self.segmentation_model_name = "ErfNet_Small"
 
 
 class configInput(configMain):
     def __init__(self, path='/'):
         configMain.__init__(self)
 
-        """
         st = lambda aug: iaa.Sometimes(0.2, aug)
         oc = lambda aug: iaa.Sometimes(0.1, aug)
-        rl = lambda aug: iaa.Sometimes(0.04, aug)
-        self.augment = iaa.Sequential([
+        rl = lambda aug: iaa.Sometimes(0.05, aug)
 
+        # Yang: actually there is only one sensor modalities, thus, the second augmenter is not used.
+        self.augment = [iaa.Sequential([
 
-            rl(iaa.GaussianBlur((0, 1.3))), # blur images with a sigma between 0 and 1.5
-            rl(iaa.AdditiveGaussianNoise(loc=0, scale=(0.0, 0.05), per_channel=0.5)), # add gaussian noise to images
-            rl(iaa.Dropout((0.0, 0.10), per_channel=0.5)), # randomly remove up to X% of the pixels
-            oc(iaa.Add((-20, 20), per_channel=0.5)), # change brightness of images (by -X to Y of original value)
-            st(iaa.Multiply((0.25, 2.5), per_channel=0.2)), # change brightness of images (X-Y% of original value)
-            rl(iaa.ContrastNormalization((0.5, 1.5), per_channel=0.5)), # improve or worsen the contrast
-            rl(iaa.Grayscale((0.0, 1))), # put grayscale
+            rl(iaa.GaussianBlur((0, 1.3))),  # blur images with a sigma between 0 and 1.5
+            rl(iaa.AdditiveGaussianNoise(loc=0, scale=(0.0, 0.05), per_channel=0.5)),  # add gaussian noise to images
+            rl(iaa.Dropout((0.0, 0.10), per_channel=0.5)),  # randomly remove up to X% of the pixels
+            oc(iaa.Add((-20, 20), per_channel=0.5)),  # change brightness of images (by -X to Y of original value)
+            st(iaa.Multiply((0.25, 2.5), per_channel=0.2)),  # change brightness of images (X-Y% of original value)
+            rl(iaa.ContrastNormalization((0.5, 1.5), per_channel=0.5)),  # improve or worsen the contrast
+            rl(iaa.Grayscale((0.0, 1))),  # put grayscale
 
+        ],
+            random_order=True  # do all of the above in random order
+        ), iaa.Sequential([  # AUGMENTATION Labels
 
-            ],
-            random_order=True # do all of the above in random order
+            rl(iaa.Dropout((0.0, 0.03))),  # randomly remove up to X% of the pixels
+
+            rl(iaa.CoarseDropout((0.0, 0.03), size_percent=(0.2, 0.3))),  # randomly remove up to X% of the pixels
+
+        ],
+            random_order=True  # do all of the above in random order
         )
-        """
-        # Yang: this could be callable augment function act on all sensory inputs
-        self.augment = [None]
+        ]
+
+        # self.augment = [None]
 
         # there are files with data, 200 images each, and here we select which ones to use
 
-
         self.dataset_name = 'Carla'
-        # with open(os.path.join(self.save_data_stats, 'path'),'r') as f:
-        #	path = f.read().strip()
 
-
-        train_path = os.path.join(path, 'RC28_wpz_M')
-        val_path = os.path.join(path, 'RC025Val')
+        train_path = "/data/yang/code/aws/scratch/CIL_modular_data/matthias_data/RC28_wpz_M"
+        val_path = "/data/yang/code/aws/scratch/CIL_modular_data/matthias_data/RC025Val"
         print(train_path)
 
         self.train_db_path = [os.path.join(train_path, f) for f in glob.glob1(train_path, "data_*.h5")]
@@ -139,8 +147,14 @@ class configTrain(configMain):
         configMain.__init__(self)
 
         self.loss_function = 'mse_branched'  # Chose between: mse_branched, mse_branched_ladd
-        self.control_mode = 'single_branch_wp'
+        self.control_mode = 'single_branch_wp' # TODO: study the loss_function and control_mode
         self.learning_rate = 0.0002  # First
+        # use the default segmentation network
+        self.seg_network_erfnet_one_hot = True
+        self.train_segmentation = True # TODO: why train segmentation == True? will it be not transferrable?
+        # self.finetune_segmentation = True
+        self.number_of_labels = 2
+
         self.restore_seg_test = False
         self.training_schedule = [[50000, 0.5], [100000, 0.5 * 0.5], [150000, 0.5 * 0.5 * 0.5],
                                   [200000, 0.5 * 0.5 * 0.5 * 0.5],

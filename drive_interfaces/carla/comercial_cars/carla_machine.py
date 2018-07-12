@@ -6,6 +6,7 @@ import scipy
 import tensorflow as tf
 from configparser import ConfigParser
 from pygame.locals import *
+import cv2
 
 sys.path.append('../train')
 sldist = lambda c1, c2: math.sqrt((c2[0] - c1[0])**2 + (c2[1] - c1[1])**2)
@@ -186,6 +187,8 @@ class CarlaMachine(Runnable, Driver):
         self._recording = False
         self._start_time = 0
 
+        self.debug_i = 0
+
     def start(self):
 
         # You start with some configurationpath
@@ -352,6 +355,13 @@ class CarlaMachine(Runnable, Driver):
                 sensor = sensor[:, :, ::-1]
                 sensor = scipy.misc.imresize(sensor, [self._config.sensors_size[i][0], self._config.sensors_size[i][1]])
 
+                # debug, see what's happending during the evaluation process
+                # Yang
+                debug_path = "./temp/"
+                cv2.imwrite(debug_path +
+                            str(self.debug_i).zfill(5) +
+                            ".png", sensor)
+                self.debug_i += 1
 
             elif self._config.sensor_names[i] == 'labels':
 

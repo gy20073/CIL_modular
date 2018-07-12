@@ -73,7 +73,9 @@ class configMain:
         self.perform_simulation_test = False
         self.output_is_on = True
         # self.extra_augment_factor = 6.0
-        self.segmentation_model = '/export/vcl-nfs2/shared/matthia1/Github/carla_chauffeur/models/erfnet_small_cityscapes_aug'
+        #self.segmentation_model = '/export/vcl-nfs2/shared/matthia1/Github/carla_chauffeur/models/erfnet_small_cityscapes_aug'
+        # Yang change
+        self.segmentation_model = '/data/yang/code/aws/scratch/CIL_modular_data/matthias_data/erfnet_small_cityscapes_aug'
         self.segmentation_model_name = "ErfNet_Small"
 
 

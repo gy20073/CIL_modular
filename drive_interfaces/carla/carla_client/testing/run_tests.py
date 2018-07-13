@@ -366,6 +366,9 @@ def run_experiment(opt_dict,city_name):
                                 print('+++++ Target achieved in %f seconds! +++++' % final_time)
                             else:
                                 print('----- Timeout! -----')
+
+                            print("debug Yang, return super early!!!!!!!!!!!!!")
+                            return None
     return list_stats
 
 def main(runnable):

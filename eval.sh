@@ -3,6 +3,10 @@
 export CUDA_VISIBLE_DEVICES=2
 ulimit -Sn 60000
 
+rm ./temp/*png
+rm ./temp/directions.txt
+rm ./temp/carla_0_debug.png
+
 python \
 drive_interfaces/carla/comercial_cars/run_test_cvpr.py \
 -e mm45_rc28_wpz_M_mm41_cityscapes_aug_cluster \

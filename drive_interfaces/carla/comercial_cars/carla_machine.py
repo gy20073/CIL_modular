@@ -188,6 +188,7 @@ class CarlaMachine(Runnable, Driver):
         self._start_time = 0
 
         self.debug_i = 0
+        self.debug_j = 0
 
     def start(self):
 
@@ -324,8 +325,17 @@ class CarlaMachine(Runnable, Driver):
         # ori =(rewards.ori_x,rewards.ori_y,rewards.ori_z)
         # pos,point = self.planner.get_defined_point(pos,ori,(target[0],target[1],22),(1.0,0.02,-0.001),self._select_goal)
         # direction = convert_to_car_coord(point[0],point[1],pos[0],pos[1],ori[0],ori[1])
-        print(measurements['PlayerMeasurements'].forward_speed)
-        print(direction)
+        print("forward speed is:", measurements['PlayerMeasurements'].forward_speed)
+        print("direction is:", direction)
+        if not abs(direction-2.0)< 0.1:
+            print("!!!!!!!!!!!!!!!some turning should be happending now!!!!!!!!!!!!!!!!!")
+        # debug, Yang, write the directions into a text file
+        debug_path = "./temp/"
+        with open(debug_path+"directions.txt", "a") as f:
+            f.write(str(direction) + "\n")
+        self.debug_j += 1
+        print("debug j is ", self.debug_j)
+
         sensors = []
         for name in self._config.sensor_names:
             if name == 'rgb':
@@ -362,6 +372,7 @@ class CarlaMachine(Runnable, Driver):
                             str(self.debug_i).zfill(5) +
                             ".png", sensor)
                 self.debug_i += 1
+                print("debug i is ", self.debug_i)
 
             elif self._config.sensor_names[i] == 'labels':
 

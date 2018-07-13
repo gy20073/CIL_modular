@@ -8,6 +8,8 @@ Created on Sat Jun 10 19:12:37 2017
 from __future__ import print_function
 import time
 import math
+import numpy as np
+import os, shutil, cv2
 
 from carla import CARLA
 from carla import  SceneDescription,EpisodeStart,EpisodeReady,Control,Measurements
@@ -87,6 +89,33 @@ class Runnable(object, ):
             distance = self.compute_distance([curr_x, curr_y], [prev_x, prev_y], [target.location.x, target.location.y])
             # debug 
             print('[d=%f] c_x = %f, c_y = %f ---> t_x = %f, t_y = %f' % (float(distance), curr_x, curr_y, target.location.x, target.location.y))
+            # TODO: print human readable locations Yang
+            def world2image(curr_x, curr_y):
+                rotation = np.array([curr_x, curr_y])
+                #worldoffset = np.array([544.000000,-10748.000000])
+                worldoffset = np.array([0, 0])
+                mapoffset = np.array([-1643.022,-1643.022])
+                rotation = (rotation + worldoffset - mapoffset) / 16.43
+                # since indexing is the reverse order
+                rotation = rotation[::-1]
+                return rotation.astype(np.int32)
+            debug_path = "./temp/carla_0_debug.png"
+            if not os.path.exists(debug_path):
+                shutil.copy("./drive_interfaces/carla/carla_client/carla/planner/carla_0.png", debug_path)
+            img = cv2.imread(debug_path)
+            cur = world2image(curr_x, curr_y)
+            tar = world2image(target.location.x, target.location.y)
+            print("current location", cur, "final location", tar)
+            img[cur[0]-3:cur[0]+3, cur[1]-3:cur[1]+3, 0] = 0
+            img[cur[0] - 3:cur[0] + 3, cur[1] - 3:cur[1] + 3, 1] = 0
+            img[cur[0] - 3:cur[0] + 3, cur[1] - 3:cur[1] + 3, 2] = 255
+            img[tar[0]-3:tar[0]+3, tar[1]-3:tar[1]+3, 0] = 255
+            img[tar[0] - 3:tar[0] + 3, tar[1] - 3:tar[1] + 3, 1] = 0
+            img[tar[0] - 3:tar[0] + 3, tar[1] - 3:tar[1] + 3, 2] = 0
+            cv2.imwrite(debug_path, img)
+            # end of TODO
+
+
 
             if(distance < 200.0):
                 success = True

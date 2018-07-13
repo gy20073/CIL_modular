@@ -500,7 +500,8 @@ class Planner(object):
 				self.init(node_source, node_target)
 				route = self.solve()
 
-			#print route
+			# Debug Yang: investigate the route
+			print("route", route)
 
 			# We recompute the distance based on route
 			self.distance= self.get_distance_closest_node_route(node_source,route)
@@ -512,6 +513,10 @@ class Planner(object):
 				self.grid[i[0],i[1]] = 0.0
 
 			commands = self.graph_to_commands(route)
+
+			# Debug Yang: investigate teh commands
+			print("commands", commands)
+
 			made_turn,completed_command = self.check_command_completed(commands,self.commands)
 			
 

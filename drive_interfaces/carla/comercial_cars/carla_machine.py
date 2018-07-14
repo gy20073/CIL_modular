@@ -10,24 +10,22 @@ import cv2
 
 sys.path.append('../train')
 sldist = lambda c1, c2: math.sqrt((c2[0] - c1[0])**2 + (c2[1] - c1[1])**2)
-from carla import CARLA
-from carla import Measurements
-from carla import Control
-from carla.agent import *
-from carla import Planner
+# TODO: migrate these to the newer version
+from carla.planner.planner import Planner
+from carla.agent.agent import Agent
+from carla.client import VehicleControl
+from carla.client import make_carla_client
+# TODO: end of the migration
+
 
 from codification import *
-
 from training_manager import TrainManager
 import machine_output_functions
-from Runnable import *
 from driver import *
 from drawing_tools import *
 import random
 
 slim = tf.contrib.slim
-
-Measurements.noise = property(lambda self: 0)
 
 number_of_seg_classes = 5
 classes_join = {0: 2, 1: 2, 2: 2, 3: 2, 5: 2, 12: 2, 9: 2, 11: 2, 4: 0, 10: 1, 8: 3, 6: 3, 7: 4}
@@ -113,7 +111,7 @@ def convert_to_car_coord(goal_x, goal_y, pos_x, pos_y, car_heading_x, car_headin
     return [car_goal_x, car_goal_y]
 
 
-class CarlaMachine(Runnable, Driver):
+class CarlaMachine(Agent, Driver):
     def __init__(self, gpu_number="0", experiment_name='None', driver_conf=None, memory_fraction=0.9, \
                  trained_manager=None, session=None, config_input=None):
 
@@ -173,8 +171,7 @@ class CarlaMachine(Runnable, Driver):
         import os
         dir_path = os.path.dirname(__file__)
         if driver_conf.use_planner:
-            self.planner = Planner(dir_path + '/../carla_client/carla/planner/' + driver_conf.city_name + '.txt', \
-                                   dir_path + '/../carla_client/carla/planner/' + driver_conf.city_name + '.png')
+            self.planner = Planner(driver_conf.city_name)
 
         self._host = driver_conf.host
         self._port = driver_conf.port
@@ -193,8 +190,7 @@ class CarlaMachine(Runnable, Driver):
     def start(self):
 
         # You start with some configurationpath
-
-        self.carla = CARLA(self._host, self._port)
+        self.carla = make_carla_client(self._host, self._port)
 
         self.positions = self.carla.loadConfigurationFile(self._config_path)
 
@@ -229,15 +225,10 @@ class CarlaMachine(Runnable, Driver):
 
         return [self._left_button, self._right_button, self._straight_button]
 
-    def compute_goal(self, pos, ori):  # Return the goal selected
-        pos, point = self.planner.get_defined_point(pos, ori, (
-        self.positions[self._target][0], self.positions[self._target][1], 22), (1.0, 0.02, -0.001),
-                                                    1 + self._select_goal)
-        return convert_to_car_coord(point[0], point[1], pos[0], pos[1], ori[0], ori[1])
-
     def compute_direction(self, pos, ori):  # This should have maybe some global position... GPS stuff
 
         if self._train_manager._config.control_mode == 'goal':
+            raise
             return self.compute_goal(pos, ori)
 
         elif self.use_planner:
@@ -305,22 +296,8 @@ class CarlaMachine(Runnable, Driver):
         self.carla.newEpisode(initial_pos)
         self._target = target
 
-    def get_all_turns(self, data, target):
-        rewards = data[0]
-        sensor = data[2][0]
-        speed = rewards.speed
-        return self.planner.get_all_commands((rewards.player_x, rewards.player_y, 22),
-                                             (rewards.ori_x, rewards.ori_y, rewards.ori_z), \
-                                             (target[0], target[1], 22), (1.0, 0.02, -0.001))
-
-    def run_step(self, measurements, target):
-
-        direction, _ = self.planner.get_next_command((measurements['PlayerMeasurements'].transform.location.x,
-                                                      measurements['PlayerMeasurements'].transform.location.y, 22), \
-                                                     (measurements['PlayerMeasurements'].transform.orientation.x,
-                                                      measurements['PlayerMeasurements'].transform.orientation.y,
-                                                      measurements['PlayerMeasurements'].transform.orientation.z), \
-                                                     (target.location.x, target.location.y, 22), (1.0, 0.02, -0.001))
+    # TODO: change to the agent interface
+    def run_step(self, measurements, sensor_data, direction, target):
         # pos = (rewards.player_x,rewards.player_y,22)
         # ori =(rewards.ori_x,rewards.ori_y,rewards.ori_z)
         # pos,point = self.planner.get_defined_point(pos,ori,(target[0],target[1],22),(1.0,0.02,-0.001),self._select_goal)
@@ -335,13 +312,15 @@ class CarlaMachine(Runnable, Driver):
             f.write(str(direction) + "\n")
         self.debug_j += 1
         print("debug j is ", self.debug_j)
+        # End of debug
 
+        print(sensor_data)
         sensors = []
         for name in self._config.sensor_names:
             if name == 'rgb':
-                sensors.append(measurements['BGRA'][0])
+                sensors.append(sensor_data["SceneFinal"])
             elif name == 'labels':
-                sensors.append(measurements['Labels'][0])
+                sensors.append(sensor_data['SemanticSegmentation'])
 
         control = self.compute_action(sensors, measurements['PlayerMeasurements'].forward_speed, direction)
 
@@ -459,7 +438,7 @@ class CarlaMachine(Runnable, Driver):
         if speed > 35.0 and brake == 0.0:
             acc = 0.0
 
-        control = Control()
+        control = VehicleControl()
 
         control.steer = steer
 
@@ -477,7 +456,8 @@ class CarlaMachine(Runnable, Driver):
 
 
     def get_sensor_data(self):
-        measurements = self.carla.getMeasurements()
+        measurements, _ = self.carla.read_data()
+
         self._latest_measurements = measurements
         player_data = measurements['PlayerMeasurements']
         pos = [player_data.transform.location.x, player_data.transform.location.y, 22]

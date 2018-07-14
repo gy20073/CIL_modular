@@ -26,104 +26,8 @@ sys.path.append('structures')
 
 from carla_machine import *
 
-from run_tests import run_experiment, load_carla_0_parameters, load_carla_1_parameters
-
-"""
-def load_carla_0_parameters():
-
-
-    # experiment testing conditions
-    weathers = [ 1, # clearNoon
-                 3, # wetNoon
-                 6, # HardRainNoon
-                 8, # ClearSunset
-            ]
-    
-    repetitions_per_experiment = [1, 1, 1, 1, 1]
-    
-    poses_exp1 = []
-    pedestrians_exp1 = [ 0] * len(poses_exp1)
-    
-    vehicles_exp1 = [ 0] * len(poses_exp1)
-    
-    poses_exp2 = []
-    pedestrians_exp2 = [ 0] * len(poses_exp2)
-    
-    vehicles_exp2 = [ 0] * len(poses_exp2)
-    
-
-    poses_exp3 = []
-    pedestrians_exp3 = [ 0] * len(poses_exp3)
-    vehicles_exp3 = [ 0] * len(poses_exp3)
-    
-    poses_exp4 = [[18, 77], [56, 48], [11, 68], [63, 14], [66, 42],\
-                  [57, 48], [73, 7], [50, 60], [77, 72], [52, 57],\
-                  [63, 72], [53, 7], [81, 49], [68, 7], [43, 73], [81, 52],\
-                  [46, 70], [60, 53], [82, 73], [76, 40], [76, 7],\
-                  [80, 75], [66, 51], [40, 71],[70, 44], [7, 70], [71, 50],\
-                  [64, 44], [73, 61], [75, 1], [51, 62], [58, 49],[82, 52], [68, 0], [66, 48],\
-                  [70, 7], [76, 59], [75, 72],[43, 62], [1, 53], [18, 79], [67, 42],  [49, 57],\
-                  [53, 81],[70, 44], [61, 68], [66, 46], [71, 72], [1, 52], [76, 72]]
-
-    pedestrians_exp4 = [ 50] * len(poses_exp4)
-    vehicles_exp4 = [ 15] * len(poses_exp4)
-    
-    
-    start_goal_poses = [poses_exp1, poses_exp2, poses_exp3, poses_exp4]
-    pedestrians = [pedestrians_exp1, pedestrians_exp2, pedestrians_exp3, pedestrians_exp4]
-    vehicles = [vehicles_exp1, vehicles_exp2, vehicles_exp3, vehicles_exp4]
-
-    return start_goal_poses,pedestrians,vehicles,weathers, repetitions_per_experiment
-
-
-
-def load_carla_1_parameters():
-
-    # experiment testing conditions
-    weathers = [ 1, # clearNoon
-                 3, # wetNoon
-                 6, # HardRainNoon
-                 8, # ClearSunset
-                 # Non Seen in training conditions
-                 2, # Cloudy Noon
-                 14 # Soft Rain Sunset
-            ]
-    
-    repetitions_per_experiment = [1, 1, 1, 1, 1]
-    
-    poses_exp1 = []
-
-    pedestrians_exp1 = [ 0] * len(poses_exp1)
-    
-    vehicles_exp1 = [ 0] * len(poses_exp1)
-    
-    poses_exp2 = []
-    pedestrians_exp2 = [ 0] * len(poses_exp2)
-    
-    vehicles_exp2 = [ 0] * len(poses_exp2)
-
-    poses_exp3 = []
-
-    pedestrians_exp3 = [ 0] * len(poses_exp3)
-    vehicles_exp3 = [ 0] * len(poses_exp3)
-    
-    poses_exp4 = [[99, 47], [82, 35], [82, 24], [80, 85], [106, 84], [78, 35], [142, 84], [90, 108], [76, 35], [33, 76],\
-               [110, 37], [62, 119], [17, 10], [106, 137], [10, 22], [106, 34], [61, 113], [34, 147], [137, 100], [133, 48],\
-               [111, 57], [49, 106], [111, 35], [144, 99], [109, 58], [75, 118], [83, 37], [106, 47], [103, 17], [23, 76],\
-               [79, 46], [143, 87], [80, 36], [66, 85], [22, 80], [33, 79], [35, 63], [78, 85], [109, 52], [118, 64]]
-               
-    pedestrians_exp4 = [ 50] * len(poses_exp4)
-    vehicles_exp4 = [ 20] * len(poses_exp4)
-    
-    
-    start_goal_poses = [poses_exp1, poses_exp2, poses_exp3, poses_exp4]
-    pedestrians = [pedestrians_exp1, pedestrians_exp2, pedestrians_exp3, pedestrians_exp4]
-    vehicles = [vehicles_exp1, vehicles_exp2, vehicles_exp3, vehicles_exp4]
-
-    return start_goal_poses,pedestrians,vehicles,weathers, repetitions_per_experiment
-
-
-"""
+from carla.driving_benchmark import run_driving_benchmark
+from carla.driving_benchmark.experiment_suites import CoRL2017
 
 
 def parse_drive_arguments(args, driver_conf):
@@ -162,117 +66,16 @@ def parse_drive_arguments(args, driver_conf):
 
     return driver_conf
 
-
-def generate_camera_str(dic):
-    camera_str = '''
-[CARLA/SceneCapture/%s]
-PostProcessing=%s
-ImageSizeX=%d
-ImageSizeY=%d
-CameraFOV=%d
-CameraPositionX=%d
-CameraPositionY=%d
-CameraPositionZ=%d
-CameraRotationPitch=%d
-CameraRotationRoll=%d
-CameraRotationYaw=%d''' % (dic['NAME'], dic['TYPE'], dic['ImageSizeX'], dic['ImageSizeY'],
-                           dic['CameraFOV'], dic['CameraPositionX'], dic['CameraPositionY'],
-                           dic['CameraPositionZ'], dic['CameraRotationPitch'],
-                           dic['CameraRotationRoll'], dic['CameraRotationYaw'])
-
-    return (dic['NAME'], camera_str)
-
-
-def generate_conffile_from_dict(opt_dict):
-    str_preamble = '''
-[CARLA/Server]
-UseNetworking=true
-SynchronousMode = true
-WorldPort=2000
-WritePort=2001
-ReadPort=2002'''
-
-    str_level = '''
-[CARLA/LevelSettings]
-NumberOfVehicles=%d
-NumberOfPedestrians=%d
-WeatherId=%d''' % (opt_dict['VEHICLES'], opt_dict['PEDESTRIANS'], opt_dict['WEATHER'])
-
-    str_camera_pre = '''
-[CARLA/SceneCapture]
-Cameras='''
-
-    str_camera_pos = ''
-    N = len(opt_dict['CAMERAS'])
-    for c in range(N):
-        (camera_name, str_camera) = generate_camera_str(opt_dict['CAMERAS'][c])
-        str_camera_pos += ('\n' + str_camera)
-
-        str_camera_pre += camera_name
-        if (c + 1 != N):
-            str_camera_pre += ','
-
-    str_cameras = str_camera_pre + '\n' + str_camera_pos
-    str_conf = str_preamble + '\n\n' + str_level + '\n\n' + str_cameras + '\n'
-
-    with open(opt_dict['EXP_NAME'], "w") as text_file:
-        text_file.write(str_conf)
-
-
-def main(host, port, summary_name, ncars, npedestrians, city, resolution, timeouts, experiments_to_run, weathers_in,
-         runnable):
-    host = host
-    port = int(port)
-
-    summary_file = summary_name
-
-    # cameras setup
-    width = resolution[0]
-    height = resolution[1]
-    # fov = 100
-    # c_x = 200
-    # c_y = 0
-    # c_z = 140
-    # r_p = -15.0
-    # r_r = 0
-    # r_y = 0
-
-    fov = 100
-    c_x = 250
-    c_y = 0
-    c_z = 100
-    r_p = 0
-    r_r = 0
-    r_y = 0
-
-    cameras = [{'NAME': 'RGB', 'TYPE': 'SceneFinal', 'ImageSizeX': width,
-                'ImageSizeY': height, 'CameraFOV': fov, 'CameraPositionX': c_x,
-                'CameraPositionY': c_y, 'CameraPositionZ': c_z,
-                'CameraRotationPitch': r_p, 'CameraRotationRoll': r_r,
-                'CameraRotationYaw': r_y},
-               {'NAME': 'Labels', 'TYPE': 'SemanticSegmentation', 'ImageSizeX': width,
-                'ImageSizeY': height, 'CameraFOV': fov, 'CameraPositionX': c_x,
-                'CameraPositionY': c_y, 'CameraPositionZ': c_z,
-                'CameraRotationPitch': r_p, 'CameraRotationRoll': r_r,
-                'CameraRotationYaw': r_y}
-
-               ]
-
-    if city == 'carla_0':
-        start_goal_poses, pedestrians, vehicles, weathers, repetitions_per_experiment = load_carla_0_parameters()
-    else:
-        start_goal_poses, pedestrians, vehicles, weathers, repetitions_per_experiment = load_carla_1_parameters()
-
-    weathers = weathers_in
-    opt_dict = {'CARLA': None, 'HOST': host, 'PORT': port,
-                'OUTPUT_SUMMARY': summary_file, 'RUNNABLE': runnable,
-                'CAMERAS': cameras, 'WIDTH': width, 'HEIGHT': height,
-                'WEATHERS': weathers, 'REPETITIONS': repetitions_per_experiment,
-                'START_GOAL_POSES': start_goal_poses, 'PEDESTRIANS': pedestrians,
-                'VEHICLES': vehicles, 'EXPERIMENTS_TO_RUN': experiments_to_run}
-
-    # run experiments
-    run_experiment(opt_dict, city)
+def main(host, port, city, summary_name, agent):
+    #TODO: make an agent; define the camera in the testing env; change city name
+    # debug Yang, after debug, change continue experiment to True
+    experiment_suite = CoRL2017(city)
+    run_driving_benchmark(agent, experiment_suite,
+                          city_name=city,
+                          log_name=summary_name,
+                          continue_experiment=False,
+                          host=host,
+                          port=int(port))
 
 
 if (__name__ == '__main__'):
@@ -350,5 +153,4 @@ if (__name__ == '__main__'):
     # instance your controller here
     runnable = CarlaMachine("0", args.experiment_name, driver_conf, float(args.memory))
 
-    main(args.host, args.port, args.summary, args.ncars, args.npedestrians, args.city, driver_conf.resolution, timeouts,
-         tasks, weathers, runnable)
+    main(args.host, args.port, args.city, args.summary, runnable)

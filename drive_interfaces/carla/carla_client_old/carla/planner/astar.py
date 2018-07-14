@@ -1,9 +1,3 @@
-# Copyright (c) 2017 Computer Vision Center (CVC) at the Universitat Autonoma de
-# Barcelona (UAB).
-#
-# This work is licensed under the terms of the MIT license.
-# For a copy, see <https://opensource.org/licenses/MIT>.
-
 import heapq
 
 
@@ -27,9 +21,6 @@ class Cell(object):
         self.h = 0
         self.f = 0
 
-    def __lt__(self, other):
-        return self.g < other.g
-
 
 class AStar(object):
     def __init__(self):
@@ -42,8 +33,6 @@ class AStar(object):
         self.cells = []
         self.grid_height = None
         self.grid_width = None
-        self.start = None
-        self.end = None
 
     def init_grid(self, width, height, walls, start, end):
         """Prepare grid cells, walls.
@@ -93,14 +82,14 @@ class AStar(object):
         @returns adjacent cells list.
         """
         cells = []
-        if cell.x < self.grid_width - 1:
-            cells.append(self.get_cell(cell.x + 1, cell.y))
+        if cell.x < self.grid_width-1:
+            cells.append(self.get_cell(cell.x+1, cell.y))
         if cell.y > 0:
-            cells.append(self.get_cell(cell.x, cell.y - 1))
+            cells.append(self.get_cell(cell.x, cell.y-1))
         if cell.x > 0:
-            cells.append(self.get_cell(cell.x - 1, cell.y))
-        if cell.y < self.grid_height - 1:
-            cells.append(self.get_cell(cell.x, cell.y + 1))
+            cells.append(self.get_cell(cell.x-1, cell.y))
+        if cell.y < self.grid_height-1:
+            cells.append(self.get_cell(cell.x, cell.y+1))
         return cells
 
     def get_path(self):
@@ -134,7 +123,7 @@ class AStar(object):
         heapq.heappush(self.opened, (self.start.f, self.start))
         while len(self.opened):
             # pop cell from heap queue
-            _, cell = heapq.heappop(self.opened)
+            f, cell = heapq.heappop(self.opened)
             # add cell to closed list so we don't process it twice
             self.closed.add(cell)
             # if ending cell, return found path

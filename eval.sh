@@ -14,6 +14,6 @@ drive_interfaces/carla/comercial_cars/run_test_cvpr.py \
 -l 127.0.0.1 \
 -p 2000 \
 -t 2 \
--cy carla_0 \
+-cy Town01 \
 -w 1 \
 -m 0.25 || true #TestTownTrainWeather

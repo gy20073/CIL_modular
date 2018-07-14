@@ -1,2 +1,2 @@
+from .forward_agent import ForwardAgent
 from .agent import Agent
-from .configuration import *

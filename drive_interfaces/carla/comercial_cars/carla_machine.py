@@ -6,7 +6,7 @@ import scipy
 import tensorflow as tf
 from configparser import ConfigParser
 from pygame.locals import *
-import cv2
+import cv2, os
 
 sys.path.append('../train')
 sldist = lambda c1, c2: math.sqrt((c2[0] - c1[0])**2 + (c2[1] - c1[1])**2)
@@ -15,6 +15,11 @@ from carla.planner.planner import Planner
 from carla.agent.agent import Agent
 from carla.client import VehicleControl
 from carla.client import make_carla_client
+from carla import image_converter
+from carla.planner.map import CarlaMap
+import numpy as np
+import shutil
+from PIL import ImageDraw, Image, ImageFont
 # TODO: end of the migration
 
 
@@ -110,7 +115,6 @@ def convert_to_car_coord(goal_x, goal_y, pos_x, pos_y, car_heading_x, car_headin
 
     return [car_goal_x, car_goal_y]
 
-
 class CarlaMachine(Agent, Driver):
     def __init__(self, gpu_number="0", experiment_name='None', driver_conf=None, memory_fraction=0.9, \
                  trained_manager=None, session=None, config_input=None):
@@ -186,6 +190,7 @@ class CarlaMachine(Agent, Driver):
 
         self.debug_i = 0
         self.debug_j = 0
+        self.debug_init = False
 
     def start(self):
 
@@ -302,29 +307,62 @@ class CarlaMachine(Agent, Driver):
         # ori =(rewards.ori_x,rewards.ori_y,rewards.ori_z)
         # pos,point = self.planner.get_defined_point(pos,ori,(target[0],target[1],22),(1.0,0.02,-0.001),self._select_goal)
         # direction = convert_to_car_coord(point[0],point[1],pos[0],pos[1],ori[0],ori[1])
-        print("forward speed is:", measurements['PlayerMeasurements'].forward_speed)
+        print("forward speed (m/s) is:", measurements.player_measurements.forward_speed)
         print("direction is:", direction)
         if not abs(direction-2.0)< 0.1:
             print("!!!!!!!!!!!!!!!some turning should be happending now!!!!!!!!!!!!!!!!!")
-        # debug, Yang, write the directions into a text file
-        debug_path = "./temp/"
-        with open(debug_path+"directions.txt", "a") as f:
-            f.write(str(direction) + "\n")
-        self.debug_j += 1
-        print("debug j is ", self.debug_j)
-        # End of debug
 
         print(sensor_data)
         sensors = []
         for name in self._config.sensor_names:
             if name == 'rgb':
-                sensors.append(sensor_data["SceneFinal"])
+                sensors.append(image_converter.to_bgra_array(sensor_data["CameraRGB"]))
             elif name == 'labels':
                 sensors.append(sensor_data['SemanticSegmentation'])
 
-        control = self.compute_action(sensors, measurements['PlayerMeasurements'].forward_speed, direction)
+        speed_KMH = measurements.player_measurements.forward_speed * 3.6
+        control = self.compute_action(sensors, speed_KMH, direction)
+
+        # debug visualize the current trajectory
+        if not self.debug_init:
+            self.debug_init = True
+            map_name = "Town01"
+            self.carla_map = CarlaMap(map_name, 0.1653, 50)
+            original_path = "./drive_interfaces/carla/carla_client/carla/planner/"+map_name+".png"
+            self.img = cv2.imread(original_path)
+
+        curr_x = measurements.player_measurements.transform.location.x
+        curr_y = measurements.player_measurements.transform.location.y
+
+        cur = self.carla_map.convert_to_pixel([curr_x, curr_y, 22.0])
+        cur = [int(cur[1]), int(cur[0])]
+        tar = self.carla_map.convert_to_pixel([target.location.x, target.location.y, 22.0])
+        tar = [int(tar[1]), int(tar[0])]
+        print("current location", cur, "final location", tar)
+        self.img[cur[0] - 3:cur[0] + 3, cur[1] - 3:cur[1] + 3, 0] = 0
+        self.img[cur[0] - 3:cur[0] + 3, cur[1] - 3:cur[1] + 3, 1] = 0
+        self.img[cur[0] - 3:cur[0] + 3, cur[1] - 3:cur[1] + 3, 2] = 255
+        self.img[tar[0] - 3:tar[0] + 3, tar[1] - 3:tar[1] + 3, 0] = 255
+        self.img[tar[0] - 3:tar[0] + 3, tar[1] - 3:tar[1] + 3, 1] = 0
+        self.img[tar[0] - 3:tar[0] + 3, tar[1] - 3:tar[1] + 3, 2] = 0
+        if self.debug_i % 10 == 0:
+            debug_path = "./temp/carla_0_debug.png"
+            cv2.imwrite(debug_path, self.img)
 
         return control
+
+    @staticmethod
+    def write_text_on_image(image, string, fontsize=10):
+        image = image.copy()
+        image = np.uint8(image)
+        j = Image.fromarray(image)
+        draw = ImageDraw.Draw(j)
+        # font = ImageFont.load_default().font
+        # font = ImageFont.truetype("/usr/share/fonts/truetype/inconsolata/Inconsolata.otf", fontsize)
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", fontsize)
+        draw.text((0, 0), string, (255, 0, 0), font=font)
+
+        return np.array(j)
 
     def compute_action(self, sensors, speed, direction=None):
 
@@ -347,9 +385,15 @@ class CarlaMachine(Agent, Driver):
                 # debug, see what's happending during the evaluation process
                 # Yang
                 debug_path = "./temp/"
+                txtdt = {2.0: "follow",
+                         3.0: "left",
+                         4.0: "right",
+                         5.0: "straight",
+                         0.0: "goal"}
+                viz = self.write_text_on_image(sensor, txtdt[direction], 10)
                 cv2.imwrite(debug_path +
                             str(self.debug_i).zfill(5) +
-                            ".png", sensor)
+                            ".png", viz)
                 self.debug_i += 1
                 print("debug i is ", self.debug_i)
 
@@ -459,7 +503,7 @@ class CarlaMachine(Agent, Driver):
         measurements, _ = self.carla.read_data()
 
         self._latest_measurements = measurements
-        player_data = measurements['PlayerMeasurements']
+        player_data = measurements.player_measurements
         pos = [player_data.transform.location.x, player_data.transform.location.y, 22]
         ori = [player_data.transform.orientation.x, player_data.transform.orientation.y,
                player_data.transform.orientation.z]

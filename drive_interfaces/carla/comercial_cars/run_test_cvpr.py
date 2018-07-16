@@ -27,7 +27,8 @@ sys.path.append('structures')
 from carla_machine import *
 
 from carla.driving_benchmark import run_driving_benchmark
-from carla.driving_benchmark.experiment_suites import CoRL2017
+#from carla.driving_benchmark.experiment_suites import CoRL2017
+from carla.driving_benchmark.experiment_suites import CVPR2017
 
 
 def parse_drive_arguments(args, driver_conf):
@@ -69,7 +70,7 @@ def parse_drive_arguments(args, driver_conf):
 def main(host, port, city, summary_name, agent):
     #TODO: make an agent; define the camera in the testing env; change city name
     # debug Yang, after debug, change continue experiment to True
-    experiment_suite = CoRL2017(city)
+    experiment_suite = CVPR2017(city)
     run_driving_benchmark(agent, experiment_suite,
                           city_name=city,
                           log_name=summary_name,

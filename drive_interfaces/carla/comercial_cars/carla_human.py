@@ -193,9 +193,9 @@ class CarlaHuman(Driver):
             if time.time() - self._start_time > self._reset_period:
 
                 self._reset()
-            elif self._latest_measurements['PlayerMeasurements'].collision_vehicles > 0.0 \
-                    or self._latest_measurements['PlayerMeasurements'].collision_pedestrians > 0.0 or \
-                            self._latest_measurements['PlayerMeasurements'].collision_other > 0.0:
+            elif self._latest_measurements.player_measurements.collision_vehicles > 0.0 \
+                    or self._latest_measurements.player_measurements.collision_pedestrians > 0.0 or \
+                            self._latest_measurements.player_measurements.collision_other > 0.0:
 
                 self._reset()
 
@@ -252,7 +252,7 @@ class CarlaHuman(Driver):
         # return the latest measurement and the next direction
         measurements = self.carla.getMeasurements()
         self._latest_measurements = measurements
-        player_data = measurements['PlayerMeasurements']
+        player_data = measurements.player_measurements
         pos = [player_data.transform.location.x, player_data.transform.location.y, 22]
         ori = [player_data.transform.orientation.x, player_data.transform.orientation.y,
                player_data.transform.orientation.z]

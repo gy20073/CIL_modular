@@ -166,7 +166,7 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
             recording = driver.get_recording()
             driver.get_reset()
             if hasattr(drive_config, 'carla_config'):
-                speed = measurements['PlayerMeasurements'].forward_speed
+                speed = measurements.player_measurements.forward_speed
                 # actions = driver.compute_action(images.rgb[drive_config.middle_camera],measurements.forward_speed,\
                 # driver.compute_direction((measurements.transform.location.x,measurements.transform.location.y,22),\
                 # (measurements.transform.orientation.x,measurements.transform.orientation.y,measurements.transform.orientation.z))) #rewards.speed

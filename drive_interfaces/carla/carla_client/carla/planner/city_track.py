@@ -127,10 +127,11 @@ class CityTrack(object):
 
 
     def _closest_intersection_route_position(self, current_node, route):
-
+        print("current node is", current_node, "route is", route)
         distance_vector = []
         for _ in route:
             for node_iterator in self._map.get_intersection_nodes():
+                #print("a intersection node is", node_iterator)
                 distance_vector.append(sldist(node_iterator, current_node))
 
         return sorted(distance_vector)[0]

@@ -76,25 +76,32 @@ class Planner(object):
                 raise RuntimeError('Impossible to find route')
 
             self._commands = self._route_to_commands(route)
+            print("new route computed, this is the command", self._commands)
 
             if self._city_track.is_far_away_from_route_intersection(
                     track_source):
+                print("at new node, away from intersection, far away from route intersection, outputing follow")
                 return LANE_FOLLOW
             else:
                 if self._commands:
+                    print("at new node, away from intersection, not far from route intersection, outputing command[0]")
                     return self._commands[0]
                 else:
+                    print("at new node, away from intersection, self.commands=None, output lane follow")
                     return LANE_FOLLOW
         else:
 
             if self._city_track.is_far_away_from_route_intersection(
                     track_source):
+                print("at old node, or close to intersection, far away from route intersection, output follow")
                 return LANE_FOLLOW
 
             # If there is computed commands
             if self._commands:
+                print("at old node, or close to intersection, close to route intersection, has commands, output command[0]")
                 return self._commands[0]
             else:
+                print("at old node, or close to intersection, close to route intersection, has None command, output follow")
                 return LANE_FOLLOW
 
     def get_shortest_path_distance(

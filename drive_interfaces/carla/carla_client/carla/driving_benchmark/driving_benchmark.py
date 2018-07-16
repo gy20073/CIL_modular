@@ -10,6 +10,11 @@ import logging
 import math
 import time
 
+from subprocess import call
+import os
+from carla.planner.map import CarlaMap
+import cv2
+
 from carla.client import VehicleControl
 from carla.client import make_carla_client
 from carla.driving_benchmark.metrics import Metrics
@@ -59,6 +64,8 @@ class DrivingBenchmark(object):
 
         # We have a default planner instantiated that produces high level commands
         self._planner = Planner(city_name)
+
+        self.carla_map = CarlaMap(city_name, 0.1653, 50)
 
     def benchmark_agent(self, experiment_suite, agent, client):
         """
@@ -181,6 +188,30 @@ class DrivingBenchmark(object):
                 end_point.location.x, end_point.location.y, end_point.location.z], [
                 end_point.orientation.x, end_point.orientation.y, end_point.orientation.z])
 
+    def load_empty_trajectory(self):
+        original_path = "./drive_interfaces/carla/carla_client/carla/planner/" + self._city_name + ".png"
+        self.trajectory_img = cv2.imread(original_path)
+
+    def update_trajectory(self, curr_x, curr_y, tar_x, tar_y):
+        cur = self.carla_map.convert_to_pixel([curr_x, curr_y, 22.0])
+        cur = [int(cur[1]), int(cur[0])]
+        tar = self.carla_map.convert_to_pixel([tar_x, tar_y, 22.0])
+        tar = [int(tar[1]), int(tar[0])]
+        print("current location", cur, "final location", tar)
+        self.trajectory_img[cur[0] - 3:cur[0] + 3, cur[1] - 3:cur[1] + 3, 0] = 0
+        self.trajectory_img[cur[0] - 3:cur[0] + 3, cur[1] - 3:cur[1] + 3, 1] = 0
+        self.trajectory_img[cur[0] - 3:cur[0] + 3, cur[1] - 3:cur[1] + 3, 2] = 255
+        self.trajectory_img[tar[0] - 3:tar[0] + 3, tar[1] - 3:tar[1] + 3, 0] = 255
+        self.trajectory_img[tar[0] - 3:tar[0] + 3, tar[1] - 3:tar[1] + 3, 1] = 0
+        self.trajectory_img[tar[0] - 3:tar[0] + 3, tar[1] - 3:tar[1] + 3, 2] = 0
+
+    def save_trajectory_image(self, episode_name):
+        out_name = os.path.join(self._recording._path, '_images/episode_{:s}_trajectory.png'.format(episode_name))
+        folder = os.path.dirname(out_name)
+        if not os.path.isdir(folder):
+            os.makedirs(folder)
+        cv2.imwrite(out_name, self.trajectory_img)
+
     def _run_navigation_episode(
             self,
             agent,
@@ -217,6 +248,10 @@ class DrivingBenchmark(object):
         distance = 10000
         success = False
 
+        self.load_empty_trajectory()
+        agent.debug_i = 0
+        agent.temp_image_path = self._recording._path
+
         while (current_timestamp - initial_timestamp) < (time_out * 1000) and not success:
 
             # Read data from server with the client
@@ -229,7 +264,8 @@ class DrivingBenchmark(object):
             client.send_control(control)
 
             # save images if the flag is activated
-            self._recording.save_images(sensor_data, episode_name, frame)
+            #sensor_data = self._recording.yang_annotate_images(sensor_data, directions)
+            #self._recording.save_images(sensor_data, episode_name, frame)
 
             current_x = measurements.player_measurements.transform.location.x
             current_y = measurements.player_measurements.transform.location.y
@@ -242,6 +278,9 @@ class DrivingBenchmark(object):
             # Get the distance travelled until now
             distance = sldist([current_x, current_y],
                               [target.location.x, target.location.y])
+
+            self.update_trajectory(current_x, current_y, target.location.x, target.location.y)
+
             # Write status of the run on verbose mode
             logging.info('Status:')
             logging.info(
@@ -257,6 +296,25 @@ class DrivingBenchmark(object):
             measurement_vec.append(measurements.player_measurements)
             control_vec.append(control)
 
+        # convert the images saved by the underlying to a video
+        if self._recording._save_images:
+            # convert the saved images to a video, and store it in the right place
+            # we have to save the image within the carla_machine, since only that will know what's the cutting plane
+            # assume that the images lies around at ./temp/%05d.png
+            print("converting images to a video...")
+            out_name = os.path.join(self._recording._path, '_images/episode_{:s}.mp4'.format(episode_name))
+
+            folder = os.path.dirname(out_name)
+            if not os.path.isdir(folder):
+                os.makedirs(folder)
+
+            cmd = ["ffmpeg", "-y", "-i",  agent.temp_image_path+"/%09d.png", "-c:v", "libx264", out_name]
+            call(" ".join(cmd), shell=True)
+            cmd = ["rm", agent.temp_image_path+"/00*png"]
+            call(" ".join(cmd), shell=True)
+
+            self.save_trajectory_image(episode_name)
+
         if success:
             return 1, measurement_vec, control_vec, float(
                 current_timestamp - initial_timestamp) / 1000.0, distance
@@ -269,7 +327,8 @@ def run_driving_benchmark(agent,
                           log_name='Test',
                           continue_experiment=False,
                           host='127.0.0.1',
-                          port=2000
+                          port=2000,
+                          save_images=False
                           ):
     while True:
         try:
@@ -287,7 +346,8 @@ def run_driving_benchmark(agent,
                                              name_to_save=log_name + '_'
                                                           + type(experiment_suite).__name__
                                                           + '_' + city_name,
-                                             continue_experiment=continue_experiment)
+                                             continue_experiment=continue_experiment,
+                                             save_images=save_images)
                 # This function performs the benchmark. It returns a dictionary summarizing
                 # the entire execution.
 

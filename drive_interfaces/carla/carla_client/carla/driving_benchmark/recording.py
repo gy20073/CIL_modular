@@ -2,6 +2,12 @@ import csv
 import datetime
 import os
 
+from PIL import ImageDraw, Image, ImageFont
+import numpy as np
+from carla import image_converter
+from carla import sensor
+ImageSensorData = sensor.Image
+
 
 class Recording(object):
 
@@ -201,6 +207,43 @@ class Recording(object):
         else:
             line_on_file = 1
         return new_path, line_on_file
+
+    def write_text_on_image(self, image, string, fontsize=10):
+        image = np.uint8(image)
+        j = Image.fromarray(image)
+        draw = ImageDraw.Draw(j)
+        # font = ImageFont.load_default().font
+        # font = ImageFont.truetype("/usr/share/fonts/truetype/inconsolata/Inconsolata.otf", fontsize)
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", fontsize)
+        draw.text((0, 0), string, (255, 0, 0), font=font)
+
+        return j
+
+    # deprecated
+    def yang_annotate_images(self, sensor_data, directions):
+        if self._save_images:
+            out = {}
+            for name, image in sensor_data.items():
+                if isinstance(image, ImageSensorData):
+                    numpy_image = image_converter.to_rgb_array(image)
+                    txtdt = {2.0: "follow",
+                             3.0: "left",
+                             4.0: "right",
+                             5.0: "straight",
+                             0.0: "goal"}
+                    viz = self.write_text_on_image(numpy_image, txtdt[directions], 10)
+                    # convert the PIL image object to the ImageSensorData
+                    viz = viz.convert("RGBA")
+                    viz = ImageSensorData(image.frame_number,
+                                          image.width,
+                                          image.height,
+                                          image.type,
+                                          image.fov,
+                                          viz.tobytes())
+                    out[name] = viz
+                else:
+                    out[name] = image
+            return out
 
     def save_images(self, sensor_data, episode_name, frame):
         """

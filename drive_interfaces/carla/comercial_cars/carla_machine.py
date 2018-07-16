@@ -191,6 +191,7 @@ class CarlaMachine(Agent, Driver):
         self.debug_i = 0
         self.debug_j = 0
         self.debug_init = False
+        self.temp_image_path = "./temp/"
 
     def start(self):
 
@@ -312,7 +313,7 @@ class CarlaMachine(Agent, Driver):
         if not abs(direction-2.0)< 0.1:
             print("!!!!!!!!!!!!!!!some turning should be happending now!!!!!!!!!!!!!!!!!")
 
-        print(sensor_data)
+        #print(sensor_data)
         sensors = []
         for name in self._config.sensor_names:
             if name == 'rgb':
@@ -322,32 +323,6 @@ class CarlaMachine(Agent, Driver):
 
         speed_KMH = measurements.player_measurements.forward_speed * 3.6
         control = self.compute_action(sensors, speed_KMH, direction)
-
-        # debug visualize the current trajectory
-        if not self.debug_init:
-            self.debug_init = True
-            map_name = "Town01"
-            self.carla_map = CarlaMap(map_name, 0.1653, 50)
-            original_path = "./drive_interfaces/carla/carla_client/carla/planner/"+map_name+".png"
-            self.img = cv2.imread(original_path)
-
-        curr_x = measurements.player_measurements.transform.location.x
-        curr_y = measurements.player_measurements.transform.location.y
-
-        cur = self.carla_map.convert_to_pixel([curr_x, curr_y, 22.0])
-        cur = [int(cur[1]), int(cur[0])]
-        tar = self.carla_map.convert_to_pixel([target.location.x, target.location.y, 22.0])
-        tar = [int(tar[1]), int(tar[0])]
-        print("current location", cur, "final location", tar)
-        self.img[cur[0] - 3:cur[0] + 3, cur[1] - 3:cur[1] + 3, 0] = 0
-        self.img[cur[0] - 3:cur[0] + 3, cur[1] - 3:cur[1] + 3, 1] = 0
-        self.img[cur[0] - 3:cur[0] + 3, cur[1] - 3:cur[1] + 3, 2] = 255
-        self.img[tar[0] - 3:tar[0] + 3, tar[1] - 3:tar[1] + 3, 0] = 255
-        self.img[tar[0] - 3:tar[0] + 3, tar[1] - 3:tar[1] + 3, 1] = 0
-        self.img[tar[0] - 3:tar[0] + 3, tar[1] - 3:tar[1] + 3, 2] = 0
-        if self.debug_i % 10 == 0:
-            debug_path = "./temp/carla_0_debug.png"
-            cv2.imwrite(debug_path, self.img)
 
         return control
 
@@ -384,7 +359,7 @@ class CarlaMachine(Agent, Driver):
 
                 # debug, see what's happending during the evaluation process
                 # Yang
-                debug_path = "./temp/"
+                debug_path = self.temp_image_path + "/"
                 txtdt = {2.0: "follow",
                          3.0: "left",
                          4.0: "right",
@@ -392,7 +367,7 @@ class CarlaMachine(Agent, Driver):
                          0.0: "goal"}
                 viz = self.write_text_on_image(sensor, txtdt[direction], 10)
                 cv2.imwrite(debug_path +
-                            str(self.debug_i).zfill(5) +
+                            str(self.debug_i).zfill(9) +
                             ".png", viz)
                 self.debug_i += 1
                 print("debug i is ", self.debug_i)

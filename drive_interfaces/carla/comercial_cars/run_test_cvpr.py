@@ -76,7 +76,8 @@ def main(host, port, city, summary_name, agent):
                           log_name=summary_name,
                           continue_experiment=False,
                           host=host,
-                          port=int(port))
+                          port=int(port),
+                          save_images=True)
 
 
 if (__name__ == '__main__'):

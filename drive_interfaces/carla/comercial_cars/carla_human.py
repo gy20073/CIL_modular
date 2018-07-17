@@ -155,20 +155,6 @@ class CarlaHuman(Driver):
 
         return [self._left_button, self._right_button, self._straight_button]
 
-    def compute_direction_joystick(self, pos, ori, goal_pos, goal_ori):
-
-        # BUtton 3 has priority
-
-        button_vec = self._get_direction_buttons()
-        if sum(button_vec) == 0:  # Nothing
-            return 2
-        elif button_vec[0] == True:  # Left
-            return 3
-        elif button_vec[1] == True:  # RIght
-            return 4
-        else:
-            return 5
-
     def get_recording(self):
 
         if self._autopilot:
@@ -187,7 +173,6 @@ class CarlaHuman(Driver):
             return self._recording
 
     def get_reset(self):
-
         if self._autopilot:
             # if within auto pilot, reset if long enough or has collisions
             if time.time() - self._start_time > self._reset_period:
@@ -198,18 +183,9 @@ class CarlaHuman(Driver):
                             self._latest_measurements.player_measurements.collision_other > 0.0:
 
                 self._reset()
-
-
         else:
             if (self.joystick.get_button(4)):
                 self._reset()
-
-    def get_noise(self, noise):
-        if (self.joystick.get_button(5)):
-            if noise == True:
-                return False
-
-        return noise
 
     def get_waypoints(self):
 

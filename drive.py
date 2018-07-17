@@ -35,11 +35,6 @@ from extra import *
 pygame.init()
 clock = pygame.time.Clock()
 
-
-def frame2numpy(frame, frameSize):
-    return np.resize(np.fromstring(frame, dtype='uint8'), (frameSize[1], frameSize[0], 3))
-
-
 def get_camera_dict(ini_file):
     config = configparser.ConfigParser()
     config.read(ini_file)
@@ -57,7 +52,6 @@ def get_camera_dict(ini_file):
 # TODO: TURN this into A FACTORY CLASS
 def get_instance(drive_config, experiment_name, drivers_name, memory_use):
     if drive_config.interface == "Carla":
-
         from carla_recorder import Recorder
 
         if drive_config.type_of_driver == "Human":
@@ -66,38 +60,6 @@ def get_instance(drive_config, experiment_name, drivers_name, memory_use):
         else:
             from carla_machine import CarlaMachine
             driver = CarlaMachine("0", experiment_name, drive_config, memory_use)
-
-    if drive_config.interface == "VirtualElektra":
-
-        from carla_recorder import Recorder
-
-        if drive_config.type_of_driver == "Human":
-            from virtual_elektra_human import VirtualElektraHuman
-            driver = VirtualElektraHuman(drive_config)
-        else:
-            from virtual_elektra_machine import VirtualElektraMachine
-            driver = VirtualElektraMachine("0", experiment_name, drive_config, memory_use)
-
-    elif drive_config.interface == 'GTA':
-
-        from gta_recorder import Recorder
-        if drive_config.type_of_driver == "Human":
-            from gta_human import GTAHuman
-            driver = GTAHuman()
-        else:
-            from gta_machine import GTAMachine
-            driver = GTAMachine("0", experiment_name)
-
-    elif drive_config.interface == 'DeepRC':
-
-        from deeprc_recorder import Recorder
-        if drive_config.type_of_driver == "Human":
-            from deeprc_human import DeepRCHuman
-            driver = DeepRCHuman(drive_config)
-        else:
-            from deeprc_machine import DeepRCMachine
-            driver = DeepRCMachine("0", experiment_name, drive_config, memory_use)
-
     else:
         print(" Not valid interface is set ")
 
@@ -147,10 +109,6 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
                 measurements, direction = driver.get_sensor_data()  # Later it would return more image like [rewards,images,segmentation]
             else:  ##RC Car
                 measurements, images = driver.get_sensor_data()  # Later it would return more image like [rewards,images,segmentation]
-
-            # sensor_data = frame2numpy(image,[800,600])
-
-
 
             # Compute now the direction
             if drive_config.show_screen:
@@ -211,12 +169,7 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
                     pass
 
             if drive_config.type_of_driver == "Machine" and drive_config.show_screen and drive_config.plot_vbp:
-
-                if drive_config.interface == "DeepRC":
-                    image_vbp = driver.compute_perception_activations(images[drive_config.middle_camera], 0)
-                else:
-                    image_vbp = driver.compute_perception_activations(image, speed)
-
+                image_vbp = driver.compute_perception_activations(image, speed)
                 screen_manager.plot_camera(image_vbp, [1, 0])
 
             iteration += 1
@@ -226,6 +179,5 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
         traceback.print_exc()
 
     finally:
-
         # driver.write_performance_file(path,folder_name,iteration)
         pygame.quit()

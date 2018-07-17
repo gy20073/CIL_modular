@@ -142,16 +142,6 @@ if __name__ == '__main__':
 
             # General evaluation algorithm ( train again for a while and check network stile)
             evaluate(args.gpu, args.experiment_name)
-        elif args.mode == 'predict':
-            from predict import predict
-
-            driver_conf_module = __import__(args.driver_config)
-            driver_conf = driver_conf_module.configDrive()
-
-            driver_conf = parse_drive_arguments(args, driver_conf)
-
-            predict(args.experiment_name, driver_conf, args.name, float(args.memory))
-
         elif args.mode == 'test_input':
             from test_input import test_input
 

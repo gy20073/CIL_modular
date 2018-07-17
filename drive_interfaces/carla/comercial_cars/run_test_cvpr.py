@@ -27,7 +27,6 @@ sys.path.append('structures')
 from carla_machine import *
 
 from carla.driving_benchmark import run_driving_benchmark
-#from carla.driving_benchmark.experiment_suites import CoRL2017
 from carla.driving_benchmark.experiment_suites import CVPR2017
 
 
@@ -84,7 +83,6 @@ if (__name__ == '__main__'):
 
     parser = argparse.ArgumentParser(description='Chauffeur')
 
-    parser.add_argument('-g', '--gpu', type=str, default="0", help='GPU NUMBER')
     parser.add_argument('-lg', '--log', help="activate the log file", action="store_true")
     parser.add_argument('-db', '--debug', help="put the log file to screen", action="store_true")
 
@@ -101,17 +99,10 @@ if (__name__ == '__main__'):
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
     parser.add_argument('-pt', '--path', type=str, default="/media/adas/012B4138528FF294/TestBranchNoCol2/",
                         help='Path to Store outputs')
-    parser.add_argument('-sc', '--show_screen', action="store_true", help='If we are showing the screen of the player')
     parser.add_argument('-res', '--resolution', default="800,600", help='If we are showing the screen of the player')
-    parser.add_argument('-nc', '--ncars', default=20, help='The number of cars')
-    parser.add_argument('-np', '--npedestrians', default=100, help='The number of pedestrians')
     parser.add_argument('--driver', default="Human", help='Select who is driving, a human or a machine')
     parser.add_argument('-s', '--summary', default="summary_number_1", help='summary')
     parser.add_argument('-cy', '--city', help='select the graph from the city being used')
-    parser.add_argument('-t', '--tasks', default="0,1,2,3", help='The tasks used on testing')
-    parser.add_argument('-ti', '--time', default="60,90,120,150", help='The times for each experiment')
-    parser.add_argument('-w', '--weathers', default="1", help='The weathers')
-
     parser.add_argument('-imc', '--image_cut', help='Set the positions where the image is cut')
 
     args = parser.parse_args()
@@ -119,8 +110,6 @@ if (__name__ == '__main__'):
         LOG_FILENAME = 'log_runtests.log'
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG)
         if args.debug:  # set of functions to put the logging to screen
-
-
             root = logging.getLogger()
             root.setLevel(logging.DEBUG)
             ch = logging.StreamHandler(sys.stdout)
@@ -129,16 +118,6 @@ if (__name__ == '__main__'):
             ch.setFormatter(formatter)
             root.addHandler(ch)
 
-    tasks_string = args.tasks.split(',')
-    tasks = [int(x) for x in tasks_string]
-
-    weathers_string = args.weathers.split(',')
-    weathers = [int(x) for x in weathers_string]
-
-    time_string = args.time.split(',')
-    timeouts = [float(x) for x in time_string]
-
-    # driver_conf_module  = __import__("9cam_agent_carla_test")
     driver_conf_module = __import__("9cam_agent_carla_test_rc")
     driver_conf = driver_conf_module.configDrive()
     driver_conf.use_planner = True

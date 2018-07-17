@@ -124,11 +124,6 @@ def get_instance(drive_config, experiment_name, drivers_name, memory_use):
 
 def drive(experiment_name, drive_config, name=None, memory_use=1.0):
     # host,port,gpu_number,path,show_screen,resolution,noise_type,config_path,type_of_driver,experiment_name,city_name,game,drivers_name
-
-
-
-
-
     driver, recorder = get_instance(drive_config, experiment_name, name, memory_use)
 
     noiser = Noiser(drive_config.noise)
@@ -211,30 +206,6 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
                     image.setflags(write=1)
                     screen_manager.plot_camera_steer(image,actions.steer,[1,0])
                     '''
-
-                elif drive_config.interface == "GTA":
-
-                    dist_to_goal = math.sqrt((measurements.goal[0] - measurements.position[0]) * (
-                    measurements.goal[0] - measurements.position[0]) + (
-                                             measurements.goal[1] - measurements.position[1]) * (
-                                             measurements.goal[1] - measurements.position[1]))
-
-                    image = image[:, :, ::-1]
-                    screen_manager.plot_driving_interface(capture_time, np.copy(images), action, action_noisy, \
-                                                          direction, recording and (drifting_time == 0.0 or will_drift),
-                                                          drifting_time, will_drift \
-                                                          , measurements.speed, 0, 0, None, measurements.reseted,
-                                                          driver.get_number_completions(), dist_to_goal, 0)  #
-
-                elif drive_config.interface == "DeepRC":
-                    # for key,value in drive_config.cameras_to_plot.iteritems():
-                    #	screen_manager.plot_driving_interface( capture_time,np.copy(images[key]),\
-                    #		actions[key],action_noisy,measurements.direction,recording and (drifting_time == 0.0 or  will_drift),\
-                    #		drifting_time,will_drift,measurements.speed,0,0,value) #
-                    image = images[drive_config.middle_camera][drive_config.image_cut[0]:drive_config.image_cut[1], :,
-                            :]
-                    screen_manager.plot_camera_steer(image, actions[0].steer, [0, 0])
-
                 else:
                     print("Not supported interface")
                     pass

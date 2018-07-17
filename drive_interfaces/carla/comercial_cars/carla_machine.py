@@ -106,15 +106,6 @@ def load_system(config):
 
     return training_manager
 
-
-def convert_to_car_coord(goal_x, goal_y, pos_x, pos_y, car_heading_x, car_heading_y):
-    start_to_goal = (goal_x - pos_x, goal_y - pos_y)
-
-    car_goal_x = -(-start_to_goal[0] * car_heading_y + start_to_goal[1] * car_heading_x)
-    car_goal_y = start_to_goal[0] * car_heading_x + start_to_goal[1] * car_heading_y
-
-    return [car_goal_x, car_goal_y]
-
 class CarlaMachine(Agent, Driver):
     def __init__(self, gpu_number="0", experiment_name='None', driver_conf=None, memory_fraction=0.9, \
                  trained_manager=None, session=None, config_input=None):
@@ -265,55 +256,13 @@ class CarlaMachine(Agent, Driver):
     def get_reset(self):
         return False
 
-    def get_vec_dist(self, x_dst, y_dst, x_src, y_src):
-        vec = np.array([x_dst, y_dst] - np.array([x_src, y_src]))
-        dist = math.sqrt(vec[0] ** 2 + vec[1] ** 2)
-        return vec / dist, dist
-
-    def get_angle(self, vec_dst, vec_src):
-        angle = math.atan2(vec_dst[1] - vec_src[1], vec_dst[0] - vec_src[0])
-        if angle > math.pi:
-            angle -= 2 * math.pi
-        elif angle < -math.pi:
-            angle += 2 * math.pi
-        return angle
-
-    def new_episode(self, initial_pos, target, cars, pedestrians, weather):
-
-        config = ConfigParser()
-
-        config.read(self._config_path)
-        config.set('CARLA/LevelSettings', 'NumberOfVehicles', cars)
-
-        config.set('CARLA/LevelSettings', 'NumberOfPedestrians', pedestrians)
-
-        config.set('CARLA/LevelSettings', 'WeatherId', weather)
-
-        # Write down a temporary init_file to be used on the experiments
-        temp_f_name = 's' + str(initial_pos) + '_e' + str(target) + "_p" + \
-                      str(pedestrians) + '_c' + str(cars) + "_w" + str(weather) + \
-                      '.ini'
-
-        with open(temp_f_name, 'w') as configfile:
-            config.write(configfile)
-
-        positions = self.carla.requestNewEpisode(temp_f_name)
-
-        self.carla.newEpisode(initial_pos)
-        self._target = target
-
     # TODO: change to the agent interface
     def run_step(self, measurements, sensor_data, direction, target):
-        # pos = (rewards.player_x,rewards.player_y,22)
-        # ori =(rewards.ori_x,rewards.ori_y,rewards.ori_z)
-        # pos,point = self.planner.get_defined_point(pos,ori,(target[0],target[1],22),(1.0,0.02,-0.001),self._select_goal)
-        # direction = convert_to_car_coord(point[0],point[1],pos[0],pos[1],ori[0],ori[1])
         print("forward speed (m/s) is:", measurements.player_measurements.forward_speed)
         print("direction is:", direction)
         if not abs(direction-2.0)< 0.1:
             print("!!!!!!!!!!!!!!!some turning should be happending now!!!!!!!!!!!!!!!!!")
 
-        #print(sensor_data)
         sensors = []
         for name in self._config.sensor_names:
             if name == 'rgb':

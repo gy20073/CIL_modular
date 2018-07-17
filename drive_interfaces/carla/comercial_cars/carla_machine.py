@@ -223,13 +223,11 @@ class CarlaMachine(Agent, Driver):
         return [self._left_button, self._right_button, self._straight_button]
 
     def compute_direction(self, pos, ori):  # This should have maybe some global position... GPS stuff
-
         if self._train_manager._config.control_mode == 'goal':
             raise
             return self.compute_goal(pos, ori)
 
         elif self.use_planner:
-
             command, made_turn, completed = self.planner.get_next_command(pos, ori, (
             self.positions[self._target].location.x, self.positions[self._target].location.y, 22), (1.0, 0.02, -0.001))
             return command
@@ -250,7 +248,6 @@ class CarlaMachine(Agent, Driver):
                 return 5
 
     def get_recording(self):
-
         return False
 
     def get_reset(self):
@@ -260,8 +257,6 @@ class CarlaMachine(Agent, Driver):
     def run_step(self, measurements, sensor_data, direction, target):
         print("forward speed (m/s) is:", measurements.player_measurements.forward_speed)
         print("direction is:", direction)
-        if not abs(direction-2.0)< 0.1:
-            print("!!!!!!!!!!!!!!!some turning should be happending now!!!!!!!!!!!!!!!!!")
 
         sensors = []
         for name in self._config.sensor_names:
@@ -289,9 +284,6 @@ class CarlaMachine(Agent, Driver):
         return np.array(j)
 
     def compute_action(self, sensors, speed, direction=None):
-
-        capture_time = time.time()
-
         if direction == None:
             direction = self.compute_direction((0, 0, 0), (0, 0, 0))
 
@@ -342,27 +334,17 @@ class CarlaMachine(Agent, Driver):
             sensor_pack.append(sensor)
 
         if len(sensor_pack) > 1:
-
-            print(sensor_pack[0].shape)
-            print(sensor_pack[1].shape)
+            print("sensor pack 0 shape", sensor_pack[0].shape)
+            print("sensor pack 1 shape", sensor_pack[1].shape)
             image_input = np.concatenate((sensor_pack[0], sensor_pack[1]), axis=2)
-
         else:
             image_input = sensor_pack[0]
             print(sensor_pack[0].shape)
 
         image_input = image_input.astype(np.float32)
-
         image_input = np.multiply(image_input, 1.0 / 255.0)
 
-        # print "2"
-        # print image_input.shape
-        # print speed
-        # print direction
-
-
         if (self._train_manager._config.control_mode == 'single_branch_wp'):
-
             # Yang: use the waypoints to predict the steer, in theory PID controller, but in reality just P controller
             # TODO: ask, only the regression target is different, others are the same
             steer, acc, brake, wp1angle, wp2angle = self._control_function(image_input, speed, direction, self._config,
@@ -372,25 +354,7 @@ class CarlaMachine(Agent, Driver):
 
             steer_gain = 0.8
             steer = steer_gain * wp1angle
-
-            if steer > 0:
-
-                # print ("SQRT")
-                # steer = math.sqrt(steer)
-
-                # print ("SQ")
-                # steer = math.pow(steer,2)
-
-                steer = min(steer, 1)
-            else:
-
-                # print ("SQRT")
-                # steer = - math.sqrt(-steer)
-
-                # print ("SQ")
-                # steer = - math.pow(-steer,2)
-
-                steer = max(steer, -1)
+            steer =min(max(steer, -1), 1)
 
             print(('Predicted Steering: ', steer_pred, ' Waypoint Steering: ', steer))
 
@@ -407,22 +371,15 @@ class CarlaMachine(Agent, Driver):
             acc = 0.0
 
         control = VehicleControl()
-
         control.steer = steer
-
         control.throttle = acc
         control.brake = brake
-        # print brake
-
         control.hand_brake = 0
         control.reverse = 0
 
         return control  # ,machine_output_functions.get_intermediate_rep(image_input,speed,self._config,self._sess,self._train_manager)
 
     # The augmentation should be dependent on speed
-
-
-
     def get_sensor_data(self):
         measurements, _ = self.carla.read_data()
 
@@ -450,28 +407,20 @@ class CarlaMachine(Agent, Driver):
         return measurements, direction
 
     def compute_perception_activations(self, sensor, speed):
-
         # sensor = sensor[self._image_cut[0]:self._image_cut[1],:,:]
-
         sensor = scipy.misc.imresize(sensor, [self._config.network_input_size[0], self._config.network_input_size[1]])
-
         image_input = sensor.astype(np.float32)
-
         image_input = np.multiply(image_input, 1.0 / 255.0)
-
         # vbp_image =  machine_output_functions.vbp(image_input,speed,self._config,self._sess,self._train_manager)
         vbp_image = machine_output_functions.seg_viz(image_input, speed, self._config, self._sess, self._train_manager)
 
         # min_max_scaler = preprocessing.MinMaxScaler()
         # vbp_image = min_max_scaler.fit_transform(np.squeeze(vbp_image))
-
         # print vbp_image.shape
         return 0.4 * grayscale_colormap(np.squeeze(vbp_image), 'jet') + 0.6 * image_input  # inferno
 
     def act(self, action):
-
         self.carla.sendCommand(action)
 
     def stop(self):
-
         self.carla.stop()

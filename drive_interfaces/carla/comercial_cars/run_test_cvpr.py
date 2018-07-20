@@ -28,43 +28,10 @@ from carla_machine import *
 
 from carla.driving_benchmark import run_driving_benchmark
 from carla.driving_benchmark.experiment_suites import CVPR2017
+from common_util import parse_drive_arguments
 
 
-def parse_drive_arguments(args, driver_conf):
-    # Carla Config
-    if args.carla_config is not None:
-        driver_conf.carla_config = args.carla_config
 
-    if args.host is not None:
-        driver_conf.host = args.host
-
-    if args.port is not None:
-        driver_conf.port = args.port
-
-    if args.path is not None:
-        driver_conf.path = args.path
-
-    if args.driver is not None:
-        driver_conf.type_of_driver = args.driver
-
-    if args.resolution is not None:
-        res_string = args.resolution.split(',')
-        resolution = []
-        resolution.append(int(res_string[0]))
-        resolution.append(int(res_string[1]))
-        driver_conf.resolution = resolution
-
-    if args.city is not None:
-        driver_conf.city_name = args.city
-
-    if args.image_cut is not None:
-        cut_string = args.image_cut.split(',')
-        image_cut = []
-        image_cut.append(int(cut_string[0]))
-        image_cut.append(int(cut_string[1]))
-        driver_conf.image_cut = image_cut
-
-    return driver_conf
 
 def main(host, port, city, summary_name, agent):
     #TODO: make an agent; define the camera in the testing env; change city name
@@ -121,7 +88,10 @@ if (__name__ == '__main__'):
     driver_conf_module = __import__("9cam_agent_carla_test_rc")
     driver_conf = driver_conf_module.configDrive()
     driver_conf.use_planner = True
-    driver_conf = parse_drive_arguments(args, driver_conf)
+    driver_conf = parse_drive_arguments(args,
+                                        driver_conf,
+                                        attributes=['carla_config', 'host',
+                                                    'path', 'type_of_driver', 'city'])
     print (driver_conf)
 
     with  open(args.summary + '.stats.csv', 'w+') as f:

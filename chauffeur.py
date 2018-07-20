@@ -1,5 +1,4 @@
-import sys
-
+import sys, argparse, os, logging
 sys.path.append('test')
 sys.path.append('configuration')
 sys.path.append('drive_interfaces/configuration')
@@ -8,13 +7,6 @@ sys.path.append('train')
 sys.path.append('utils')
 sys.path.append('input/spliter')
 sys.path.append('structures')
-
-import argparse
-
-import os
-
-import logging
-
 
 def parse_drive_arguments(args, driver_conf):
     # Carla Config

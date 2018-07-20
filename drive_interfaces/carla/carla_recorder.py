@@ -1,14 +1,7 @@
-import math as m
-import os
-import time
-from threading import Thread
-
-import h5py
+import os, h5py, scipy, cv2, math
 import numpy as np
-import scipy
-from PIL import Image
+from threading import Thread
 from queue import Queue
-
 
 # lets put a big queue for the disk. So I keep it real time while the disk is writing stuff
 def threaded(fn):
@@ -22,77 +15,62 @@ def threaded(fn):
     return wrapper
 
 
+def get_vec_dist(x_dst, y_dst, x_src, y_src):
+    vec = np.array([x_dst, y_dst] - np.array([x_src, y_src]))
+    dist = math.sqrt(vec[0] ** 2 + vec[1] ** 2)
+    return vec / dist, dist
+
+
+def get_angle(vec_dst, vec_src):
+    angle = math.atan2(vec_dst[1], vec_dst[0]) - math.atan2(vec_src[1], vec_src[0])
+    if angle > math.pi:
+        angle -= 2 * math.pi
+    elif angle < -math.pi:
+        angle += 2 * math.pi
+    return angle
+
+
 class Recorder(object):
     # We assume a three camera case not many cameras per input ....
-
-
-    def __init__(self, file_prefix, resolution=[800, 600], current_file_number=0, \
-                 record_image=True, image_cut=[0, 600], camera_dict={}, record_waypoints=False):
-
-        self._number_of_seg_classes = 13
-        self._record_image_hdf5 = True
-        self._number_images_per_file = 200
+    def __init__(self, file_prefix, resolution=[800, 600], current_file_number=0,
+                image_cut=[0, 600], camera_dict={}):
         self._file_prefix = file_prefix
-        self._image_size2 = resolution[1]
-        self._image_size1 = resolution[0]
-        self._record_image = False
-        self._number_rewards = 27 + 4 * record_waypoints
-        self._image_cut = image_cut
-        self._camera_dict = camera_dict
-        self._record_waypoints = record_waypoints
         if not os.path.exists(self._file_prefix):
             os.mkdir(self._file_prefix)
 
+        # image related storing options
+        self._number_images_per_file = 200
+        self._image_size1 = resolution[0]
+        self._image_size2 = resolution[1]
+        self._image_cut = image_cut
+
+        # other rewards
+        self._number_rewards = 27 + 4
+        self._camera_dict = camera_dict
+
+        # initialize for writing the db
         self._current_file_number = current_file_number
-        self._current_hf = self._create_new_db()
-
-        self._images_writing_folder_vec = []
-        # for i in range(max(len(self._camera_dict),1)):
-        #	images_writing_folder = self._file_prefix + "Images_" +str(i) + "/"
-        #	if not os.path.exists(images_writing_folder):
-        #		os.mkdir(images_writing_folder)
-        #	self._images_writing_folder_vec.append(images_writing_folder)
-
-
-
-        self._csv_writing_file = self._file_prefix + 'outputs.csv'
         self._current_pos_on_file = 0
+        self._current_hf = self._create_new_db()
         self._data_queue = Queue(5000)
         self.run_disk_writer()
 
     def _create_new_db(self):
-
+        # TODO: change the reading part to have the image decoding
         hf = h5py.File(self._file_prefix + 'data_' + str(self._current_file_number).zfill(5) + '.h5', 'w')
-        self.data_center = hf.create_dataset('rgb',
-                                             (self._number_images_per_file, self._image_size2, self._image_size1, 3),
-                                             dtype=np.uint8)
-        self.segs_center = hf.create_dataset('labels',
-                                             (self._number_images_per_file, self._image_size2, self._image_size1, 1),
-                                             dtype=np.uint8)
-        self.depth_center = hf.create_dataset('depth',
-                                              (self._number_images_per_file, self._image_size2, self._image_size1, 3),
-                                              dtype=np.uint8)
-
+        dt = h5py.special_dtype(vlen=np.dtype('uint8'))
+        self.data_center = hf.create_dataset('rgb',    (self._number_images_per_file,), dtype=dt)
+        self.segs_center = hf.create_dataset('labels', (self._number_images_per_file,), dtype=dt)
+        self.depth_center = hf.create_dataset('depth', (self._number_images_per_file,), dtype=dt)
         self.data_rewards = hf.create_dataset('targets', (self._number_images_per_file, self._number_rewards), 'f')
 
         return hf
 
     def record(self, measurements, action, action_noise, direction, waypoints=None):
-
         self._data_queue.put([measurements, action, action_noise, direction, waypoints])
-
-    def get_one_hot_encoding(self, array, numLabels):
-        mask = np.zeros((array.shape[0], array.shape[1], numLabels))
-        for x in range(len(array)):
-            row = array[x]
-            for y in range(len(row)):
-                label = row[y]
-                mask[x, y, label] = 1
-        return mask
 
     @threaded
     def run_disk_writer(self):
-
         while True:
             data = self._data_queue.get()
             # if self._data_queue.qsize() % 100 == 0:
@@ -101,8 +79,6 @@ class Recorder(object):
 
     def _write_to_disk(self, data):
         # Use the dictionary for this
-
-
         measurements = data[0]
         actions = data[1]
         action_noise = data[2]
@@ -110,7 +86,6 @@ class Recorder(object):
         waypoints = data[4]
 
         for i in range(max(len(measurements['BGRA']), len(measurements['Labels']), len(measurements['Depth']))):
-
             if self._current_pos_on_file == self._number_images_per_file:
                 self._current_file_number += 1
                 self._current_pos_on_file = 0
@@ -119,51 +94,25 @@ class Recorder(object):
 
             pos = self._current_pos_on_file
 
-            capture_time = int(round(time.time() * 1000))
+            # Check if there is RGB images
+            if len(measurements['BGRA']) > i:
+                image = measurements['BGRA'][i][self._image_cut[0]:self._image_cut[1], :, :3]
+                image = image[:, :, ::-1]
+                image = scipy.misc.imresize(image, [self._image_size2, self._image_size1])
+                self.data_center[pos] = np.fromstring(cv2.imencode(".jpg", image)[1], dtype=np.uint8)
 
-            # print int(round(time.time() * 1000))
-            # if self._record_image:
-            #	im = Image.fromarray(image)
-            #	b, g, r,a = im.split()
-            #	im = Image.merge("RGB", (r, g, b))
-            #	im.save(self._images_writing_folder_vec[folder_num] + str((capture_time)) + ".jpg")
-            if self._record_image:
-                if len(measurements['BGRA']) > 0:
-                    im = Image.fromarray(measurements['BGRA'][i])
-                    b, g, r, a = im.split()
-                    im = Image.merge("RGB", (r, g, b))
-                    im.save(self._images_writing_folder_vec[i] + "img_" + str((capture_time)) + ".png")
-                if len(measurements['Labels']) > 0:
-                    scene_seg = (measurements['Labels'][i][:, :, 2])
-                    Image.fromarray(scene_seg * m.floor(255 / (self._number_of_seg_classes - 1))).convert('RGB').save(
-                        self._images_writing_folder_vec[i] + "seg_" + str((capture_time)) + ".png")
+            # Check if there is semantic segmentation images
+            if len(measurements['Labels']) > i:
+                scene_seg = measurements['Labels'][i][self._image_cut[0]:self._image_cut[1], :, 2]
+                scene_seg = scipy.misc.imresize(scene_seg, [self._image_size2, self._image_size1], interp='nearest')
+                scene_seg = scene_seg[:, :, np.newaxis]
+                self.segs_center[pos] = np.fromstring(cv2.imencode(".png", scene_seg)[1],
+                                                      dtype=np.uint8)
 
-            if self._record_image_hdf5:
-
-                # Check if there is RGB images
-                if len(measurements['BGRA']) > i:
-                    image = measurements['BGRA'][i][self._image_cut[0]:self._image_cut[1], :, :3]
-                    image = image[:, :, ::-1]
-                    image = scipy.misc.imresize(image, [self._image_size2, self._image_size1])
-                    self.data_center[pos] = image
-                # Image.fromarray(image).save(self._images_writing_folder_vec[i] + "h5img_" + str((capture_time)) + ".png")
-
-                # Check if there is semantic segmentation images
-                if len(measurements['Labels']) > i:
-                    scene_seg = measurements['Labels'][i][self._image_cut[0]:self._image_cut[1], :, 2]
-
-                    scene_seg = scipy.misc.imresize(scene_seg, [self._image_size2, self._image_size1], interp='nearest')
-                    scene_seg = scene_seg[:, :, np.newaxis]
-
-                    self.segs_center[pos] = scene_seg
-                # for layer in range(scene_seg_hot.shape[2]):
-                #	Image.fromarray(scene_seg_hot[:,:,e]*255).convert('RGB').save(self._images_writing_folder_vec[i] \
-                #	+ "h5seg_" + str((capture_time)) + "_" + str(layer) + ".png")
-                if len(measurements['Depth']) > i:
-                    depth = measurements['Depth'][i][self._image_cut[0]:self._image_cut[1], :, :3]
-
-                    depth = scipy.misc.imresize(depth, [self._image_size2, self._image_size1])
-                    self.depth_center[pos] = depth
+            if len(measurements['Depth']) > i:
+                depth = measurements['Depth'][i][self._image_cut[0]:self._image_cut[1], :, :3]
+                depth = scipy.misc.imresize(depth, [self._image_size2, self._image_size1])
+                self.depth_center[pos] = np.fromstring(cv2.imencode(".png", depth)[1], dtype=np.uint8)
 
             self.data_rewards[pos, 0] = actions.steer
             self.data_rewards[pos, 1] = actions.throttle
@@ -191,17 +140,35 @@ class Recorder(object):
             self.data_rewards[pos, 23] = measurements.player_measurements.transform.orientation.z
             self.data_rewards[pos, 24] = direction
             self.data_rewards[pos, 25] = i
-            self.data_rewards[pos, 26] = float(self._camera_dict[i][1])
-            if self._record_waypoints:
-                self.data_rewards[pos, 27] = waypoints[0][0]
-                self.data_rewards[pos, 28] = waypoints[0][1]
-                self.data_rewards[pos, 29] = waypoints[1][0]
-                self.data_rewards[pos, 30] = waypoints[1][1]
+            self.data_rewards[pos, 26] = float(self._camera_dict[i][1]) # angle
+            self.data_rewards[pos, 27] = waypoints[0][0]
+            self.data_rewards[pos, 28] = waypoints[0][1]
+            self.data_rewards[pos, 29] = waypoints[1][0]
+            self.data_rewards[pos, 30] = waypoints[1][1]
 
-            # print 'Angle ',self.data_rewards[pos,26]
-            # print 'LENS ',len(images.rgb),len(images.scene_seg)
+            # merge the convertwp functionality into this file
+            def get_angle_mag(wp0, wp1):
+                wp_vector, wp_mag = get_vec_dist(wp0, wp1,
+                                                   measurements.player_measurements.transform.location.x,
+                                                   measurements.player_measurements.transform.location.y)
+                if wp_mag > 0:
+                    # TODO: check the definition of x and y, as well as the def of camera angle
+                    wp_angle = get_angle(wp_vector, [measurements.player_measurements.transform.orientation.x,
+                                                     measurements.player_measurements.transform.orientation.y]) - \
+                                math.radians(self.data_rewards[pos, 26])
+                else:
+                    wp_angle = 0
+                return wp_angle, wp_mag
+
+            wp1_angle, wp1_mag = get_angle_mag(waypoints[0][0], waypoints[0][1])
+            wp2_angle, wp2_mag = get_angle_mag(waypoints[1][0], waypoints[1][1])
+
+            self.data_rewards[pos, 31] = wp1_angle
+            self.data_rewards[pos, 32] = wp1_mag
+            self.data_rewards[pos, 33] = wp2_angle
+            self.data_rewards[pos, 34] = wp2_mag
+
             self._current_pos_on_file += 1
 
     def close(self):
-
         self._current_hf.close()

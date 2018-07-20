@@ -1,21 +1,7 @@
-import math
-import random
-
-
 class Driver(object):
     # Initializes all necessary shared data for this class
     def __init__(self):
-        self._car_lenght = 6
-        self._time = 1.0 + float(random.randint(0, 10)) / 10.0
-
-
-
-        # utility functions
-
-    def _adjust_steering(self, steering, angle, speed):
-        angle = math.radians(angle)
-        speed = math.fabs(speed) / 3.6
-        return steering + (math.atan((angle * self._car_lenght) / (self._time * speed + 0.01))) / 3.1415
+        pass
 
     # Should Basically start the system. Any connection needed with the driving device or the
     # data interface should be made on this function.

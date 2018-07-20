@@ -17,7 +17,3 @@ def parse_drive_arguments(args, driver_conf, attributes):
         driver_conf.image_cut = [int(cut_string[0]), int(cut_string[1])]
 
     return driver_conf
-
-import cv2
-def arr_to_png(arr):
-    return cv2.imencode(".png", arr)

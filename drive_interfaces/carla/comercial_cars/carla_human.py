@@ -18,7 +18,7 @@ import numpy as np
 sldist = lambda c1, c2: math.sqrt((c2[0] - c1[0]) ** 2 + (c2[1] - c1[1]) ** 2)
 import time
 from configparser import ConfigParser
-from driver import *
+from driver import Driver
 
 
 def find_valid_episode_position(positions, waypointer):

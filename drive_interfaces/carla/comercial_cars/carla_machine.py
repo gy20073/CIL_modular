@@ -1,47 +1,25 @@
-import sys
-import time
-
-import pygame
-import scipy
+import sys, time, pygame, scipy, cv2, os, random
 import tensorflow as tf
-from configparser import ConfigParser
 from pygame.locals import *
-import cv2, os
+import numpy as np
+from PIL import ImageDraw, Image, ImageFont
 
 sys.path.append('../train')
 sldist = lambda c1, c2: math.sqrt((c2[0] - c1[0])**2 + (c2[1] - c1[1])**2)
-# TODO: migrate these to the newer version
+# carla related import
 from carla.planner.planner import Planner
 from carla.agent.agent import Agent
 from carla.client import VehicleControl
 from carla.client import make_carla_client
 from carla import image_converter
-from carla.planner.map import CarlaMap
-import numpy as np
-import shutil
-from PIL import ImageDraw, Image, ImageFont
-# TODO: end of the migration
-
 
 from codification import *
 from training_manager import TrainManager
 import machine_output_functions
-from driver import *
+from driver import Driver
 from drawing_tools import *
-import random
 
 slim = tf.contrib.slim
-
-number_of_seg_classes = 5
-classes_join = {0: 2, 1: 2, 2: 2, 3: 2, 5: 2, 12: 2, 9: 2, 11: 2, 4: 0, 10: 1, 8: 3, 6: 3, 7: 4}
-
-
-def join_classes(labels_image, labels_mapping):
-    compressed_labels_image = np.copy(labels_image)
-    for key, value in labels_mapping.items():
-        compressed_labels_image[np.where(labels_image == key)] = value
-    return compressed_labels_image
-
 
 def restore_session(sess, saver, models_path):
     ckpt = 0
@@ -312,24 +290,6 @@ class CarlaMachine(Agent, Driver):
                             ".png", viz)
                 self.debug_i += 1
                 print("debug i is ", self.debug_i)
-
-            elif self._config.sensor_names[i] == 'labels':
-
-                sensor = sensor[self._image_cut[0]:self._image_cut[1], :, 2]
-
-                sensor = scipy.misc.imresize(sensor, [self._config.sensors_size[i][0], self._config.sensors_size[i][1]],
-                                             interp='nearest')
-
-                if hasattr(self._config, 'labels_mapping'):
-                    print ("Labels with mapping")
-                    sensor = join_classes(sensor, self._config.labels_mapping) * int(
-                        255 / (self._config.number_of_labels - 1))
-                else:
-                    sensor = join_classes(sensor, classes_join) * int(255 / (number_of_seg_classes - 1))
-
-                # image_result = Image.fromarray(sensor)
-                # image_result.save('image.png')
-                sensor = sensor[:, :, np.newaxis]
 
             sensor_pack.append(sensor)
 

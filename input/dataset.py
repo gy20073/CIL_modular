@@ -8,15 +8,6 @@ import tensorflow as tf
 from codification import *
 
 
-def join_classes(labels_image, labels_mapping):
-    compressed_labels_image = np.copy(labels_image)
-
-    for key, value in labels_mapping.items():
-        compressed_labels_image[np.where(labels_image == key)] = value
-
-    return compressed_labels_image
-
-
 class Dataset(object):
     def __init__(self, splited_keys, images, datasets, config_input, augmenter):
 
@@ -287,18 +278,7 @@ class Dataset(object):
         for i in range(len(sensors)):
             sensors[i] = np.array((sensors[i]))
 
-            if i == label_idx:  ##labels
-                if hasattr(self._config, 'labels_mapping'):
-                    # print('Joining classes: ', self._config.labels_mapping)
-                    sensors[i] = join_classes(sensors[i], self._config.labels_mapping)
-
-                if self._augmenter[i] != None:
-                    sensors[i][np.where(sensors[i] == 0)] = 6
-                    sensors[i] = self._augmenter[i].augment_images(sensors[i])
-                    sensors[i][np.where(sensors[i] == 0)] = 2 * (255 // 4)
-                    sensors[i][np.where(sensors[i] == 6)] = 0
-
-            elif self._augmenter[i] != None:
+            if self._augmenter[i] != None:
                 sensors[i] = self._augmenter[i].augment_images(sensors[i])
 
             sensors[i] = sensors[i].astype(np.float32)

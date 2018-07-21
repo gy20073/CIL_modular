@@ -1,4 +1,4 @@
-import sys, time, pygame, scipy, cv2, os, random
+import sys, pygame, scipy, cv2, random
 import tensorflow as tf
 from pygame.locals import *
 import numpy as np
@@ -18,161 +18,65 @@ from training_manager import TrainManager
 import machine_output_functions
 from driver import Driver
 from drawing_tools import *
-
+from common_util import restore_session, preprocess_image
 slim = tf.contrib.slim
-
-def restore_session(sess, saver, models_path):
-    ckpt = 0
-    if not os.path.exists(models_path):
-        os.mkdir(models_path)
-
-    ckpt = tf.train.get_checkpoint_state(models_path)
-    if ckpt:
-        print('Restoring from ', ckpt.model_checkpoint_path)
-        saver.restore(sess, ckpt.model_checkpoint_path)
-    else:
-        ckpt = 0
-
-    return ckpt
-
 
 def load_system(config):
     config.batch_size = 1
     config.is_training = False
 
     training_manager = TrainManager(config, None)
-
-    if hasattr(config, 'rgb_seg_network_one_hot'):
-        training_manager.build_rgb_seg_network_one_hot()
-        print("Bulding: rgb_seg_network_one_hot")
-
+    if hasattr(config, 'seg_network_erfnet_one_hot'):
+        training_manager.build_seg_network_erfnet_one_hot()
+        print("Bulding: seg_network_erfnet_one_hot")
     else:
-        if hasattr(config, 'seg_network_gt_one_hot'):
-            training_manager.build_seg_network_gt_one_hot()
-            print("Bulding: seg_network_gt_one_hot")
-
-        else:
-            if hasattr(config, 'seg_network_gt_one_hot_join'):
-                training_manager.build_seg_network_gt_one_hot_join()
-                print("Bulding: seg_network_gt_one_hot_join")
-
-            else:
-                if hasattr(config, 'rgb_seg_network_enet'):
-                    training_manager.build_rgb_seg_network_enet()
-                    print("Bulding: rgb_seg_network_enet")
-
-                else:
-                    if hasattr(config, 'rgb_seg_network_enet_one_hot'):
-                        training_manager.build_rgb_seg_network_enet_one_hot()
-                        print("Bulding: rgb_seg_network_enet_one_hot")
-
-                    else:
-                        if hasattr(config, 'seg_network_enet_one_hot'):
-                            training_manager.build_seg_network_enet_one_hot()
-                            print("Bulding: seg_network_enet_one_hot")
-
-                        else:
-                            if hasattr(config, 'seg_network_erfnet_one_hot'):
-                                training_manager.build_seg_network_erfnet_one_hot()
-                                print("Bulding: seg_network_erfnet_one_hot")
-
-                            else:
-                                training_manager.build_network()
-                                print("Bulding: standard_network")
-
-    """ Initializing Session as variables that control the session """
+        training_manager.build_network()
+        print("Bulding: standard_network")
 
     return training_manager
 
+
 class CarlaMachine(Agent, Driver):
-    def __init__(self, gpu_number="0", experiment_name='None', driver_conf=None, memory_fraction=0.9, \
-                 trained_manager=None, session=None, config_input=None):
-
-        # use_planner=False,graph_file=None,map_file=None,augment_left_right=False,image_cut = [170,518]):
-
+    def __init__(self, gpu_number="0", experiment_name='None', driver_conf=None, memory_fraction=0.9):
         Driver.__init__(self)
 
-        if trained_manager == None:
+        conf_module = __import__(experiment_name)
+        self._config = conf_module.configInput()
+        self._config.train_segmentation = False
+        self._train_manager = load_system(conf_module.configTrain())
 
-            conf_module = __import__(experiment_name)
-            self._config = conf_module.configInput()
+        config_gpu = tf.ConfigProto()
+        config_gpu.gpu_options.visible_device_list = gpu_number
+        config_gpu.gpu_options.per_process_gpu_memory_fraction = memory_fraction
+        self._sess = tf.Session(config=config_gpu)
 
-            config_gpu = tf.ConfigProto()
-            config_gpu.gpu_options.visible_device_list = gpu_number
-
-            config_gpu.gpu_options.per_process_gpu_memory_fraction = memory_fraction
-            self._sess = tf.Session(config=config_gpu)
-
-            self._train_manager = load_system(conf_module.configTrain())
-            self._config.train_segmentation = False
-
-            self._sess.run(tf.global_variables_initializer())
-
-            if conf_module.configTrain().restore_seg_test:
-                if self._config.segmentation_model != None:
-                    exclude = ['global_step']
-
-                    variables_to_restore = slim.get_variables(scope=str(self._config.segmentation_model_name))
-
-                    saver = tf.train.Saver(variables_to_restore, max_to_keep=0)
-
-                    seg_ckpt = restore_session(self._sess, saver, self._config.segmentation_model)
-
-                variables_to_restore = list(set(tf.global_variables()) - set(
-                    slim.get_variables(scope=str(self._config.segmentation_model_name))))
-
-            else:
-                variables_to_restore = tf.global_variables()
-
-            saver = tf.train.Saver(variables_to_restore)
-            cpkt = restore_session(self._sess, saver, self._config.models_path)
-
-        else:
-            self._train_manager = trained_manager
-            self._sess = session
-            self._config = config_input
-
-        if self._train_manager._config.control_mode == 'goal':
-            self._select_goal = conf_module.configTrain().select_goal
+        self._sess.run(tf.global_variables_initializer())
+        variables_to_restore = tf.global_variables()
+        saver = tf.train.Saver(variables_to_restore)
+        restore_session(self._sess, saver, self._config.models_path)
 
         self._control_function = getattr(machine_output_functions, self._train_manager._config.control_mode)
-
         self._image_cut = driver_conf.image_cut
-
-        # load a manager to deal with test data
         self.use_planner = driver_conf.use_planner
-        import os
-        dir_path = os.path.dirname(__file__)
         if driver_conf.use_planner:
             self.planner = Planner(driver_conf.city_name)
 
         self._host = driver_conf.host
         self._port = driver_conf.port
         self._config_path = driver_conf.carla_config
-        self._resolution = driver_conf.resolution
 
         self._straight_button = False
         self._left_button = False
         self._right_button = False
-        self._recording = False
-        self._start_time = 0
 
         self.debug_i = 0
-        self.debug_j = 0
-        self.debug_init = False
         self.temp_image_path = "./temp/"
 
     def start(self):
-
-        # You start with some configurationpath
         self.carla = make_carla_client(self._host, self._port)
-
         self.positions = self.carla.loadConfigurationFile(self._config_path)
-
         self.carla.newEpisode(random.randint(0, len(self.positions)))
-
         self._target = random.randint(0, len(self.positions))
-        self._start_time = time.time()
 
     def _get_direction_buttons(self):
         # with suppress_stdout():if keys[K_LEFT]:
@@ -201,17 +105,14 @@ class CarlaMachine(Agent, Driver):
         return [self._left_button, self._right_button, self._straight_button]
 
     def compute_direction(self, pos, ori):  # This should have maybe some global position... GPS stuff
-        if self._train_manager._config.control_mode == 'goal':
-            raise
-            return self.compute_goal(pos, ori)
-
-        elif self.use_planner:
-            command, made_turn, completed = self.planner.get_next_command(pos, ori, (
-            self.positions[self._target].location.x, self.positions[self._target].location.y, 22), (1.0, 0.02, -0.001))
+        if self.use_planner:
+            command = self.planner.get_next_command(pos, ori,
+                                                    (self.positions[self._target].location.x, self.positions[self._target].location.y, 22),
+                                                    (1.0, 0.02, -0.001))
             return command
 
         else:
-            # BUtton 3 has priority
+            # Button 3 has priority
             if 'Control' not in set(self._config.inputs_names):
                 return None
 
@@ -220,7 +121,7 @@ class CarlaMachine(Agent, Driver):
                 return 2
             elif button_vec[0] == True:  # Left
                 return 3
-            elif button_vec[1] == True:  # RIght
+            elif button_vec[1] == True:  # Right
                 return 4
             else:
                 return 5
@@ -233,15 +134,10 @@ class CarlaMachine(Agent, Driver):
 
     # TODO: change to the agent interface
     def run_step(self, measurements, sensor_data, direction, target):
-        print("forward speed (m/s) is:", measurements.player_measurements.forward_speed)
-        print("direction is:", direction)
-
         sensors = []
         for name in self._config.sensor_names:
             if name == 'rgb':
                 sensors.append(image_converter.to_bgra_array(sensor_data["CameraRGB"]))
-            elif name == 'labels':
-                sensors.append(sensor_data['SemanticSegmentation'])
 
         speed_KMH = measurements.player_measurements.forward_speed * 3.6
         control = self.compute_action(sensors, speed_KMH, direction)
@@ -254,52 +150,33 @@ class CarlaMachine(Agent, Driver):
         image = np.uint8(image)
         j = Image.fromarray(image)
         draw = ImageDraw.Draw(j)
-        # font = ImageFont.load_default().font
-        # font = ImageFont.truetype("/usr/share/fonts/truetype/inconsolata/Inconsolata.otf", fontsize)
         font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", fontsize)
         draw.text((0, 0), string, (255, 0, 0), font=font)
 
         return np.array(j)
 
+    def save_image(self, sensor, direction):
+        debug_path = self.temp_image_path + "/"
+        txtdt = {2.0: "follow",
+                 3.0: "left",
+                 4.0: "right",
+                 5.0: "straight",
+                 0.0: "goal"}
+        viz = self.write_text_on_image(sensor, txtdt[direction], 10)
+        cv2.imwrite(debug_path +
+                    str(self.debug_i).zfill(9) +
+                    ".png", viz)
+        self.debug_i += 1
+        print("output image id is: ", self.debug_i)
+
     def compute_action(self, sensors, speed, direction=None):
         if direction == None:
             direction = self.compute_direction((0, 0, 0), (0, 0, 0))
 
-        sensor_pack = []
-        for i in range(len(self._config.sensor_names)):  # sensors
-            print(('Number of sensors: %s' % (len(self._config.sensor_names))))
-            sensor = sensors[i]
-
-            if self._config.sensor_names[i] == 'rgb':
-
-                sensor = sensor[self._image_cut[0]:self._image_cut[1], :, :3]
-                sensor = sensor[:, :, ::-1]
-                sensor = scipy.misc.imresize(sensor, [self._config.sensors_size[i][0], self._config.sensors_size[i][1]])
-
-                # debug, see what's happending during the evaluation process
-                # Yang
-                debug_path = self.temp_image_path + "/"
-                txtdt = {2.0: "follow",
-                         3.0: "left",
-                         4.0: "right",
-                         5.0: "straight",
-                         0.0: "goal"}
-                viz = self.write_text_on_image(sensor, txtdt[direction], 10)
-                cv2.imwrite(debug_path +
-                            str(self.debug_i).zfill(9) +
-                            ".png", viz)
-                self.debug_i += 1
-                print("debug i is ", self.debug_i)
-
-            sensor_pack.append(sensor)
-
-        if len(sensor_pack) > 1:
-            print("sensor pack 0 shape", sensor_pack[0].shape)
-            print("sensor pack 1 shape", sensor_pack[1].shape)
-            image_input = np.concatenate((sensor_pack[0], sensor_pack[1]), axis=2)
-        else:
-            image_input = sensor_pack[0]
-            print(sensor_pack[0].shape)
+        assert(len(self._config.sensor_names) == 1)
+        assert(self._config.sensor_names[0] == 'rgb')
+        image_input = preprocess_image(sensors[0], self._image_cut, self._config.sensors_size[0])
+        self.save_image(image_input, direction)
 
         image_input = image_input.astype(np.float32)
         image_input = np.multiply(image_input, 1.0 / 255.0)
@@ -307,8 +184,9 @@ class CarlaMachine(Agent, Driver):
         if (self._train_manager._config.control_mode == 'single_branch_wp'):
             # Yang: use the waypoints to predict the steer, in theory PID controller, but in reality just P controller
             # TODO: ask, only the regression target is different, others are the same
-            steer, acc, brake, wp1angle, wp2angle = self._control_function(image_input, speed, direction, self._config,
-                                                                           self._sess, self._train_manager)
+            steer, acc, brake, wp1angle, wp2angle = \
+                self._control_function(image_input, speed, direction,
+                                       self._config, self._sess, self._train_manager)
 
             steer_pred = steer
 
@@ -317,16 +195,13 @@ class CarlaMachine(Agent, Driver):
             steer =min(max(steer, -1), 1)
 
             print(('Predicted Steering: ', steer_pred, ' Waypoint Steering: ', steer))
-
         else:
-            steer, acc, brake = self._control_function(image_input, speed, direction, self._config, self._sess,
-                                                       self._train_manager)
+            steer, acc, brake = self._control_function(image_input, speed, direction,
+                                                       self._config, self._sess, self._train_manager)
 
-        if brake < 0.1:
+        if brake < 0.1 or acc > brake:
             brake = 0.0
 
-        if acc > brake:
-            brake = 0.0
         if speed > 35.0 and brake == 0.0:
             acc = 0.0
 
@@ -337,46 +212,26 @@ class CarlaMachine(Agent, Driver):
         control.hand_brake = 0
         control.reverse = 0
 
-        return control  # ,machine_output_functions.get_intermediate_rep(image_input,speed,self._config,self._sess,self._train_manager)
+        return control
 
     # The augmentation should be dependent on speed
     def get_sensor_data(self):
         measurements, _ = self.carla.read_data()
 
-        self._latest_measurements = measurements
-        player_data = measurements.player_measurements
-        pos = [player_data.transform.location.x, player_data.transform.location.y, 22]
-        ori = [player_data.transform.orientation.x, player_data.transform.orientation.y,
-               player_data.transform.orientation.z]
-
         if self.use_planner:
-            # TODO: bug Yang, it's not clear where the episode_config come from, disable use_planner for now
-            if sldist([player_data.transform.location.x, player_data.transform.location.y],
-                      [self.positions[self.episode_config[1]].location.x,
-                       self.positions[self.episode_config[1]].location.y]) < self._dist_to_activate:
-                self._reset()
-
-            print('Selected Position ', self.episode_config[1], 'from len ', len(self.positions))
-            direction, _ = self.planner.get_next_command(pos, ori, [self.positions[self.episode_config[1]].location.x,
-                                                                    self.positions[self.episode_config[1]].location.y,
-                                                                    22], (1, 0, 0))
-            print(direction)
+            # This function should be implemented by the carla benchmark, because it's machine execution, planning target
+            raise ValueError()
         else:
             direction = 2.0
 
         return measurements, direction
 
     def compute_perception_activations(self, sensor, speed):
-        # sensor = sensor[self._image_cut[0]:self._image_cut[1],:,:]
         sensor = scipy.misc.imresize(sensor, [self._config.network_input_size[0], self._config.network_input_size[1]])
         image_input = sensor.astype(np.float32)
         image_input = np.multiply(image_input, 1.0 / 255.0)
-        # vbp_image =  machine_output_functions.vbp(image_input,speed,self._config,self._sess,self._train_manager)
         vbp_image = machine_output_functions.seg_viz(image_input, speed, self._config, self._sess, self._train_manager)
 
-        # min_max_scaler = preprocessing.MinMaxScaler()
-        # vbp_image = min_max_scaler.fit_transform(np.squeeze(vbp_image))
-        # print vbp_image.shape
         return 0.4 * grayscale_colormap(np.squeeze(vbp_image), 'jet') + 0.6 * image_input  # inferno
 
     def act(self, action):

@@ -3,25 +3,11 @@ import sys
 sys.path.append('../configuration')
 sys.path.append('../input')
 sys.path.append('../train')
+sys.path.append('../utils')
 from config import *
 from dataset_manager import *
 from training_manager import TrainManager
-
-
-def restore_session(sess, saver, models_path):
-    ckpt = 0
-    if not os.path.exists(models_path):
-        os.mkdir(models_path)
-
-    ckpt = tf.train.get_checkpoint_state(models_path)
-    if ckpt:
-        print('Restoring from ', ckpt.model_checkpoint_path)
-        saver.restore(sess, ckpt.model_checkpoint_path)
-    else:
-        ckpt = 0
-
-    return ckpt
-
+from common_util import restore_session
 
 def save_model(saver, sess, models_path, i):
     saver.save(sess, models_path + 'model.ckpt', global_step=i)

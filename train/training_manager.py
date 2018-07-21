@@ -1,7 +1,7 @@
 import sys
 
 sys.path.append('train')
-
+sys.path.append('utils')
 import time
 import loss_functions
 import tensorflow as tf
@@ -10,24 +10,6 @@ from enet import *
 from erfnet import *
 
 from network import one_hot_to_image, image_to_one_hot, label_to_one_hot
-
-
-def restore_session(sess, saver, models_path):
-    ckpt = 0
-    if not os.path.exists(models_path):
-        os.makedirs(models_path)
-        os.mkdir(models_path + "/train/")
-        os.mkdir(models_path + "/val/")
-
-    ckpt = tf.train.get_checkpoint_state(models_path)
-    if ckpt:
-        print('Restoring from ', ckpt.model_checkpoint_path)
-        saver.restore(sess, ckpt.model_checkpoint_path)
-    else:
-        ckpt = 0
-
-    return ckpt
-
 
 def save_model(saver, sess, models_path, i):
     if not os.path.exists(models_path):
@@ -105,109 +87,6 @@ class TrainManager(object):
                                                                                                            self._config.image_size,
                                                                                                            self._dout,
                                                                                                            self._config)
-
-    def build_seg_network_gt_one_hot_join(self):
-        # label to one hot
-
-        """ Depends on the actual input """
-
-        with tf.name_scope("Network"):
-            network_input = label_to_one_hot(self._input_images, self._config.number_of_labels)
-            self._output_network, self._vis_images, self._features, self._weights = self._create_structure(tf,
-                                                                                                           network_input,
-                                                                                                           self._input_data,
-                                                                                                           self._config.image_size,
-                                                                                                           self._dout,
-                                                                                                           self._config)
-            self._gray = one_hot_to_image(network_input)
-            self._gray = tf.expand_dims(self._gray, -1)
-
-    def build_seg_network_gt_one_hot(self):
-        # image to one hot
-
-        """ Depends on the actual input """
-
-        with tf.name_scope("Network"):
-            self._output_network, self._vis_images, self._features, self._weights = self._create_structure(tf,
-                                                                                                           image_to_one_hot(
-                                                                                                               self._input_images,
-                                                                                                               self._config.number_of_labels),
-                                                                                                           self._input_data,
-                                                                                                           self._config.image_size,
-                                                                                                           self._dout,
-                                                                                                           self._config)
-
-    def build_rgb_seg_network_one_hot(self):
-
-        """ Depends on the actual input """
-
-        with tf.name_scope("Network"):
-            network_input = tf.concat([self._input_images[:, :, :, 0:3],
-                                       image_to_one_hot(self._input_images[:, :, :, 3:4],
-                                                        self._config.number_of_labels)], 3)
-
-            self._output_network, self._vis_images, self._features, self._weights = self._create_structure(tf,
-                                                                                                           network_input,
-                                                                                                           self._input_data,
-                                                                                                           self._config.image_size,
-                                                                                                           self._dout,
-                                                                                                           self._config)
-
-    def build_rgb_seg_network_enet(self):
-
-        """ Depends on the actual input """
-
-        self._seg_network = \
-        ENet_Small(self._input_images[:, :, :, 0:3], self._config.number_of_labels, batch_size=self._config.batch_size,
-                   reuse=self._reuse, is_training=self._config.train_segmentation)[0]
-        with tf.name_scope("Network"):
-            # with tf.variable_scope("Network",reuse=self._reuse):
-            # print  self._seg_network
-            self._gray = one_hot_to_image(self._seg_network)
-            self._gray = tf.expand_dims(self._gray, -1)
-            self._sensor_input = tf.concat([self._input_images[:, :, :, 0:3], self._gray], 3)
-
-            self._output_network, self._vis_images, self._features, self._weights \
-                = self._create_structure(tf, self._sensor_input, self._input_data, self._config.image_size, self._dout,
-                                         self._config)
-
-    def build_rgb_seg_network_enet_one_hot(self):
-        """ Depends on the actual input """
-
-        self._seg_network = \
-        ENet_Small(self._input_images[:, :, :, 0:3], self._config.number_of_labels, batch_size=self._config.batch_size,
-                   reuse=self._reuse, is_training=self._config.train_segmentation)[0]
-        with tf.name_scope("Network"):
-            # with tf.variable_scope("Network",reuse=self._reuse):
-            # print  self._seg_network
-
-            self._sensor_input = tf.concat([self._input_images[:, :, :, 0:3], self._seg_network], 3)
-            # Just for visualization
-            self._gray = one_hot_to_image(self._seg_network)
-            self._gray = tf.expand_dims(self._gray, -1)
-
-            self._output_network, self._vis_images, self._features, self._weights \
-                = self._create_structure(tf, self._sensor_input, self._input_data, self._config.image_size, self._dout,
-                                         self._config)
-
-    def build_seg_network_enet_one_hot(self):
-        """ Depends on the actual input """
-
-        self._seg_network = \
-        ENet_Small(self._input_images[:, :, :, 0:3], self._config.number_of_labels, batch_size=self._config.batch_size,
-                   reuse=self._reuse, is_training=self._config.train_segmentation)[0]
-        with tf.name_scope("Network"):
-            # with tf.variable_scope("Network",reuse=self._reuse):
-            # print  self._seg_network
-
-            self._sensor_input = self._seg_network
-            # Just for visualization
-            self._gray = one_hot_to_image(self._seg_network)
-            self._gray = tf.expand_dims(self._gray, -1)
-
-            self._output_network, self._vis_images, self._features, self._weights \
-                = self._create_structure(tf, self._sensor_input, self._input_data, self._config.image_size, self._dout,
-                                         self._config)
 
     def build_seg_network_erfnet_one_hot(self):
         """ Depends on the actual input """

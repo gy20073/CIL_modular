@@ -4,10 +4,11 @@ sys.path.append('configuration')
 sys.path.append('input')
 sys.path.append('train')
 sys.path.append('output')
+sys.path.append('utils')
 # from config import *
 from dataset_manager import *
 from training_manager import TrainManager
-from training_manager import restore_session
+from common_util import restore_session
 from training_manager import get_last_iteration
 from training_manager import save_model
 
@@ -39,43 +40,13 @@ def train(gpu_number, experiment_name, path, memory_fraction, port):
 
     training_manager = TrainManager(conf_module.configTrain(), None)
 
-    if hasattr(conf_module.configTrain(), 'rgb_seg_network_one_hot'):
-        print("Bulding: rgb_seg_network_one_hot")
-        training_manager.build_rgb_seg_network_one_hot()
+    if hasattr(conf_module.configTrain(), 'seg_network_erfnet_one_hot'):
+        print("Bulding: seg_network_erfnet_one_hot")
+        training_manager.build_seg_network_erfnet_one_hot()
 
     else:
-        if hasattr(conf_module.configTrain(), 'seg_network_gt_one_hot'):
-            print("Bulding: seg_network_gt_one_hot")
-            training_manager.build_seg_network_gt_one_hot()
-
-        else:
-            if hasattr(conf_module.configTrain(), 'seg_network_gt_one_hot_join'):
-                print("Bulding: seg_network_gt_one_hot_join")
-                training_manager.build_seg_network_gt_one_hot_join()
-
-            else:
-                if hasattr(conf_module.configTrain(), 'rgb_seg_network_enet'):
-                    print("Bulding: rgb_seg_network_enet")
-                    training_manager.build_rgb_seg_network_enet()
-
-                else:
-                    if hasattr(conf_module.configTrain(), 'rgb_seg_network_enet_one_hot'):
-                        print("Bulding: rgb_seg_network_enet_one_hot")
-                        training_manager.build_rgb_seg_network_enet_one_hot()
-
-                    else:
-                        if hasattr(conf_module.configTrain(), 'seg_network_enet_one_hot'):
-                            print("Bulding: seg_network_enet_one_hot")
-                            training_manager.build_seg_network_enet_one_hot()
-
-                        else:
-                            if hasattr(conf_module.configTrain(), 'seg_network_erfnet_one_hot'):
-                                print("Bulding: seg_network_erfnet_one_hot")
-                                training_manager.build_seg_network_erfnet_one_hot()
-
-                            else:
-                                print("Bulding: standard_network")
-                                training_manager.build_network()
+        print("Bulding: standard_network")
+        training_manager.build_network()
 
     training_manager.build_loss()
 

@@ -17,6 +17,7 @@ from screen_manager import ScreenManager
 
 from drawing_tools import *
 from extra import *
+from common_util import preprocess_image
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -105,12 +106,9 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
             if drive_config.show_screen:
                 if drive_config.interface == "Carla":
                     print('fps', 1.0 / (time.time() - capture_time))
-                    image = measurements['BGRA'][
-                                         drive_config.middle_camera][
-                                         drive_config.image_cut[0]:drive_config.image_cut[1], :, :]
-                    image = image[:, :, :3]
-                    image = image[:, :, ::-1]
-
+                    image = preprocess_image(measurements['BGRA'][drive_config.middle_camera],
+                                             drive_config.image_cut,
+                                             None)
                     image.setflags(write=1)
                     screen_manager.plot_camera_steer(image, actions.steer, [0, 0])
                 else:

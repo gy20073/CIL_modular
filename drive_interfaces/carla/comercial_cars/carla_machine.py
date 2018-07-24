@@ -7,7 +7,6 @@ from PIL import ImageDraw, Image, ImageFont
 sys.path.append('../train')
 sldist = lambda c1, c2: math.sqrt((c2[0] - c1[0])**2 + (c2[1] - c1[1])**2)
 # carla related import
-from carla.planner.planner import Planner
 from carla.agent.agent import Agent
 from carla.client import VehicleControl
 from carla.client import make_carla_client
@@ -57,9 +56,8 @@ class CarlaMachine(Agent, Driver):
 
         self._control_function = getattr(machine_output_functions, self._train_manager._config.control_mode)
         self._image_cut = driver_conf.image_cut
-        self.use_planner = driver_conf.use_planner
-        if driver_conf.use_planner:
-            self.planner = Planner(driver_conf.city_name)
+
+        assert(driver_conf.use_planner == False)
 
         self._host = driver_conf.host
         self._port = driver_conf.port
@@ -105,26 +103,19 @@ class CarlaMachine(Agent, Driver):
         return [self._left_button, self._right_button, self._straight_button]
 
     def compute_direction(self, pos, ori):  # This should have maybe some global position... GPS stuff
-        if self.use_planner:
-            command = self.planner.get_next_command(pos, ori,
-                                                    (self.positions[self._target].location.x, self.positions[self._target].location.y, 22),
-                                                    (1.0, 0.02, -0.001))
-            return command
+        # Button 3 has priority
+        if 'Control' not in set(self._config.inputs_names):
+            return None
 
+        button_vec = self._get_direction_buttons()
+        if sum(button_vec) == 0:  # Nothing
+            return 2
+        elif button_vec[0] == True:  # Left
+            return 3
+        elif button_vec[1] == True:  # Right
+            return 4
         else:
-            # Button 3 has priority
-            if 'Control' not in set(self._config.inputs_names):
-                return None
-
-            button_vec = self._get_direction_buttons()
-            if sum(button_vec) == 0:  # Nothing
-                return 2
-            elif button_vec[0] == True:  # Left
-                return 3
-            elif button_vec[1] == True:  # Right
-                return 4
-            else:
-                return 5
+            return 5
 
     def get_recording(self):
         return False
@@ -217,12 +208,7 @@ class CarlaMachine(Agent, Driver):
     # The augmentation should be dependent on speed
     def get_sensor_data(self):
         measurements, _ = self.carla.read_data()
-
-        if self.use_planner:
-            # This function should be implemented by the carla benchmark, because it's machine execution, planning target
-            raise ValueError()
-        else:
-            direction = 2.0
+        direction = 2.0
 
         return measurements, direction
 

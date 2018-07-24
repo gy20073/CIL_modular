@@ -1,19 +1,14 @@
 import pygame
 
-
-class ImageData():
-    def __init__(self):
-        self.raw_rgb = []
-        self.rgb = []
-        self.depth = []
-        self.scene_seg = []
-
-
-from carla import CARLA
-from carla import Control
 from carla.agent import *
-from carla import Planner
 import numpy as np
+
+# replacing the old version of carla
+from carla.planner.planner import Planner
+from carla.agent.agent import Agent
+from carla.client import VehicleControl
+from carla.client import make_carla_client
+from carla import image_converter
 
 sldist = lambda c1, c2: math.sqrt((c2[0] - c1[0]) ** 2 + (c2[1] - c1[1]) ** 2)
 import time
@@ -56,25 +51,23 @@ def find_valid_episode_position(positions, waypointer):
 
 class CarlaHuman(Driver):
     def __init__(self, driver_conf):
-
         Driver.__init__(self)
         self._straight_button = False
         self._left_button = False
         self._right_button = False
+
         self._recording = False
         self._skiped_frames = 20
 
-        # load a manager to deal with test data
         self.use_planner = driver_conf.use_planner
 
         if driver_conf.use_planner:
-            self.planner = Planner('drive_interfaces/carla/comercial_cars/' + driver_conf.city_name + '.txt', \
-                                   'drive_interfaces/carla/comercial_cars/' + driver_conf.city_name + '.png')
+            self.planner = Planner(driver_conf.city_name)
 
         self._host = driver_conf.host
         self._port = driver_conf.port
         self._config_path = driver_conf.carla_config
-        self._resolution = driver_conf.resolution
+
         self._autopilot = driver_conf.autopilot
         self._reset_period = driver_conf.reset_period
         self._driver_conf = driver_conf
@@ -85,7 +78,7 @@ class CarlaHuman(Driver):
 
     def start(self):
 
-        self.carla = CARLA(self._host, self._port)
+        self.carla = make_carla_client(self._host, self._port)
 
         self._reset()
 
@@ -207,7 +200,7 @@ class CarlaHuman(Driver):
             if (self.joystick.get_button(2)):
                 self._rear = False
 
-            control = Control()
+            control = VehicleControl()
             control.steer = steering_axis
             control.throttle = -(acc_axis - 1) / 2.0
             control.brake = -(brake_axis - 1) / 2.0

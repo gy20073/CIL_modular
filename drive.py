@@ -98,7 +98,7 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
             actions = driver.compute_action([measurements['BGRA'][drive_config.middle_camera],
                                              measurements['Labels'][drive_config.middle_camera]],
                                             speed)  # measurements.speed
-            action_noisy, drifting_time, will_drift = noiser.compute_noise(actions, speed)
+            action_noisy = noiser.compute_noise(actions, speed)
 
             if recording:
                 recorder.record(measurements, actions, action_noisy, direction, driver.get_waypoints())

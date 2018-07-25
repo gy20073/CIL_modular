@@ -1,161 +1,105 @@
-import copy
-import random
-import time
-
+import copy, random, time
 
 class Noiser(object):
     # define frequency into noise events per minute
     # define the amount_of_time of setting the noise
 
-
-    # NOISER GTA CONFIGURATION
-    # frequency=15, intensity = 8,min_noise_time_amount = 0.5
-
     # NOISER CARLA CONFIGURATION
     # frequency=15, intensity = 5 ,min_noise_time_amount = 0.5
 
-    # NOISER CARLA AGENT CONFIGURATION
-    # frequency=15, intensity = 5 ,min_noise_time_amount = 0.5
-
-    # NOISER DEEPRC CONFIGURATION
-    # frequency=20, intensity = 5 ,min_noise_time_amount = 0.5
-
     def __init__(self, noise_type, frequency=15, intensity=5, min_noise_time_amount=0.5):
-
+        # specifications from outside
         self.noise_type = noise_type
         self.frequency = frequency
-        self.noise_being_set = False
+        self.intensity = intensity
+        self.min_noise_time_amount = min_noise_time_amount
+
+        # FSM state variables
         self.noise_start_time = time.time()
         self.noise_end_time = time.time() + 1
-        self.min_noise_time_amount = min_noise_time_amount
-        self.noise_time_amount = min_noise_time_amount + float(random.randint(50, 200) / 100.0)
         self.second_counter = time.time()
-        self.steer_noise_time = 0
-        self.intensity = intensity
-        self.remove_noise = False
-        self.current_noise_mean = 0
+        self.spike_decay_stage = False
+        self.spike_rise_stage = False
 
-    def set_noise(self):
+        # noise parameter variables
+        self.noise_time_amount = min_noise_time_amount + float(random.randint(50, 200) / 100.0)
+        self.noise_sign = 1.0
 
+    def randomize_noise_sign(self):
         if self.noise_type == 'Spike':  # spike noise there are no variations on current noise over time
-
-            # flip between positive and negative
-            coin = random.randint(0, 1)
-            if coin == 0:  # negative
-                self.current_noise_mean = 0.001  # -random.gauss(0.05,0.02)
-            else:  # positive
-                self.current_noise_mean = -0.001  # random.gauss(0.05,0.02)
+            self.noise_sign = float(random.randint(0, 1) * 2 - 1)
 
     def get_noise(self):
+        assert(self.noise_type == 'Spike')
+        # first compute for positive noise
+        if self.spike_rise_stage:
+            time_offset = time.time() - self.noise_start_time
+        elif self.spike_decay_stage:
+            time_offset = (self.noise_end_time - self.noise_start_time) - (time.time() - self.noise_end_time)
+        else:
+            raise ValueError()
 
-        if self.noise_type == 'Spike':
-            if self.current_noise_mean > 0:
+        noise = 0.001 + time_offset * 0.03 * self.intensity
+        noise = min(noise, 0.55) * self.noise_sign
 
-                return min(0.55,
-                           self.current_noise_mean + (time.time() - self.noise_start_time) * 0.03 * self.intensity)
+        return noise
+
+    def is_time_for_noise(self):
+        # This implements a FSM, where there are 3 states: no noise, spike rise stage, spike decay stage
+        # At state no noise, if a second passed, with self.frequency/60, we will enter the spike rise stage
+        # all state variables:
+        # start_time, end_time, second_counter, spike_rise_stage, spike_decay_stage
+        # noise parameters: noise_time_amount, noise_sign
+
+        if not self.spike_rise_stage and not self.spike_decay_stage:
+            # state no noise
+            if time.time() - self.second_counter >= 1.0:
+                self.second_counter = time.time()
+                if random.randint(0, 60) < self.frequency:
+                    self.spike_rise_stage = True
+                    self.randomize_noise_sign()
+                    self.noise_time_amount = self.min_noise_time_amount + random.randint(50, 200) / 100.0
+                    self.noise_start_time = time.time()
+                    return True
+                else:
+                    return False
             else:
+                return False
 
-                return max(-0.55,
-                           self.current_noise_mean - (time.time() - self.noise_start_time) * 0.03 * self.intensity)
-
-    def get_noise_removing(self):
-        # print 'REMOVING'
-        added_noise = (self.noise_end_time - self.noise_start_time) * 0.02 * self.intensity
-        # print added_noise
-        if self.noise_type == 'Spike':
-            if self.current_noise_mean > 0:
-                added_noise = min(0.55, added_noise + self.current_noise_mean)
-                return added_noise - (time.time() - self.noise_end_time) * 0.03 * self.intensity
-            else:
-                added_noise = max(-0.55, self.current_noise_mean - added_noise)
-                return added_noise + (time.time() - self.noise_end_time) * 0.03 * self.intensity
-
-    def is_time_for_noise(self, steer):
-
-        # Count Seconds
-        second_passed = False
-        if time.time() - self.second_counter >= 1.0:
-            second_passed = True
-            self.second_counter = time.time()
-
-        if time.time() - self.noise_start_time >= self.noise_time_amount and not self.remove_noise and self.noise_being_set:
-            self.noise_being_set = False
-            self.remove_noise = True
-            self.noise_end_time = time.time()
-
-        if self.noise_being_set:
+        elif self.spike_rise_stage:
+            assert(self.spike_decay_stage == False)
+            if time.time() - self.noise_start_time >= self.noise_time_amount:
+                self.spike_rise_stage = False
+                self.spike_decay_stage = True
+                self.noise_end_time = time.time()
             return True
 
-        if self.remove_noise:
-            # print "TIME REMOVING ",(time.time()-self.noise_end_time)
-            if (time.time() - self.noise_end_time) > (self.noise_time_amount):  # if half the amount put passed
-                self.remove_noise = False
-                self.noise_time_amount = self.min_noise_time_amount + float(random.randint(50, 200) / 100.0)
+        elif self.spike_decay_stage:
+            assert(self.spike_rise_stage == False)
+            if time.time() - self.noise_end_time > self.noise_time_amount:
+                self.spike_decay_stage = False
+                self.second_counter = time.time()
                 return False
             else:
                 return True
 
-        if second_passed and not self.noise_being_set:  # Ok, if noise is not being set but a second passed... we may start puting more
-
-            seed = random.randint(0, 60)
-            if seed < self.frequency:
-                if not self.noise_being_set:
-                    self.noise_being_set = True
-                    self.set_noise()
-                    self.steer_noise_time = steer
-                    self.noise_start_time = time.time()
-                return True
-            else:
-                return False
-
-        else:
-            return False
-
-    def set_noise_exist(self, noise_exist):
-        self.noise_being_set = noise_exist
-
-    def compute_noise(self, action, speed=20):
-
-        # noisy_action = action
+    def compute_noise(self, action, speed_kmh=20):
         if self.noise_type == 'None':
-            return action, False, False
+            return action
 
         if self.noise_type == 'Spike':
-
-            if self.is_time_for_noise(action.steer):
-                steer = action.steer
-
-                if self.remove_noise:
-                    steer_noisy = max(min(steer + self.get_noise_removing() * (30 / (1.5 * speed + 5)), 1), -1)
-
-                else:
-                    steer_noisy = max(min(steer + self.get_noise() * (30 / (1.5 * speed + 5)), 1), -1)
+            if self.is_time_for_noise():
+                minmax = lambda x: max(x, min(x, 1.0), -1.0)
+                steer_noisy = minmax(action.steer + self.get_noise() * (30 / (1.5 * speed_kmh + 5)))
 
                 noisy_action = copy.deepcopy(action)
-
                 noisy_action.steer = steer_noisy
-
-                # print 'timefornosie'
-                return noisy_action, False, not self.remove_noise
-
-
-
+                return noisy_action
 
             else:
-                return action, False, False
+                return action
 
-        if self.noise_type == 'Manual':
-            if self.is_time_for_noise(action.steer):
-
-                if self.remove_noise:
-                    drifting_time = self.noise_time_amount - (time.time() - self.noise_end_time)
-
-                else:
-                    drifting_time = self.noise_time_amount - (time.time() - self.noise_start_time)
-
-                return action, drifting_time, not self.remove_noise
-            else:
-                return action, 0.0, False
+        raise ValueError("invalid noisy type: " + self.noise_type)
 
 
 if __name__ == '__main__':

@@ -1,50 +1,41 @@
-import pygame
-
-from carla.agent import *
+import pygame, io, math, time
+from configparser import ConfigParser
 import numpy as np
 
-# replacing the old version of carla
 from carla.planner.planner import Planner
-from carla.agent.agent import Agent
 from carla.client import VehicleControl
 from carla.client import make_carla_client
-from carla import image_converter
 
-sldist = lambda c1, c2: math.sqrt((c2[0] - c1[0]) ** 2 + (c2[1] - c1[1]) ** 2)
-import time
-from configparser import ConfigParser
 from driver import Driver
 
+sldist = lambda c1, c2: math.sqrt((c2[0] - c1[0]) ** 2 + (c2[1] - c1[1]) ** 2)
 
-def find_valid_episode_position(positions, waypointer):
-    found_match = False
-    while not found_match:
+def v3d_to_array(v3d):
+    return [v3d.x, v3d.y, v3d.z]
+
+def find_valid_episode_position(positions, planner):
+    while True:
+        print("a new trail to find a start and end position")
         index_start = np.random.randint(len(positions))
         start_pos = positions[index_start]
-        if not waypointer.test_position((start_pos.location.x, start_pos.location.y, 22), \
-                                        (start_pos.orientation.x, start_pos.orientation.y, start_pos.orientation.z)):
+        # The test position func means is_away_from_intersection
+        if not planner.test_position(v3d_to_array(start_pos.location)):
             continue
+
         index_goal = np.random.randint(len(positions))
-        if index_goal == index_start:
-            continue
-
-        print((' TESTING (', index_start, ',', index_goal, ')'))
         goals_pos = positions[index_goal]
-        if not waypointer.test_position((goals_pos.location.x, goals_pos.location.y, 22), \
-                                        (goals_pos.orientation.x, goals_pos.orientation.y, goals_pos.orientation.z)):
-            continue
-        if sldist([start_pos.location.x, start_pos.location.y], [goals_pos.location.x, goals_pos.location.y]) < 25000.0:
-            print(('COntinued on distance ',
-                   sldist([start_pos.location.x, start_pos.location.y], [goals_pos.location.x, goals_pos.location.y])))
-
+        print((' TESTING start and end location (', index_start, ',', index_goal, ')'))
+        if not planner.test_position(v3d_to_array(goals_pos.location)):
             continue
 
-        if waypointer.test_pair((start_pos.location.x, start_pos.location.y, 22) \
-                , (start_pos.orientation.x, start_pos.orientation.y, start_pos.orientation.z), \
-                                (goals_pos.location.x, goals_pos.location.y, 22)):
-            found_match = True
-        waypointer.reset()
-    waypointer.reset()
+        dist = sldist([start_pos.location.x, start_pos.location.y], [goals_pos.location.x, goals_pos.location.y])
+        if dist < 250.0:
+            print("continue because distance too close", dist, start_pos, goals_pos)
+            continue
+
+        if planner.is_there_posible_route(v3d_to_array(start_pos.location), v3d_to_array(start_pos.orientation),
+                                          v3d_to_array(goals_pos.location), v3d_to_array(goals_pos.orientation)):
+            break
 
     return index_start, index_goal
 
@@ -52,34 +43,33 @@ def find_valid_episode_position(positions, waypointer):
 class CarlaHuman(Driver):
     def __init__(self, driver_conf):
         Driver.__init__(self)
+        # some behaviors
+        self._autopilot = driver_conf.autopilot
+        self._reset_period = driver_conf.reset_period # those reset period are in the actual system time, not in simulation time
+        self._goal_reaching_threshold = 3
+        self.use_planner = driver_conf.use_planner
+        # we need the planner to find a valid episode, so we initialize one no matter what
+        self.planner = Planner(driver_conf.city_name)
+
+        # resources
+        self._host = driver_conf.host
+        self._port = driver_conf.port
+
+        # various config files
+        self._driver_conf = driver_conf
+        self._config_path = driver_conf.carla_config
+
+        # some initializations
         self._straight_button = False
         self._left_button = False
         self._right_button = False
 
+        self._rear = False
         self._recording = False
         self._skiped_frames = 20
 
-        self.use_planner = driver_conf.use_planner
-
-        if driver_conf.use_planner:
-            self.planner = Planner(driver_conf.city_name)
-
-        self._host = driver_conf.host
-        self._port = driver_conf.port
-        self._config_path = driver_conf.carla_config
-
-        self._autopilot = driver_conf.autopilot
-        self._reset_period = driver_conf.reset_period
-        self._driver_conf = driver_conf
-
-        self._rear = False
-        if self._autopilot:
-            self._agent = Agent(ConfigAgent(driver_conf.city_name))
-
     def start(self):
-
-        self.carla = make_carla_client(self._host, self._port)
-
+        self.carla = make_carla_client(self._host, int(self._port))
         self._reset()
 
         if not self._autopilot:
@@ -94,34 +84,26 @@ class CarlaHuman(Driver):
             self.joystick.init()
 
     def _reset(self):
+        self._start_time = time.time()
 
+        # create the carla config based on template and the params passed in
         config = ConfigParser()
-
         config.optionxform = str
         config.read(self._config_path)
-        config.set('CARLA/LevelSettings', 'NumberOfVehicles', self._driver_conf.cars)
-
+        config.set('CARLA/LevelSettings', 'NumberOfVehicles',    self._driver_conf.cars)
         config.set('CARLA/LevelSettings', 'NumberOfPedestrians', self._driver_conf.pedestrians)
+        config.set('CARLA/LevelSettings', 'WeatherId',           self._driver_conf.weather)
+        output = io.StringIO()
+        config.write(output)
+        scene_descriptions = self.carla.load_settings(output.getvalue())
 
-        config.set('CARLA/LevelSettings', 'WeatherId', self._driver_conf.weather)
+        # based on the scene descriptions, find the start and end positions
+        self.positions = scene_descriptions.player_start_spots
+        # the episode_config saves [start_index, end_index]
+        self.episode_config = find_valid_episode_position(self.positions, self.planner)
 
-        # Write down a temporary init_file to be used on the experiments
-        temp_f_name = 'p' + str(self._driver_conf.pedestrians) + '_c' + str(self._driver_conf.cars) + "_w" \
-                      + str(self._driver_conf.weather) + '.ini'
-
-        with open(temp_f_name, 'w') as configfile:
-            config.write(configfile)
-
-        self._start_time = time.time()
-        self.positions = self.carla.loadConfigurationFile(self._config_path)
-        self.episode_config = find_valid_episode_position(self.positions, self._agent.waypointer)
-        self._agent = Agent(ConfigAgent(self._driver_conf.city_name))
-
-        self.carla.newEpisode(self.episode_config[0])
-
-        print('RESET ON POSITION ', self.episode_config[0])
-        self._dist_to_activate = 300
-        # Set 10 frames to skip
+        self.carla.start_episode(self.episode_config[0])
+        print('RESET ON POSITION ', self.episode_config[0], ", the target location is: ", self.episode_config[1])
         self._skiped_frames = 0
 
     def _get_direction_buttons(self):
@@ -149,7 +131,6 @@ class CarlaHuman(Driver):
         return [self._left_button, self._right_button, self._straight_button]
 
     def get_recording(self):
-
         if self._autopilot:
             if self._skiped_frames >= 20:
                 return True
@@ -168,31 +149,25 @@ class CarlaHuman(Driver):
     def get_reset(self):
         if self._autopilot:
             # if within auto pilot, reset if long enough or has collisions
-            if time.time() - self._start_time > self._reset_period:
-
-                self._reset()
-            elif self._latest_measurements.player_measurements.collision_vehicles > 0.0 \
-                    or self._latest_measurements.player_measurements.collision_pedestrians > 0.0 or \
-                            self._latest_measurements.player_measurements.collision_other > 0.0:
-
+            if time.time() - self._start_time > self._reset_period \
+              or self._latest_measurements.player_measurements.collision_vehicles    > 0.0 \
+              or self._latest_measurements.player_measurements.collision_pedestrians > 0.0 \
+              or self._latest_measurements.player_measurements.collision_other       > 0.0:
                 self._reset()
         else:
             if (self.joystick.get_button(4)):
                 self._reset()
 
     def get_waypoints(self):
-
-        wp1, wp2 = self._agent.get_active_wps()
+        # TODO: waiting for German Ros to expose the waypoints
+        wp1 = [1.0, 1.0]
+        wp2 = [2.0, 2.0]
         return [wp1, wp2]
 
     def compute_action(self, sensor, speed):
-
-        """ Get Steering """
         if not self._autopilot:
             steering_axis = self.joystick.get_axis(0)
-
             acc_axis = self.joystick.get_axis(2)
-
             brake_axis = self.joystick.get_axis(3)
 
             if (self.joystick.get_button(3)):
@@ -206,43 +181,44 @@ class CarlaHuman(Driver):
             control.brake = -(brake_axis - 1) / 2.0
             if control.brake < 0.001:
                 control.brake = 0.0
-
             control.hand_brake = 0
             control.reverse = self._rear
-
-
         else:
-
-            control = self._agent.get_control(self._latest_measurements, self.positions[self.episode_config[1]])
+            # This relies on the calling of get_sensor_data, otherwise self._latest_measurements are not filled
+            control = self._latest_measurements.player_measurements.autopilot_control
 
         return control
 
     def get_sensor_data(self, goal_pos=None, goal_ori=None):
         # return the latest measurement and the next direction
-        measurements = self.carla.getMeasurements()
+        measurements, sensor_data = self.carla.read_data()
+
         self._latest_measurements = measurements
         player_data = measurements.player_measurements
-        pos = [player_data.transform.location.x, player_data.transform.location.y, 22]
-        ori = [player_data.transform.orientation.x, player_data.transform.orientation.y,
+        pos = [player_data.transform.location.x,
+               player_data.transform.location.y,
+               0.22]
+        ori = [player_data.transform.orientation.x,
+               player_data.transform.orientation.y,
                player_data.transform.orientation.z]
 
         if self.use_planner:
-
-            if sldist([player_data.transform.location.x, player_data.transform.location.y],
+            if sldist([player_data.transform.location.x,
+                       player_data.transform.location.y],
                       [self.positions[self.episode_config[1]].location.x,
-                       self.positions[self.episode_config[1]].location.y]) < self._dist_to_activate:
+                       self.positions[self.episode_config[1]].location.y]) < self._goal_reaching_threshold:
                 self._reset()
 
-            print('Selected Position ', self.episode_config[1], 'from len ', len(self.positions))
-            direction, _ = self.planner.get_next_command(pos, ori, [self.positions[self.episode_config[1]].location.x,
-                                                                    self.positions[self.episode_config[1]].location.y,
-                                                                    22], (1, 0, 0))
-            print(direction)
+            direction = self.planner.get_next_command(pos, ori,
+                                                      [self.positions[self.episode_config[1]].location.x,
+                                                       self.positions[self.episode_config[1]].location.y,
+                                                       0.22],
+                                                      (1, 0, 0))
+            print("planner output direction: ", direction)
         else:
             direction = 2.0
 
         return measurements, direction
 
-    def act(self, action):
-
-        self.carla.sendCommand(action)
+    def act(self, control):
+        self.carla.send_control(control)

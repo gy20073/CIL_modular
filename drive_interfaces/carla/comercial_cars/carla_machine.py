@@ -72,8 +72,9 @@ class CarlaMachine(Agent, Driver):
 
     def start(self):
         self.carla = make_carla_client(self._host, self._port)
-        self.positions = self.carla.loadConfigurationFile(self._config_path)
-        self.carla.newEpisode(random.randint(0, len(self.positions)))
+        with open(self._config_path, "r") as f:
+            self.positions = self.carla.load_settings(f.read()).player_start_spots
+        self.carla.start_episode(random.randint(0, len(self.positions)))
         self._target = random.randint(0, len(self.positions))
 
     def _get_direction_buttons(self):
@@ -220,8 +221,5 @@ class CarlaMachine(Agent, Driver):
 
         return 0.4 * grayscale_colormap(np.squeeze(vbp_image), 'jet') + 0.6 * image_input  # inferno
 
-    def act(self, action):
-        self.carla.sendCommand(action)
-
-    def stop(self):
-        self.carla.stop()
+    def act(self, control):
+        self.carla.send_control(control)

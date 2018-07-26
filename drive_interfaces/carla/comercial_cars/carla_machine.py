@@ -9,7 +9,8 @@ sldist = lambda c1, c2: math.sqrt((c2[0] - c1[0])**2 + (c2[1] - c1[1])**2)
 # carla related import
 from carla.agent.agent import Agent
 from carla.client import VehicleControl
-from carla.client import make_carla_client
+#from carla.client import make_carla_client
+from carla.client import CarlaClient
 from carla import image_converter
 
 from codification import *
@@ -71,7 +72,9 @@ class CarlaMachine(Agent, Driver):
         self.temp_image_path = "./temp/"
 
     def start(self):
-        self.carla = make_carla_client(self._host, self._port)
+        self.carla = CarlaClient(self._host, int(self._port))
+        self.carla.connect()
+
         with open(self._config_path, "r") as f:
             self.positions = self.carla.load_settings(f.read()).player_start_spots
         self.carla.start_episode(random.randint(0, len(self.positions)))
@@ -124,15 +127,15 @@ class CarlaMachine(Agent, Driver):
     def get_reset(self):
         return False
 
-    # TODO: change to the agent interface
+    # TODO: change to the agent interface, this depend on the sensor names
     def run_step(self, measurements, sensor_data, direction, target):
         sensors = []
         for name in self._config.sensor_names:
             if name == 'rgb':
                 sensors.append(image_converter.to_bgra_array(sensor_data["CameraRGB"]))
 
-        speed_KMH = measurements.player_measurements.forward_speed * 3.6
-        control = self.compute_action(sensors, speed_KMH, direction)
+        speed_kmh = measurements.player_measurements.forward_speed * 3.6
+        control = self.compute_action(sensors, speed_kmh, direction)
 
         return control
 
@@ -161,13 +164,13 @@ class CarlaMachine(Agent, Driver):
         self.debug_i += 1
         print("output image id is: ", self.debug_i)
 
-    def compute_action(self, sensors, speed, direction=None):
+    def compute_action(self, sensor, speed_kmh, direction=None):
         if direction == None:
             direction = self.compute_direction((0, 0, 0), (0, 0, 0))
 
         assert(len(self._config.sensor_names) == 1)
         assert(self._config.sensor_names[0] == 'rgb')
-        image_input = preprocess_image(sensors[0], self._image_cut, self._config.sensors_size[0])
+        image_input = preprocess_image(sensor, self._image_cut, self._config.sensors_size[0])
         self.save_image(image_input, direction)
 
         image_input = image_input.astype(np.float32)
@@ -177,7 +180,7 @@ class CarlaMachine(Agent, Driver):
             # Yang: use the waypoints to predict the steer, in theory PID controller, but in reality just P controller
             # TODO: ask, only the regression target is different, others are the same
             steer, acc, brake, wp1angle, wp2angle = \
-                self._control_function(image_input, speed, direction,
+                self._control_function(image_input, speed_kmh, direction,
                                        self._config, self._sess, self._train_manager)
 
             steer_pred = steer
@@ -188,13 +191,13 @@ class CarlaMachine(Agent, Driver):
 
             print(('Predicted Steering: ', steer_pred, ' Waypoint Steering: ', steer))
         else:
-            steer, acc, brake = self._control_function(image_input, speed, direction,
+            steer, acc, brake = self._control_function(image_input, speed_kmh, direction,
                                                        self._config, self._sess, self._train_manager)
 
         if brake < 0.1 or acc > brake:
             brake = 0.0
 
-        if speed > 35.0 and brake == 0.0:
+        if speed_kmh > 35 and brake == 0.0:
             acc = 0.0
 
         control = VehicleControl()
@@ -208,16 +211,16 @@ class CarlaMachine(Agent, Driver):
 
     # The augmentation should be dependent on speed
     def get_sensor_data(self):
-        measurements, _ = self.carla.read_data()
+        measurements, sensor_data = self.carla.read_data()
         direction = 2.0
 
-        return measurements, direction
+        return measurements, sensor_data, direction
 
-    def compute_perception_activations(self, sensor, speed):
+    def compute_perception_activations(self, sensor, speed_kmh):
         sensor = scipy.misc.imresize(sensor, [self._config.network_input_size[0], self._config.network_input_size[1]])
         image_input = sensor.astype(np.float32)
         image_input = np.multiply(image_input, 1.0 / 255.0)
-        vbp_image = machine_output_functions.seg_viz(image_input, speed, self._config, self._sess, self._train_manager)
+        vbp_image = machine_output_functions.seg_viz(image_input, speed_kmh, self._config, self._sess, self._train_manager)
 
         return 0.4 * grayscale_colormap(np.squeeze(vbp_image), 'jet') + 0.6 * image_input  # inferno
 

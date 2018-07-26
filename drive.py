@@ -18,6 +18,7 @@ from screen_manager import ScreenManager
 from drawing_tools import *
 from extra import *
 from common_util import preprocess_image
+from carla import image_converter
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -25,13 +26,13 @@ clock = pygame.time.Clock()
 def get_camera_dict(ini_file):
     config = configparser.ConfigParser()
     config.read(ini_file)
-    cameras = config['CARLA/SceneCapture']['Cameras']
+    cameras = config['CARLA/Sensor']['Sensors']
     camera_dict = {}
     cameras = cameras.split(',')
     print(cameras)
     for i in range(len(cameras)):
-        angle = config['CARLA/SceneCapture/' + cameras[i]]['CameraRotationYaw']
-        camera_dict.update({i: (cameras[i], angle)})
+        angle = config['CARLA/Sensor/' + cameras[i]]['RotationYaw']
+        camera_dict.update({cameras[i]: angle})
 
     return camera_dict
 
@@ -87,26 +88,25 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
         while direction != -1:
             capture_time = time.time()
             # get the sensory data
-            measurements, direction = driver.get_sensor_data()  # Later it would return more image like [rewards,images,segmentation]
+            measurements, sensor_data, direction = driver.get_sensor_data()  # Later it would return more image like [rewards,images,segmentation]
             # decide whether need recording
             recording = driver.get_recording()
             # reset the environment if needed
             driver.get_reset()
 
             # compute the actions based on the image and the speed
-            speed = measurements.player_measurements.forward_speed
-            actions = driver.compute_action([measurements['BGRA'][drive_config.middle_camera],
-                                             measurements['Labels'][drive_config.middle_camera]],
-                                            speed)  # measurements.speed
-            action_noisy = noiser.compute_noise(actions, speed)
+            speed_kmh = measurements.player_measurements.forward_speed * 3.6
+            actions = driver.compute_action(image_converter.to_bgra_array(sensor_data['CameraMiddle']),
+                                            speed_kmh)  # measurements.speed
+            action_noisy = noiser.compute_noise(actions, speed_kmh)
 
             if recording:
-                recorder.record(measurements, actions, action_noisy, direction, driver.get_waypoints())
+                recorder.record(measurements, sensor_data, actions, action_noisy, direction, driver.get_waypoints())
 
             if drive_config.show_screen:
                 if drive_config.interface == "Carla":
                     print('fps', 1.0 / (time.time() - capture_time))
-                    image = preprocess_image(measurements['BGRA'][drive_config.middle_camera],
+                    image = preprocess_image(image_converter.to_bgra_array(sensor_data['CameraMiddle']),
                                              drive_config.image_cut,
                                              None)
                     image.setflags(write=1)
@@ -115,7 +115,7 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
                     raise ValueError("Not supported interface")
 
             if drive_config.type_of_driver == "Machine" and drive_config.show_screen and drive_config.plot_vbp:
-                image_vbp = driver.compute_perception_activations(image, speed)
+                image_vbp = driver.compute_perception_activations(image, speed_kmh)
                 screen_manager.plot_camera(image_vbp, [1, 0])
 
             iteration += 1

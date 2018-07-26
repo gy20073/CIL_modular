@@ -4,7 +4,8 @@ import numpy as np
 
 from carla.planner.planner import Planner
 from carla.client import VehicleControl
-from carla.client import make_carla_client
+#from carla.client import make_carla_client
+from carla.client import CarlaClient
 
 from driver import Driver
 
@@ -69,7 +70,9 @@ class CarlaHuman(Driver):
         self._skiped_frames = 20
 
     def start(self):
-        self.carla = make_carla_client(self._host, int(self._port))
+        self.carla = CarlaClient(self._host, int(self._port))
+        self.carla.connect()
+
         self._reset()
 
         if not self._autopilot:
@@ -192,17 +195,17 @@ class CarlaHuman(Driver):
     def get_sensor_data(self, goal_pos=None, goal_ori=None):
         # return the latest measurement and the next direction
         measurements, sensor_data = self.carla.read_data()
-
         self._latest_measurements = measurements
-        player_data = measurements.player_measurements
-        pos = [player_data.transform.location.x,
-               player_data.transform.location.y,
-               0.22]
-        ori = [player_data.transform.orientation.x,
-               player_data.transform.orientation.y,
-               player_data.transform.orientation.z]
 
         if self.use_planner:
+            player_data = measurements.player_measurements
+            pos = [player_data.transform.location.x,
+                   player_data.transform.location.y,
+                   0.22]
+            ori = [player_data.transform.orientation.x,
+                   player_data.transform.orientation.y,
+                   player_data.transform.orientation.z]
+
             if sldist([player_data.transform.location.x,
                        player_data.transform.location.y],
                       [self.positions[self.episode_config[1]].location.x,
@@ -218,7 +221,7 @@ class CarlaHuman(Driver):
         else:
             direction = 2.0
 
-        return measurements, direction
+        return measurements, sensor_data, direction
 
     def act(self, control):
         self.carla.send_control(control)

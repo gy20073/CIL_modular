@@ -1,7 +1,9 @@
-import os, h5py, scipy, cv2, math
+import os, h5py, scipy, cv2, math, sys
 import numpy as np
 from threading import Thread
 from queue import Queue
+sys.path.append('drive_interfaces/carla/carla_client')
+from carla import image_converter
 
 # lets put a big queue for the disk. So I keep it real time while the disk is writing stuff
 def threaded(fn):
@@ -43,9 +45,12 @@ class Recorder(object):
         self._image_size1 = resolution[0]
         self._image_size2 = resolution[1]
         self._image_cut = image_cut
+        self._sensor_names = ['SegRight', 'CameraLeft', 'DepthLeft',
+                              'CameraMiddle', 'SegLeft', 'CameraRight',
+                              'DepthMiddle', 'SegMiddle', 'DepthRight']
 
         # other rewards
-        self._number_rewards = 27 + 4
+        self._number_rewards = 35
         self._camera_dict = camera_dict
 
         # initialize for writing the db
@@ -58,16 +63,16 @@ class Recorder(object):
     def _create_new_db(self):
         # TODO: change the reading part to have the image decoding
         hf = h5py.File(self._file_prefix + 'data_' + str(self._current_file_number).zfill(5) + '.h5', 'w')
-        dt = h5py.special_dtype(vlen=np.dtype('uint8'))
-        self.data_center = hf.create_dataset('rgb',    (self._number_images_per_file,), dtype=dt)
-        self.segs_center = hf.create_dataset('labels', (self._number_images_per_file,), dtype=dt)
-        self.depth_center = hf.create_dataset('depth', (self._number_images_per_file,), dtype=dt)
         self.data_rewards = hf.create_dataset('targets', (self._number_images_per_file, self._number_rewards), 'f')
+        self.sensors={}
+        dt = h5py.special_dtype(vlen=np.dtype('uint8'))
+        for sensor_name in self._sensor_names:
+            self.sensors[sensor_name] = hf.create_dataset(sensor_name, (self._number_images_per_file,), dtype=dt)
 
         return hf
 
-    def record(self, measurements, action, action_noise, direction, waypoints=None):
-        self._data_queue.put([measurements, action, action_noise, direction, waypoints])
+    def record(self, measurements, sensor_data, action, action_noise, direction, waypoints=None):
+        self._data_queue.put([measurements, sensor_data, action, action_noise, direction, waypoints])
 
     @threaded
     def run_disk_writer(self):
@@ -79,96 +84,92 @@ class Recorder(object):
 
     def _write_to_disk(self, data):
         # Use the dictionary for this
-        measurements = data[0]
-        actions = data[1]
-        action_noise = data[2]
-        direction = data[3]
-        waypoints = data[4]
+        measurements, sensor_data, actions, action_noise, direction, waypoints = data
 
-        for i in range(max(len(measurements['BGRA']), len(measurements['Labels']), len(measurements['Depth']))):
-            if self._current_pos_on_file == self._number_images_per_file:
-                self._current_file_number += 1
-                self._current_pos_on_file = 0
-                self._current_hf.close()
-                self._current_hf = self._create_new_db()
+        if self._current_pos_on_file == self._number_images_per_file:
+            self._current_file_number += 1
+            self._current_pos_on_file = 0
+            self._current_hf.close()
+            self._current_hf = self._create_new_db()
+        pos = self._current_pos_on_file
 
-            pos = self._current_pos_on_file
-
-            # Check if there is RGB images
-            if len(measurements['BGRA']) > i:
-                image = measurements['BGRA'][i][self._image_cut[0]:self._image_cut[1], :, :3]
-                image = image[:, :, ::-1]
+        for sensor_name in self._sensor_names:
+            if "depth" in sensor_name.lower():
+                image = image_converter.depth_to_array(sensor_data[sensor_name])
+                image = image[:, :, np.newaxis]
+                image = image[self._image_cut[0]:self._image_cut[1], :, :]
                 image = scipy.misc.imresize(image, [self._image_size2, self._image_size1])
-                self.data_center[pos] = np.fromstring(cv2.imencode(".jpg", image)[1], dtype=np.uint8)
+            elif "camera" in sensor_name.lower():
+                image = image_converter.to_rgb_array(sensor_data[sensor_name])
+                image = image[self._image_cut[0]:self._image_cut[1], :, :]
+                image = scipy.misc.imresize(image, [self._image_size2, self._image_size1])
+            elif "seg" in sensor_name.lower():
+                image = image_converter.labels_to_array(sensor_data[sensor_name])
+                image = image[:, :, np.newaxis]
+                image = image[self._image_cut[0]:self._image_cut[1], :, :]
+                image = scipy.misc.imresize(image, [self._image_size2, self._image_size1], interp='nearest')
+            else:
+                raise
 
-            # Check if there is semantic segmentation images
-            if len(measurements['Labels']) > i:
-                scene_seg = measurements['Labels'][i][self._image_cut[0]:self._image_cut[1], :, 2]
-                scene_seg = scipy.misc.imresize(scene_seg, [self._image_size2, self._image_size1], interp='nearest')
-                scene_seg = scene_seg[:, :, np.newaxis]
-                self.segs_center[pos] = np.fromstring(cv2.imencode(".png", scene_seg)[1],
-                                                      dtype=np.uint8)
+            self.sensors[sensor_name][pos] = np.fromstring(cv2.imencode(".png", image)[1], dtype=np.uint8)
 
-            if len(measurements['Depth']) > i:
-                depth = measurements['Depth'][i][self._image_cut[0]:self._image_cut[1], :, :3]
-                depth = scipy.misc.imresize(depth, [self._image_size2, self._image_size1])
-                self.depth_center[pos] = np.fromstring(cv2.imencode(".png", depth)[1], dtype=np.uint8)
+        self.data_rewards[pos, 0] = actions.steer
+        self.data_rewards[pos, 1] = actions.throttle
+        self.data_rewards[pos, 2] = actions.brake
+        self.data_rewards[pos, 3] = actions.hand_brake
+        self.data_rewards[pos, 4] = actions.reverse
+        self.data_rewards[pos, 5] = action_noise.steer
+        self.data_rewards[pos, 6] = action_noise.throttle
+        self.data_rewards[pos, 7] = action_noise.brake
+        self.data_rewards[pos, 8] = measurements.player_measurements.transform.location.x
+        self.data_rewards[pos, 9] = measurements.player_measurements.transform.location.y
+        self.data_rewards[pos, 10] = measurements.player_measurements.forward_speed # this becomes m/s
+        self.data_rewards[pos, 11] = measurements.player_measurements.collision_other
+        self.data_rewards[pos, 12] = measurements.player_measurements.collision_pedestrians
+        self.data_rewards[pos, 13] = measurements.player_measurements.collision_vehicles
+        self.data_rewards[pos, 14] = measurements.player_measurements.intersection_otherlane
+        self.data_rewards[pos, 15] = measurements.player_measurements.intersection_offroad
+        self.data_rewards[pos, 16] = measurements.player_measurements.acceleration.x
+        self.data_rewards[pos, 17] = measurements.player_measurements.acceleration.y
+        self.data_rewards[pos, 18] = measurements.player_measurements.acceleration.z
+        self.data_rewards[pos, 19] = measurements.platform_timestamp
+        self.data_rewards[pos, 20] = measurements.game_timestamp
+        self.data_rewards[pos, 21] = measurements.player_measurements.transform.orientation.x # TODO: those are deprecated
+        self.data_rewards[pos, 22] = measurements.player_measurements.transform.orientation.y
+        self.data_rewards[pos, 23] = measurements.player_measurements.transform.orientation.z
+        self.data_rewards[pos, 24] = direction
+        self.data_rewards[pos, 25] = 0 # originally i, now, not used
+        self.data_rewards[pos, 26] = 0 # originally this camera's yaw, but now not used
 
-            self.data_rewards[pos, 0] = actions.steer
-            self.data_rewards[pos, 1] = actions.throttle
-            self.data_rewards[pos, 2] = actions.brake
-            self.data_rewards[pos, 3] = actions.hand_brake
-            self.data_rewards[pos, 4] = actions.reverse
-            self.data_rewards[pos, 5] = action_noise.steer
-            self.data_rewards[pos, 6] = action_noise.throttle
-            self.data_rewards[pos, 7] = action_noise.brake
-            self.data_rewards[pos, 8] = measurements.player_measurements.transform.location.x
-            self.data_rewards[pos, 9] = measurements.player_measurements.transform.location.y
-            self.data_rewards[pos, 10] = measurements.player_measurements.forward_speed
-            self.data_rewards[pos, 11] = measurements.player_measurements.collision_other
-            self.data_rewards[pos, 12] = measurements.player_measurements.collision_pedestrians
-            self.data_rewards[pos, 13] = measurements.player_measurements.collision_vehicles
-            self.data_rewards[pos, 14] = measurements.player_measurements.intersection_otherlane
-            self.data_rewards[pos, 15] = measurements.player_measurements.intersection_offroad
-            self.data_rewards[pos, 16] = measurements.player_measurements.acceleration.x
-            self.data_rewards[pos, 17] = measurements.player_measurements.acceleration.y
-            self.data_rewards[pos, 18] = measurements.player_measurements.acceleration.z
-            self.data_rewards[pos, 19] = measurements['WallTime']
-            self.data_rewards[pos, 20] = measurements['GameTime']
-            self.data_rewards[pos, 21] = measurements.player_measurements.transform.orientation.x
-            self.data_rewards[pos, 22] = measurements.player_measurements.transform.orientation.y
-            self.data_rewards[pos, 23] = measurements.player_measurements.transform.orientation.z
-            self.data_rewards[pos, 24] = direction
-            self.data_rewards[pos, 25] = i
-            self.data_rewards[pos, 26] = float(self._camera_dict[i][1]) # angle
-            self.data_rewards[pos, 27] = waypoints[0][0]
-            self.data_rewards[pos, 28] = waypoints[0][1]
-            self.data_rewards[pos, 29] = waypoints[1][0]
-            self.data_rewards[pos, 30] = waypoints[1][1]
+        # TODO: below is waypoints
+        self.data_rewards[pos, 27] = waypoints[0][0]
+        self.data_rewards[pos, 28] = waypoints[0][1]
+        self.data_rewards[pos, 29] = waypoints[1][0]
+        self.data_rewards[pos, 30] = waypoints[1][1]
 
-            # merge the convertwp functionality into this file
-            def get_angle_mag(wp0, wp1):
-                wp_vector, wp_mag = get_vec_dist(wp0, wp1,
-                                                   measurements.player_measurements.transform.location.x,
-                                                   measurements.player_measurements.transform.location.y)
-                if wp_mag > 0:
-                    # TODO: check the definition of x and y, as well as the def of camera angle
-                    wp_angle = get_angle(wp_vector, [measurements.player_measurements.transform.orientation.x,
-                                                     measurements.player_measurements.transform.orientation.y]) - \
-                                math.radians(self.data_rewards[pos, 26])
-                else:
-                    wp_angle = 0
-                return wp_angle, wp_mag
+        # merge the convertwp functionality into this file
+        def get_angle_mag(wp0, wp1):
+            wp_vector, wp_mag = get_vec_dist(wp0, wp1,
+                                               measurements.player_measurements.transform.location.x,
+                                               measurements.player_measurements.transform.location.y)
+            if wp_mag > 0:
+                # TODO: check the definition of x and y, as well as the def of camera angle
+                wp_angle = get_angle(wp_vector, [measurements.player_measurements.transform.orientation.x,
+                                                 measurements.player_measurements.transform.orientation.y]) - \
+                            math.radians(self.data_rewards[pos, 26])
+            else:
+                wp_angle = 0
+            return wp_angle, wp_mag
 
-            wp1_angle, wp1_mag = get_angle_mag(waypoints[0][0], waypoints[0][1])
-            wp2_angle, wp2_mag = get_angle_mag(waypoints[1][0], waypoints[1][1])
+        wp1_angle, wp1_mag = get_angle_mag(waypoints[0][0], waypoints[0][1])
+        wp2_angle, wp2_mag = get_angle_mag(waypoints[1][0], waypoints[1][1])
 
-            self.data_rewards[pos, 31] = wp1_angle
-            self.data_rewards[pos, 32] = wp1_mag
-            self.data_rewards[pos, 33] = wp2_angle
-            self.data_rewards[pos, 34] = wp2_mag
+        self.data_rewards[pos, 31] = wp1_angle
+        self.data_rewards[pos, 32] = wp1_mag
+        self.data_rewards[pos, 33] = wp2_angle
+        self.data_rewards[pos, 34] = wp2_mag
 
-            self._current_pos_on_file += 1
+        self._current_pos_on_file += 1
 
     def close(self):
         self._current_hf.close()

@@ -8,55 +8,7 @@ sys.path.append('utils')
 sys.path.append('input/spliter')
 sys.path.append('structures')
 
-def parse_drive_arguments(args, driver_conf):
-    # Carla Config
-    if args.carla_config is not None:
-        driver_conf.carla_config = args.carla_config
-
-    if args.host is not None:
-        driver_conf.host = args.host
-
-    if args.port is not None:
-        driver_conf.port = int(args.port)
-
-    if args.path is not None:
-        driver_conf.path = args.path
-
-    if args.noise is not None:
-        driver_conf.noise = args.noise
-    if args.driver is not None:
-        driver_conf.type_of_driver = args.driver
-    if args.interface is not None:
-        driver_conf.interface = args.interface
-    if args.number_screens is not None:
-        driver_conf.number_screens = args.number_screens
-    if args.scale_factor is not None:
-        driver_conf.scale_factor = args.scale_factor
-
-    if args.resolution is not None:
-        res_string = args.resolution.split(',')
-        resolution = []
-        resolution.append(int(res_string[0]))
-        resolution.append(int(res_string[1]))
-        driver_conf.resolution = resolution
-
-    if args.image_cut is not None:
-        cut_string = args.image_cut.split(',')
-        image_cut = []
-        image_cut.append(int(cut_string[0]))
-        image_cut.append(int(cut_string[1]))
-        driver_conf.image_cut = image_cut
-
-    return driver_conf
-
-    # def main():
-    #  parser = ap.ArgumentParser(description="My Script")
-    #  parser.add_argument("--myArg")
-    #  args, leftovers = parser.parse_known_args()
-
-    #  if args.myArg is not None:
-    #      print "myArg has been set (value is %s)" % args.myArg
-
+from common_util import parse_drive_arguments
 
 if __name__ == '__main__':
 
@@ -88,7 +40,8 @@ if __name__ == '__main__':
                         help='If we are showing the screen of the player')
     parser.add_argument('-res', '--resolution', help='If we are showing the screen of the player')
     parser.add_argument('-n', '--noise', help='Set the types of noise:  Spike or None')
-    parser.add_argument('--driver', help='Select who is driving, a human or a machine')
+    # TODO: breaking change, from driver to type_of_driver
+    parser.add_argument('--type_of_driver', help='Select who is driving, a human or a machine')
     parser.add_argument('-in', '--interface', help='The environment being used as interface')
     parser.add_argument('-cy', '--city', type=str, help='select the graph from the city being used')
     parser.add_argument('-nc', '--number_screens', help='Set The number of screens that are being ploted')
@@ -103,8 +56,6 @@ if __name__ == '__main__':
         LOG_FILENAME = 'log_manual_control.log'
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG)
         if args.debug:  # set of functions to put the logging to screen
-
-
             root = logging.getLogger()
             root.setLevel(logging.DEBUG)
             ch = logging.StreamHandler(sys.stdout)
@@ -121,7 +72,9 @@ if __name__ == '__main__':
             driver_conf_module = __import__(args.driver_config)
             driver_conf = driver_conf_module.configDrive()
 
-            driver_conf = parse_drive_arguments(args, driver_conf)
+            driver_conf = parse_drive_arguments(args, driver_conf,
+                            attributes=['carla_config', 'host', 'path', 'noise',
+                                      'type_of_driver', 'interface', 'number_screens', 'scale_factor'])
 
             drive(args.experiment_name, driver_conf, args.name, float(args.memory))
 

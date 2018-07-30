@@ -23,20 +23,6 @@ from carla import image_converter
 pygame.init()
 clock = pygame.time.Clock()
 
-def get_camera_dict(ini_file):
-    config = configparser.ConfigParser()
-    config.read(ini_file)
-    cameras = config['CARLA/Sensor']['Sensors']
-    camera_dict = {}
-    cameras = cameras.split(',')
-    print(cameras)
-    for i in range(len(cameras)):
-        angle = config['CARLA/Sensor/' + cameras[i]]['RotationYaw']
-        camera_dict.update({cameras[i]: angle})
-
-    return camera_dict
-
-
 # TODO: TURN this into A FACTORY CLASS
 def get_instance(drive_config, experiment_name, drivers_name, memory_use):
     if drive_config.interface == "Carla":
@@ -60,12 +46,9 @@ def get_instance(drive_config, experiment_name, drivers_name, memory_use):
         folder_name += '_' + drivers_name
     folder_name += '_' + str(get_latest_file_number(drive_config.path, folder_name))
 
-    camera_dict = get_camera_dict(drive_config.carla_config)
-    print(" Camera Dict ", camera_dict)
     recorder = Recorder(drive_config.path + folder_name + '/',
                         drive_config.resolution,
-                        image_cut=drive_config.image_cut,
-                        camera_dict=camera_dict)
+                        image_cut=drive_config.image_cut)
 
     return driver, recorder
 
@@ -83,7 +66,6 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
                                     drive_config.scale_factor)  # [800,600]
 
     direction = 2
-    iteration = 0
     num_has_collected = 0
     try:
         while direction != -1 and drive_config.num_images_to_collect > num_has_collected:
@@ -120,7 +102,6 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
                 image_vbp = driver.compute_perception_activations(image, speed_kmh)
                 screen_manager.plot_camera(image_vbp, [1, 0])
 
-            iteration += 1
             driver.act(action_noisy)
         recorder.close()
     except:

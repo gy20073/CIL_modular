@@ -35,7 +35,7 @@ def get_angle(vec_dst, vec_src):
 class Recorder(object):
     # We assume a three camera case not many cameras per input ....
     def __init__(self, file_prefix, resolution=[800, 600], current_file_number=0,
-                image_cut=[0, 600], camera_dict={}):
+                image_cut=[0, 600]):
         self._file_prefix = file_prefix
         if not os.path.exists(self._file_prefix):
             os.mkdir(self._file_prefix)
@@ -50,7 +50,6 @@ class Recorder(object):
 
         # other rewards
         self._number_rewards = 35
-        self._camera_dict = camera_dict
 
         # initialize for writing the db
         self._current_file_number = current_file_number

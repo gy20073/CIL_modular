@@ -84,8 +84,9 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
 
     direction = 2
     iteration = 0
+    num_has_collected = 0
     try:
-        while direction != -1:
+        while direction != -1 and drive_config.num_images_to_collect > num_has_collected:
             capture_time = time.time()
             # get the sensory data
             measurements, sensor_data, direction = driver.get_sensor_data()  # Later it would return more image like [rewards,images,segmentation]
@@ -101,6 +102,7 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
             action_noisy = noiser.compute_noise(actions, speed_kmh)
 
             if recording:
+                num_has_collected += 1
                 recorder.record(measurements, sensor_data, actions, action_noisy, direction, driver.get_waypoints())
 
             if drive_config.show_screen:
@@ -120,7 +122,7 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
 
             iteration += 1
             driver.act(action_noisy)
-
+        recorder.close()
     except:
         traceback.print_exc()
 

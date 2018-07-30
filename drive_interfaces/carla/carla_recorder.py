@@ -1,4 +1,4 @@
-import os, h5py, scipy, cv2, math, sys
+import os, h5py, scipy, cv2, math, sys, time
 import numpy as np
 from threading import Thread
 from queue import Queue
@@ -41,13 +41,12 @@ class Recorder(object):
             os.mkdir(self._file_prefix)
 
         # image related storing options
-        self._number_images_per_file = 200
+        self._number_images_per_file = 40 # 200 # TODO: modify it has_data_collection
         self._image_size1 = resolution[0]
         self._image_size2 = resolution[1]
         self._image_cut = image_cut
-        self._sensor_names = ['SegRight', 'CameraLeft', 'DepthLeft',
-                              'CameraMiddle', 'SegLeft', 'CameraRight',
-                              'DepthMiddle', 'SegMiddle', 'DepthRight']
+        # self._sensor_names = ['SegRight', 'CameraLeft', 'DepthLeft', 'CameraMiddle', 'SegLeft', 'CameraRight', 'DepthMiddle', 'SegMiddle', 'DepthRight']
+        self._sensor_names = ['CameraMiddle', 'SegLeft', 'CameraRight']
 
         # other rewards
         self._number_rewards = 35
@@ -80,7 +79,9 @@ class Recorder(object):
             data = self._data_queue.get()
             # if self._data_queue.qsize() % 100 == 0:
             # print "QSIZE:",self._data_queue.qsize()
+            self._finish_writing = False
             self._write_to_disk(data)
+            self._finish_writing = True
 
     def _write_to_disk(self, data):
         # Use the dictionary for this
@@ -96,22 +97,23 @@ class Recorder(object):
         for sensor_name in self._sensor_names:
             if "depth" in sensor_name.lower():
                 image = image_converter.depth_to_array(sensor_data[sensor_name])
-                image = image[:, :, np.newaxis]
-                image = image[self._image_cut[0]:self._image_cut[1], :, :]
+                image = image[self._image_cut[0]:self._image_cut[1], :]
                 image = scipy.misc.imresize(image, [self._image_size2, self._image_size1])
+                encoded = np.fromstring(cv2.imencode(".png", image)[1], dtype=np.uint8)
             elif "camera" in sensor_name.lower():
-                image = image_converter.to_rgb_array(sensor_data[sensor_name])
-                image = image[self._image_cut[0]:self._image_cut[1], :, :]
+                image = image_converter.to_bgra_array(sensor_data[sensor_name])
+                image = image[self._image_cut[0]:self._image_cut[1], :, :3]
                 image = scipy.misc.imresize(image, [self._image_size2, self._image_size1])
+                encoded = np.fromstring(cv2.imencode(".jpg", image, [int(cv2.IMWRITE_JPEG_QUALITY), 80])[1], dtype=np.uint8)
             elif "seg" in sensor_name.lower():
                 image = image_converter.labels_to_array(sensor_data[sensor_name])
-                image = image[:, :, np.newaxis]
-                image = image[self._image_cut[0]:self._image_cut[1], :, :]
+                image = image[self._image_cut[0]:self._image_cut[1], :]
                 image = scipy.misc.imresize(image, [self._image_size2, self._image_size1], interp='nearest')
+                encoded = np.fromstring(cv2.imencode(".png", image)[1], dtype=np.uint8)
             else:
                 raise
 
-            self.sensors[sensor_name][pos] = np.fromstring(cv2.imencode(".png", image)[1], dtype=np.uint8)
+            self.sensors[sensor_name][pos] = encoded
 
         self.data_rewards[pos, 0] = actions.steer
         self.data_rewards[pos, 1] = actions.throttle
@@ -172,4 +174,7 @@ class Recorder(object):
         self._current_pos_on_file += 1
 
     def close(self):
+        while not self._data_queue.empty() or not self._finish_writing:
+            print("waiting to write out data")
+            time.sleep(1)
         self._current_hf.close()

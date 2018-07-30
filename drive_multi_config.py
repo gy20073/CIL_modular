@@ -23,7 +23,6 @@ def config_change_attrs(src, dst, new_attrs):
 
 
 if __name__ == "__main__":
-    # TODO: investigate those config
     driver_config = "9cam_agent_carla_acquire_rc_batch"
     generated_config_cache_path = "./drive_interfaces/carla/auto_gen_configs/"
     tag = "default"
@@ -45,6 +44,9 @@ if __name__ == "__main__":
                ("PositionZ", "1.5")]
     weather_range = range(1, 14)
     # all the input params ends here
+    configs = [("RotationPitch", "0")]
+    weather_range = range(14)
+    # a simple test config ends here
 
     for config in configs:
         for weather in weather_range:

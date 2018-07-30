@@ -70,7 +70,7 @@ class CarlaHuman(Driver):
         self._skiped_frames = 20
 
     def start(self):
-        self.carla = CarlaClient(self._host, int(self._port))
+        self.carla = CarlaClient(self._host, int(self._port), timeout=120)
         self.carla.connect()
 
         self._reset()
@@ -85,6 +85,10 @@ class CarlaHuman(Driver):
 
             self.joystick = pygame.joystick.Joystick(0)
             self.joystick.init()
+
+    def __del__(self):
+        print("destructing the connection")
+        self.carla.disconnect()
 
     def _reset(self):
         self._start_time = time.time()

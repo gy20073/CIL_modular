@@ -11,16 +11,17 @@ class configDrive:
         # data collection related
         self.city_name = 'Town01'
         self.carla_config = None # This will be filled by the caller
-        self.middle_camera = 1  # might be wrong, based on the actual camera? # This is not used in CarlaHuman
         # collect method
         self.autopilot = True
-        self.use_planner = True
+        self.use_planner = True # only useful in carlaHuman, used to randomly walk in the city
         self.noise = "Spike"  # NON CARLA SETTINGS PARAM
-        self.reset_period = 960
+        self.reset_period = 960 # reset when the system time goes beyond this number
         # Those parameters will override carla_config
         self.weather = "1" # This will be override by the caller
         self.cars = "50"
         self.pedestrians = "100"
+        # TODO: change hash_data_collection
+        self.num_images_to_collect = 40#200 # how many images to collect per h5 file
 
         # post processing
         self.image_cut = [0, None]  # This is made from top to botton  # decide to save the full image

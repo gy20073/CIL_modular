@@ -72,13 +72,17 @@ class CarlaMachine(Agent, Driver):
         self.temp_image_path = "./temp/"
 
     def start(self):
-        self.carla = CarlaClient(self._host, int(self._port))
+        self.carla = CarlaClient(self._host, int(self._port), timeout=120)
         self.carla.connect()
 
         with open(self._config_path, "r") as f:
             self.positions = self.carla.load_settings(f.read()).player_start_spots
         self.carla.start_episode(random.randint(0, len(self.positions)))
         self._target = random.randint(0, len(self.positions))
+
+    def __del__(self):
+        print("destructing the connection")
+        self.carla.disconnect()
 
     def _get_direction_buttons(self):
         # with suppress_stdout():if keys[K_LEFT]:

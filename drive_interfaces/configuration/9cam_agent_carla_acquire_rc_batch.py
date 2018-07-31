@@ -22,6 +22,7 @@ class configDrive:
         self.pedestrians = "100"
         # TODO: change hash_data_collection
         self.num_images_to_collect = 200*100 # how many images to collect in total
+        self.re_entry = True # True to allow continue collecting the data, this will make changes to the folder structure
 
         # post processing
         self.image_cut = [0, None]  # This is made from top to botton  # decide to save the full image

@@ -11,7 +11,7 @@ sys.path.append('configuration')
 sys.path.append('structures')
 sys.path.append('evaluation')
 
-import time, pygame, traceback, configparser, datetime
+import time, pygame, traceback, configparser, datetime, glob
 from noiser import Noiser
 from screen_manager import ScreenManager
 
@@ -44,17 +44,23 @@ def get_instance(drive_config, experiment_name, drivers_name, memory_use):
                   str(datetime.datetime.today().day)
     if drivers_name is not None:
         folder_name += '_' + drivers_name
-    folder_name += '_' + str(get_latest_file_number(drive_config.path, folder_name))
+    if drive_config.re_entry:
+        pass
+    else:
+        folder_name += '_' + str(get_latest_file_number(drive_config.path, folder_name))
 
+    num_files_in_folder = len(glob.glob(drive_config.path + folder_name + '/*.h5'))
+    print("currently, there are %d files in this folder" % (num_files_in_folder,))
     recorder = Recorder(drive_config.path + folder_name + '/',
                         drive_config.resolution,
+                        current_file_number=num_files_in_folder,
                         image_cut=drive_config.image_cut)
 
-    return driver, recorder
+    return driver, recorder, num_files_in_folder
 
 
 def drive(experiment_name, drive_config, name=None, memory_use=1.0):
-    driver, recorder = get_instance(drive_config, experiment_name, name, memory_use)
+    driver, recorder, num_files_in_folder = get_instance(drive_config, experiment_name, name, memory_use)
     noiser = Noiser(drive_config.noise)
 
     print('before starting')
@@ -66,7 +72,7 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
                                     drive_config.scale_factor)  # [800,600]
 
     direction = 2
-    num_has_collected = 0
+    num_has_collected = num_files_in_folder * recorder._number_images_per_file # 200 is num images per h5 file
     try:
         while direction != -1 and drive_config.num_images_to_collect > num_has_collected:
             capture_time = time.time()
@@ -103,10 +109,11 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
                 screen_manager.plot_camera(image_vbp, [1, 0])
 
             driver.act(action_noisy)
+        return True
 
     except:
         traceback.print_exc()
-        raise
+        return False
     finally:
         pygame.quit()
         print("closing recorder")

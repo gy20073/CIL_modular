@@ -1,4 +1,4 @@
-import sys, os
+import sys, os, time
 from configparser import ConfigParser
 from drive import drive
 
@@ -20,7 +20,6 @@ def config_change_attrs(src, dst, new_attrs):
         config.set(one[0], one[1], one[2])
     with open(dst, "w") as f:
         config.write(f)
-
 
 if __name__ == "__main__":
     driver_config = "9cam_agent_carla_acquire_rc_batch"
@@ -75,4 +74,7 @@ if __name__ == "__main__":
             driver_conf.weather = str(weather)
 
             # experiment_name & memory not used for human
-            drive("", driver_conf, this_name, 0)
+            while True:
+                if drive("", driver_conf, this_name, 0):
+                    break
+                time.sleep(10)

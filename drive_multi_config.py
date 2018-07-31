@@ -47,6 +47,17 @@ if __name__ == "__main__":
     configs = [("RotationPitch", "0")]
     weather_range = range(14)
     # a simple test config ends here
+    configs = [("RotationPitch", "0"),  # This is the default one
+               ("RotationPitch", "5"),
+               ("RotationPitch", "-5"),
+               ("ImageSizeX", "700"),
+               ("ImageSizeX", "800"),
+               ("PositionZ", "1.4"),
+               ("PositionZ", "1.8")]
+    weather_range = range(1, 14)
+    # in total there are 7*14 = 100 configs, each of the 200 h5 file has size of 33M, i.e. 30 h5 = 1G
+    # Thus we aim to collect 100 hours of training, that is 400G, so each config has quota of 3G, which is 100 files
+    # an initial config ends here
 
     for config in configs:
         for weather in weather_range:

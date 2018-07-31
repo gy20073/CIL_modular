@@ -41,12 +41,12 @@ class Recorder(object):
             os.mkdir(self._file_prefix)
 
         # image related storing options
-        self._number_images_per_file = 40 # 200 # TODO: modify it has_data_collection
+        self._number_images_per_file = 200
         self._image_size1 = resolution[0]
         self._image_size2 = resolution[1]
         self._image_cut = image_cut
         # self._sensor_names = ['SegRight', 'CameraLeft', 'DepthLeft', 'CameraMiddle', 'SegLeft', 'CameraRight', 'DepthMiddle', 'SegMiddle', 'DepthRight']
-        self._sensor_names = ['CameraMiddle', 'SegLeft', 'CameraRight']
+        self._sensor_names = ['CameraLeft', 'CameraMiddle', 'CameraRight']
 
         # other rewards
         self._number_rewards = 35
@@ -60,7 +60,8 @@ class Recorder(object):
 
     def _create_new_db(self):
         # TODO: change the reading part to have the image decoding
-        hf = h5py.File(self._file_prefix + 'data_' + str(self._current_file_number).zfill(5) + '.h5', 'w')
+        self._current_hf_path = self._file_prefix + 'data_' + str(self._current_file_number).zfill(5) + '.h5'
+        hf = h5py.File(self._current_hf_path, 'w')
         self.data_rewards = hf.create_dataset('targets', (self._number_images_per_file, self._number_rewards), 'f')
         self.sensors={}
         dt = h5py.special_dtype(vlen=np.dtype('uint8'))
@@ -177,3 +178,7 @@ class Recorder(object):
             print("waiting to write out data")
             time.sleep(1)
         self._current_hf.close()
+        if self._current_pos_on_file != self._number_images_per_file:
+            # we have an incomplete file
+            print("remove the not complete file")
+            os.remove(self._current_hf_path)

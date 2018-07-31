@@ -104,3 +104,4 @@ venv.bak/
 .mypy_cache/
 data*
 *.csv
+*drive_interfaces/carla/auto_gen_configs/*

@@ -21,7 +21,7 @@ class configDrive:
         self.cars = "50"
         self.pedestrians = "100"
         # TODO: change hash_data_collection
-        self.num_images_to_collect = 80 #200 # how many images to collect in total
+        self.num_images_to_collect = 200*100 # how many images to collect in total
 
         # post processing
         self.image_cut = [0, None]  # This is made from top to botton  # decide to save the full image

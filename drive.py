@@ -63,17 +63,18 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
     driver, recorder, num_files_in_folder = get_instance(drive_config, experiment_name, name, memory_use)
     noiser = Noiser(drive_config.noise)
 
-    print('before starting')
-    driver.start()
-    if drive_config.show_screen:
-        screen_manager = ScreenManager()
-        screen_manager.start_screen(drive_config.resolution,
-                                    drive_config.aspect_ratio,
-                                    drive_config.scale_factor)  # [800,600]
-
-    direction = 2
-    num_has_collected = num_files_in_folder * recorder._number_images_per_file # 200 is num images per h5 file
     try:
+        print('before starting')
+        driver.start()
+        if drive_config.show_screen:
+            screen_manager = ScreenManager()
+            screen_manager.start_screen(drive_config.resolution,
+                                        drive_config.aspect_ratio,
+                                        drive_config.scale_factor)  # [800,600]
+
+        direction = 2
+        num_has_collected = num_files_in_folder * recorder._number_images_per_file # 200 is num images per h5 file
+
         while direction != -1 and drive_config.num_images_to_collect > num_has_collected:
             capture_time = time.time()
             # get the sensory data

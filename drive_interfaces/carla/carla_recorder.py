@@ -57,6 +57,7 @@ class Recorder(object):
         self._current_hf = self._create_new_db()
         self._data_queue = Queue(5000)
         self.run_disk_writer()
+        self._finish_writing = True
 
     def _create_new_db(self):
         # TODO: change the reading part to have the image decoding

@@ -19,11 +19,13 @@ class DatasetManager(object):
         spliter = Spliter(1, 1, config.steering_bins_perc)
 
         #self.labels_per_division = [[0, 2, 5], [3], [4]]
+        # this returns: [i_labels_per_division][a list of keys that belongs to this directions]
         divided_keys_train = spliter.divide_keys_by_labels(
                 self._datasets_train[0][config.variable_names.index("Control")][:],
                 config.labels_per_division)
         # The structure is: self._splited_keys_train[i_labels_per_division][i__steering_bins_perc][a list of keys]
         # In theory should be sharded instance ids by those two criterions
+        # This divide the keys into several smaller partition, simply by steering_bins_perc binning, order the same
         self._splited_keys_train = spliter.split_by_output(
                 self._datasets_train[0][config.variable_names.index("Steer")][:],
                 divided_keys_train)

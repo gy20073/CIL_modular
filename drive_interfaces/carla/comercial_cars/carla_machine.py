@@ -81,8 +81,9 @@ class CarlaMachine(Agent, Driver):
         self._target = random.randint(0, len(self.positions))
 
     def __del__(self):
-        print("destructing the connection")
-        self.carla.disconnect()
+        if hasattr(self, 'carla'):
+            print("destructing the connection")
+            self.carla.disconnect()
 
     def _get_direction_buttons(self):
         # with suppress_stdout():if keys[K_LEFT]:

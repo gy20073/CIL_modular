@@ -87,8 +87,9 @@ class CarlaHuman(Driver):
             self.joystick.init()
 
     def __del__(self):
-        print("destructing the connection")
-        self.carla.disconnect()
+        if hasattr(self, 'carla'):
+            print("destructing the connection")
+            self.carla.disconnect()
 
     def _reset(self):
         self._start_time = time.time()

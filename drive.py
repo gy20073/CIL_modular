@@ -62,6 +62,12 @@ def get_instance(drive_config, experiment_name, drivers_name, memory_use):
 def drive(experiment_name, drive_config, name=None, memory_use=1.0):
     driver, recorder, num_files_in_folder = get_instance(drive_config, experiment_name, name, memory_use)
     noiser = Noiser(drive_config.noise)
+    num_has_collected = num_files_in_folder * recorder._number_images_per_file  # 200 is num images per h5 file
+
+    if drive_config.num_images_to_collect <= num_has_collected:
+        print("closing recorder")
+        recorder.close()
+        return True
 
     try:
         print('before starting')
@@ -73,7 +79,7 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
                                         drive_config.scale_factor)  # [800,600]
 
         direction = 2
-        num_has_collected = num_files_in_folder * recorder._number_images_per_file # 200 is num images per h5 file
+
 
         while direction != -1 and drive_config.num_images_to_collect > num_has_collected:
             capture_time = time.time()
@@ -119,6 +125,4 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
         pygame.quit()
         print("closing recorder")
         recorder.close()
-        print("closing connection")
-        driver.__del__()
         print("clean up done")

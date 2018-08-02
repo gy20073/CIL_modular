@@ -18,6 +18,7 @@ def decode_inst(value):
 
 def encode(value):
     # what is the meaning of those controls?
+    # 1 of k encoding
     if value == 2.0:
         return [1, 0, 0, 0]
     elif value == 5.0:

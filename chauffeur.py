@@ -76,11 +76,6 @@ if __name__ == '__main__':
             from train import train
 
             train(args.gpu, args.experiment_name, args.path, args.memory, int(args.port))
-        elif args.mode == 'evaluate':
-            from evaluate import evaluate
-
-            # General evaluation algorithm ( train again for a while and check network stile)
-            evaluate(args.gpu, args.experiment_name)
         elif args.mode == 'test_input':
             from test_input import test_input
 

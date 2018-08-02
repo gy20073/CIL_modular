@@ -2,13 +2,49 @@ import sys, h5py, threading
 import tensorflow as tf
 
 sys.path.append('spliter')
-from spliter import Spliter
 from dataset import *
 
-# TODO: Divide also by acceleration and Steering
+def split(controls, steers, labels_per_division, steering_bins_perc):
+    # labels_per_division: [[0, 2, 5], [3], [4]]
+    # steering_bins_perc: [0.05, 0.05, 0.1, 0.3, 0.3, 0.1, 0.05, 0.05]
+    initial_partition = [[] for _ in range(len(labels_per_division))]
+    for i in range(len(controls)):
+        index = None
+        for k in range(len(labels_per_division)):
+            if int(controls[i]) in labels_per_division[k]:
+                index = k
+        initial_partition[index].append(i)
+
+    # then we continue to partition the steers
+    output = []
+    steers = np.array(steers)
+    for i_control_division in range(len(labels_per_division)):
+        # get the steer values for this division
+        this_ids = initial_partition[i_control_division]
+        this_ids = np.array(this_ids)
+        this_steer = steers[this_ids]
+
+        # compute the binning boundaries
+        accumulated_percent = []
+        tot = 0.0
+        for percent in steering_bins_perc[:-1]:
+            tot += percent
+            accumulated_percent.append(tot * 100.0)
+
+        boundaries = np.percentile(this_steer, accumulated_percent)
+        digitized = np.digitize(this_steer, boundaries)
+
+        # flush to output
+        this_output = []
+        for i_percent in range(len(steering_bins_perc)):
+            this_output.append(this_ids[digitized == i_percent])
+        output.append(this_output)
+
+    return output
 
 class DatasetManager(object):
     def __init__(self, config):
+        # self._datasets_train is a list of totNum* dim, no transposed
         self._images_train, self._datasets_train = self.read_all_files(config.train_db_path,
                                                                        config.sensor_names,
                                                                        config.dataset_names)
@@ -16,42 +52,28 @@ class DatasetManager(object):
                                                                    config.sensor_names,
                                                                    config.dataset_names)
 
-        spliter = Spliter(1, 1, config.steering_bins_perc)
-
-        # TODO: self._datasets_train is a list of totNum* dim, no transposed
-        #self.labels_per_division = [[0, 2, 5], [3], [4]]
-        # this returns: [i_labels_per_division][a list of keys that belongs to this directions]
-        divided_keys_train = spliter.divide_keys_by_labels(
-                self._datasets_train[0][config.variable_names.index("Control")][:],
-                config.labels_per_division)
+        # self.labels_per_division = [[0, 2, 5], [3], [4]]
         # The structure is: self._splited_keys_train[i_labels_per_division][i_steering_bins_perc][a list of keys]
-        # In theory should be sharded instance ids by those two criterions
         # This divide the keys into several smaller partition, simply by steering_bins_perc binning, order the same
-        self._splited_keys_train = spliter.split_by_output(
-                self._datasets_train[0][config.variable_names.index("Steer")][:],
-                divided_keys_train)
-        # TODO: override the computation of self._splited_keys_train, to be a simpler function
+        splited_keys_train = split(controls=self._datasets_train[0][:, config.variable_names.index("Control")],
+                                   steers=self._datasets_train[0][:, config.variable_names.index("Steer")],
+                                   labels_per_division=config.labels_per_division,
+                                   steering_bins_perc=config.steering_bins_perc)
 
-        divided_keys_val = spliter.divide_keys_by_labels(
-                self._datasets_val[0][config.variable_names.index("Control")][:],
-                config.labels_per_division)  # THE NOISE IS NOW NONE, TEST THIS
-        self._splited_keys_val = spliter.split_by_output(
-                self._datasets_val[0][config.variable_names.index("Steer")][:],
-                divided_keys_val)
-
-        print("max id train", max(max(max(self._splited_keys_train))))
-        print("min id train", min(min(min(self._splited_keys_train))))
-        print("max id val", max(max(max(self._splited_keys_val))))
-
-        self.train = Dataset(self._splited_keys_train,
+        self.train = Dataset(splited_keys_train,
                              self._images_train,
                              self._datasets_train, config, config.augment)
-        self.validation = Dataset(self._splited_keys_val,
+
+        splited_keys_val = split(controls=self._datasets_val[0][:, config.variable_names.index("Control")],
+                                   steers=self._datasets_val[0][:, config.variable_names.index("Steer")],
+                                   labels_per_division=config.labels_per_division,
+                                   steering_bins_perc=config.steering_bins_perc)
+
+        self.validation = Dataset(splited_keys_val,
                                   self._images_val,
                                   self._datasets_val, config, [None] * len(config.sensor_names))
 
     def start_training_queueing(self, sess):
-        # TODO: those extra threading for enqueue operation might be unnecessary
         enqueue_thread = threading.Thread(target=self.train.enqueue, args=[sess])
         enqueue_thread.isDaemon()
         enqueue_thread.start()

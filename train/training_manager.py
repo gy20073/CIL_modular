@@ -99,7 +99,9 @@ class TrainManager(object):
         #		beta1=0.7,beta2=0.85
         #		beta1=0.99,beta2=0.999
         with tf.name_scope("Optimization"):
-            if hasattr(self._config, 'finetune_segmentation') or not (hasattr(self._config, 'segmentation_model_name')):
+            if hasattr(self._config, 'finetune_segmentation') or \
+                    not (hasattr(self._config, 'segmentation_model_name')) or \
+                    self._config.segmentation_model is None:
                 self._train_step = tf.train.AdamOptimizer(self._variable_learning).minimize(self._loss)
                 print("Optimizer: All variables")
             else:

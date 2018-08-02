@@ -141,7 +141,7 @@ class Recorder(object):
         self.data_rewards[pos, 22] = measurements.player_measurements.transform.orientation.y
         self.data_rewards[pos, 23] = measurements.player_measurements.transform.orientation.z
         self.data_rewards[pos, 24] = direction
-        self.data_rewards[pos, 25] = 0 # originally i, now, not used
+        self.data_rewards[pos, 25] = 0 # originally i, now, not used, they are also not used anywhere else
         self.data_rewards[pos, 26] = 0 # originally this camera's yaw, but now not used
 
         # TODO: below is waypoints

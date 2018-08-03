@@ -11,7 +11,6 @@ from common_util import restore_session
 from dataset_manager import *
 from training_manager import TrainManager, get_last_iteration, save_model
 from output_manager import OutputManager
-from test_manager import TestManager
 
 import tensorflow as tf
 slim = tf.contrib.slim
@@ -69,9 +68,6 @@ def train(gpu_number, experiment_name, path, memory_fraction, port):
                                        batch_tensor_val)
 
     # Creates a test manager that connects to a server and tests there constantly
-    if config_main.perform_simulation_test:
-        test_manager = TestManager(conf_module.configTest(), conf_module.configInput(), sess, training_manager, port,
-                                   experiment_name)
 
     for i in range(initialIteration, config_main.number_iterations):
         start_time = time.time()
@@ -87,5 +83,3 @@ def train(gpu_number, experiment_name, path, memory_fraction, port):
         #   """ With the current trained net, let the outputmanager print and save all the outputs """
         if config_main.output_is_on:
             output_manager.print_outputs(i, duration)
-        if config_main.perform_simulation_test and i % config_main.test_interval == 0:
-            test_manager.perform_simulation_test(i)

@@ -90,7 +90,8 @@ class Dataset(object):
                     imencoded = self._images[isensor][ibatch][iinbatch]
                     # decode the image
                     decoded = cv2.imdecode(imencoded, 1)
-                    # TODO: optional image downsampling
+                    if hasattr(self._config, "hack_resize_image"):
+                        decoded = cv2.resize(decoded, self._config.hack_resize_image)
                     sensors_batch[isensor][count, :, :, :] = decoded
 
                 generated_ids[count] = i
@@ -162,8 +163,8 @@ class Dataset(object):
                 else:
                     raise ValueError()
 
-        assert(self._config.sensor_names == ['rgb'])
-        return sensors[self._config.sensor_names.index('rgb')], targets, inputs
+        assert(self._config.sensor_names == ['CameraMiddle'])
+        return sensors[self._config.sensor_names.index('CameraMiddle')], targets, inputs
 
     # Used by enqueue
     def process_run(self, sess, data_loaded):

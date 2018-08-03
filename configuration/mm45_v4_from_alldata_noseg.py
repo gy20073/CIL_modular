@@ -11,7 +11,7 @@ class configMain:
 
         self.image_size = (88, 200, 3)
         self.network_input_size = self.image_size
-        # TODO: the speed unit has changed, when reading from the h5 file
+        # the speed unit has changed, when reading from the h5 file, we change the speed_factor to adjust for this
         self.variable_names = ['Steer', 'Gas', 'Brake', 'Hand_B', 'Reverse',
                                'Steer_N', 'Gas_N', 'Brake_N',
                                'Pos_X', 'Pos_Y', 'Speed',
@@ -19,7 +19,6 @@ class configMain:
                                'Plat_Ts', 'Game_Ts', 'Ori_X', 'Ori_Y', 'Ori_Z', 'Control', 'Camera', 'Angle',
                                'wp1_x', 'wp1_y', 'wp2_x', 'wp2_y', 'wp1_angle', 'wp1_mag', 'wp2_angle', 'wp2_mag']
 
-        # TODO: change corresponding sensor name calls
         self.sensor_names = ['CameraMiddle']
         self.sensors_size = [self.image_size]
         self.sensors_normalize = [True]
@@ -78,9 +77,7 @@ class configInput(configMain):
         self.val_db_path = glob.glob("/data/yang/code/aws/scratch/carla_collect/1/*WeatherId=13/data_*.h5")
         self.train_db_path = list(set(all_files) - set(self.val_db_path))
 
-        # TODO: change the speed compatibility
-        # TODO: For now is hardcooded, but eventually we should be able to calculate this from data at the loading time.
-        self.speed_factor = 40.0  # In KM/H
+        self.speed_factor = 40.0 / 3.6  # In KM/H, the new measurement unit is in m/s, thus we had to change the factor
 
         # The division is made by three diferent data kinds
         # in every mini-batch there will be equal number of samples with labels from each group
@@ -89,8 +86,8 @@ class configInput(configMain):
         self.dataset_names = ['targets']
         self.queue_capacity = 10 # now measured in how many batches
 
-        # TODO: resize the images
-        # TODO: use the new mode for TrainManager
+        # TODO: move from this hacky way of resizing to something more systematic
+        self.hack_resize_image = (88, 200)
 
     # TODO NOT IMPLEMENTED Felipe: True/False switches to turn data balancing on or off
 

@@ -32,7 +32,7 @@ def train(gpu_number, experiment_name, path, memory_fraction, port):
     dataset_manager.start_training_queueing(sess)
     dataset_manager.start_validation_queueing(sess)
 
-    training_manager = TrainManager(conf_module.configTrain(), None)
+    training_manager = TrainManager(conf_module.configTrain(), None, old_mode=False, batch_tensor=batch_tensor)
     if hasattr(conf_module.configTrain(), 'seg_network_erfnet_one_hot'):
         print("Bulding: seg_network_erfnet_one_hot")
         training_manager.build_seg_network_erfnet_one_hot()

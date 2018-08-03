@@ -135,9 +135,9 @@ class CarlaMachine(Agent, Driver):
     # TODO: change to the agent interface, this depend on the sensor names
     def run_step(self, measurements, sensor_data, direction, target):
         sensors = []
+        assert(self._config.sensor_names == ["CameraMiddle"])
         for name in self._config.sensor_names:
-            if name == 'rgb':
-                sensors.append(image_converter.to_bgra_array(sensor_data["CameraRGB"]))
+            sensors.append(image_converter.to_bgra_array(sensor_data[name]))
 
         speed_kmh = measurements.player_measurements.forward_speed * 3.6
         control = self.compute_action(sensors, speed_kmh, direction)
@@ -173,8 +173,7 @@ class CarlaMachine(Agent, Driver):
         if direction == None:
             direction = self.compute_direction((0, 0, 0), (0, 0, 0))
 
-        assert(len(self._config.sensor_names) == 1)
-        assert(self._config.sensor_names[0] == 'rgb')
+        assert(self._config.sensor_names == ['CameraMiddle'])
         image_input = preprocess_image(sensor, self._image_cut, self._config.sensors_size[0])
         self.save_image(image_input, direction)
 

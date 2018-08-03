@@ -1,6 +1,0 @@
-Here are the scripts for data collection and evaluation. 
-
-So the process is to run the collect data script. Then clean the data manually and run the convertwp script. 
-Then train a model with corresponding config file, e.g.
-CUDA_VISIBLE_DEVICES='0' python chauffeur.py train -e mm408_rc28_wpz_M_mm45_dr -pt /home/muellem/Downloads/Desktop/
-Then evaluate model (see batch files for examples).

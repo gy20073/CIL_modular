@@ -39,14 +39,17 @@ def get_instance(drive_config, experiment_name, drivers_name, memory_use):
         raise ValueError()
 
     # prepare a folder name
-    folder_name = str(datetime.datetime.today().year) + \
-                  str(datetime.datetime.today().month) + \
-                  str(datetime.datetime.today().day)
-    if drivers_name is not None:
-        folder_name += '_' + drivers_name
-    if drive_config.re_entry:
-        pass
+    if not drive_config.re_entry:
+        folder_name = str(datetime.datetime.today().year) + \
+                      str(datetime.datetime.today().month) + \
+                      str(datetime.datetime.today().day)
     else:
+        folder_name = ""
+    if drivers_name is not None:
+        if folder_name != "":
+            folder_name = folder_name + "_"
+        folder_name += drivers_name
+    if not drive_config.re_entry:
         folder_name += '_' + str(get_latest_file_number(drive_config.path, folder_name))
 
     num_files_in_folder = len(glob.glob(drive_config.path + folder_name + '/*.h5'))

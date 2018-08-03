@@ -142,7 +142,7 @@ class Dataset(object):
 
                 if this_name == "Speed":
                     # Yang: speed_factor is normalizing the speed
-                    targets[itarget][ibatch] /= self._config.speed_factor
+                    targets[itarget][ibatch] /= self._config.speed_factor / 3.6
                 elif this_name == "Gas":
                     # Yang: require Gas >=0
                     targets[itarget][ibatch] = max(0, targets[itarget][ibatch])
@@ -157,7 +157,7 @@ class Dataset(object):
                 if this_name == "Control":
                     inputs[iinput][ibatch] = encode(target_selected[k, ibatch])
                 elif this_name == "Speed":
-                    inputs[iinput][ibatch] = target_selected[k, ibatch] / self._config.speed_factor
+                    inputs[iinput][ibatch] = target_selected[k, ibatch] / self._config.speed_factor * 3.6
                 elif this_name == "Distance":
                     inputs[iinput][ibatch] = check_distance(target_selected[k, ibatch])
                 else:

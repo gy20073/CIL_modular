@@ -77,7 +77,7 @@ class configInput(configMain):
         self.val_db_path = glob.glob("/data/yang/code/aws/scratch/carla_collect/1/*WeatherId=13/data_*.h5")
         self.train_db_path = list(set(all_files) - set(self.val_db_path))
 
-        self.speed_factor = 40.0 / 3.6  # In KM/H, the new measurement unit is in m/s, thus we had to change the factor
+        self.speed_factor = 40.0  # In KM/H, the new measurement unit is in m/s, thus we had to change the factor
 
         # The division is made by three diferent data kinds
         # in every mini-batch there will be equal number of samples with labels from each group
@@ -97,7 +97,7 @@ class configTrain(configMain):
         configMain.__init__(self)
 
         self.loss_function = 'mse_branched'  # Chose between: mse_branched, mse_branched_ladd
-        self.control_mode = 'single_branch_wp' # TODO: study the loss_function and control_mode
+        self.control_mode = 'single_branch'
         self.learning_rate = 0.0002
         # use the default segmentation network
         #self.seg_network_erfnet_one_hot = True  # comment this line out to use the standard network

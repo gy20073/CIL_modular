@@ -1,9 +1,8 @@
 """Visualization libs"""
-import sys, time
+import sys
 import tensorflow as tf
 sys.path.append('../utils')
 
-from log_manager import LogManager
 from validation_manager import ValidationManager
 from codification import *
 
@@ -26,7 +25,6 @@ class OutputManager(object):
         self.tensorboard_images()
         self._merged = tf.summary.merge_all()
 
-        self._logger = LogManager(config, training_manager, sess, self._config.use_curses)
         self._validater = ValidationManager(config, training_manager, sess, batch_tensor_val, self._merged)
 
         self.first_time = True
@@ -80,16 +78,14 @@ class OutputManager(object):
     def print_outputs(self, i, duration):
         # the dictonary of the data used for training
         if i % self._config.print_interval == 0:
-            self._logger.update_log_state(i, duration)
+            # ideally also include: Epoch, sample inputs and targets
+            # print("step=%d, images/second=%f, train loss=%f, validation loss=%f\n" % (i, 1.0*self._config/duration, 0.0, 0.0))
+            print("step=%d, images/second=%f" % (i, 1.0 * self._config / duration))
 
         """ Writing summary """
         if i % self._config.summary_writing_period == 0 or self.first_time:
             self.first_time = False
-
             self.write_tensorboard_summary(i)
-
-            self._logger.write_summary(i)
-            self._logger.print_screen_track(i, duration)
 
         if i % self._config.validation_period == 0:
             self._validater.run(i)

@@ -68,6 +68,7 @@ class CarlaHuman(Driver):
         self._rear = False
         self._recording = False
         self._skiped_frames = 20
+        self._stucked_counter = 0
 
     def start(self):
         self.carla = CarlaClient(self._host, int(self._port), timeout=120)
@@ -113,6 +114,7 @@ class CarlaHuman(Driver):
         self.carla.start_episode(self.episode_config[0])
         print('RESET ON POSITION ', self.episode_config[0], ", the target location is: ", self.episode_config[1])
         self._skiped_frames = 0
+        self._stucked_counter = 0
 
     def _get_direction_buttons(self):
         # with suppress_stdout():
@@ -156,11 +158,19 @@ class CarlaHuman(Driver):
 
     def get_reset(self):
         if self._autopilot:
+            # increase the stuck detector if conditions satisfy
+            if self._latest_measurements.player_measurements.forward_speed < 0.1 and \
+               self._latest_measurements.player_measurements.autopilot_control.throttle > 0.5:
+                self._stucked_counter += 1
+            else:
+                self._stucked_counter = 0
+
             # if within auto pilot, reset if long enough or has collisions
             if time.time() - self._start_time > self._reset_period \
               or self._latest_measurements.player_measurements.collision_vehicles    > 0.0 \
               or self._latest_measurements.player_measurements.collision_pedestrians > 0.0 \
-              or self._latest_measurements.player_measurements.collision_other       > 0.0:
+              or self._latest_measurements.player_measurements.collision_other       > 0.0 \
+              or self._stucked_counter > 10 :
                 self._reset()
         else:
             if (self.joystick.get_button(4)):

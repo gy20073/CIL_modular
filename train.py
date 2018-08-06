@@ -16,7 +16,7 @@ import tensorflow as tf
 slim = tf.contrib.slim
 
 
-def train(gpu_number, experiment_name, path, memory_fraction, port):
+def train(experiment_name, memory_fraction):
     """ Initialize the input class to get the configuration """
     conf_module = __import__(experiment_name)
     config_main = conf_module.configMain()
@@ -25,7 +25,7 @@ def train(gpu_number, experiment_name, path, memory_fraction, port):
     config_gpu.gpu_options.per_process_gpu_memory_fraction = float(memory_fraction)
     sess = tf.Session(config=config_gpu)
 
-    dataset_manager = DatasetManager(conf_module.configInput(path))
+    dataset_manager = DatasetManager(conf_module.configInput())
     batch_tensor = dataset_manager.train.get_batch_tensor()
     batch_tensor_val = dataset_manager.validation.get_batch_tensor()
     dataset_manager.start_training_queueing(sess)

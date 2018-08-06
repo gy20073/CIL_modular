@@ -159,8 +159,7 @@ class CarlaHuman(Driver):
     def get_reset(self):
         if self._autopilot:
             # increase the stuck detector if conditions satisfy
-            if self._latest_measurements.player_measurements.forward_speed < 0.1 and \
-               self._latest_measurements.player_measurements.autopilot_control.throttle > 0.5:
+            if self._latest_measurements.player_measurements.forward_speed < 0.1:
                 self._stucked_counter += 1
             else:
                 self._stucked_counter = 0
@@ -170,8 +169,8 @@ class CarlaHuman(Driver):
               or self._latest_measurements.player_measurements.collision_vehicles    > 0.0 \
               or self._latest_measurements.player_measurements.collision_pedestrians > 0.0 \
               or self._latest_measurements.player_measurements.collision_other       > 0.0 \
-              or self._stucked_counter > 100:
-                if self._stucked_counter > 100:
+              or self._stucked_counter > 150:
+                if self._stucked_counter > 150:
                     reset_because_stuck = True
                 else:
                     reset_because_stuck = False

@@ -54,7 +54,7 @@ class configMain:
 
 
 class configInput(configMain):
-    def __init__(self, path='/'):
+    def __init__(self):
         configMain.__init__(self)
 
         st = lambda aug: iaa.Sometimes(0.2, aug)
@@ -73,8 +73,8 @@ class configInput(configMain):
             random_order=True  # do all of the above in random order
         )]
 
-        all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/1/*/data_*.h5")
-        self.val_db_path = glob.glob("/data/yang/code/aws/scratch/carla_collect/1/*WeatherId=13/data_*.h5")
+        all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/2/*/data_*.h5")
+        self.val_db_path = glob.glob("/data/yang/code/aws/scratch/carla_collect/2/*WeatherId=13/data_*.h5")
         self.train_db_path = list(set(all_files) - set(self.val_db_path))
 
         self.speed_factor = 40.0  # In KM/H, the new measurement unit is in m/s, thus we had to change the factor
@@ -118,13 +118,10 @@ class configOutput(configMain):
         self.print_interval = 100 # how often in output manager to print
         self.summary_writing_period = 100 # for output manager
         self.validation_period = 1000  # For output manager, I consider validation as an output thing since it does not directly affects the training in general
-        self.use_curses = False  # If we want to use curses library for a cutter print, this is always set to false
-
-        self.targets_to_print = ['Steer', 'Gas', 'Brake']  # Also prints the error. Maybe Energy
-        self.selected_branch = 0  # for the branches that have steering we also select the branch
-        self.inputs_to_print = ['Speed']
 
 
+
+# The class below is deprecated, but save it for now, because we have to migrate the testing process to the new benchmark.
 class configTest(configMain):
     def __init__(self):
         configMain.__init__(self)

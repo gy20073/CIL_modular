@@ -75,7 +75,7 @@ if __name__ == '__main__':
         elif args.mode == 'train':
             from train import train
 
-            train(args.gpu, args.experiment_name, args.path, args.memory, int(args.port))
+            train(args.experiment_name, args.memory)
         elif args.mode == 'test_input':
             from test_input import test_input
 

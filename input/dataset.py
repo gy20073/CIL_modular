@@ -54,10 +54,16 @@ class Dataset(object):
     def get_batch_tensor(self):
         return self._dequeue_op
 
-    def sample_positions_to_train(self, number_of_samples):
-        return np.random.choice(range(self._config.number_steering_bins),
+    def sample_positions_to_train(self, number_of_samples, splited_keys):
+        out_splited_keys = []
+        for sp in splited_keys:
+            if len(sp)>0:
+                out_splited_keys.append(sp)
+
+        return np.random.choice(range(len(out_splited_keys)),
                                 size=number_of_samples,
-                                replace=True)
+                                replace=True), \
+               out_splited_keys
 
     # Used by next_batch, for each of the control block,
     def datagen(self, batch_size, number_control_divisions):
@@ -78,10 +84,11 @@ class Dataset(object):
             if control_part == (number_control_divisions - 1):
                 num_to_sample = batch_size - (number_control_divisions - 1) * num_to_sample
 
-            sampled_positions = self.sample_positions_to_train(num_to_sample)
+            sampled_positions, non_empty_split_keys = self.sample_positions_to_train(num_to_sample,
+                                                               self._splited_keys[control_part])
 
             for outer_n in sampled_positions:
-                i = random.choice(self._splited_keys[control_part][outer_n])
+                i = random.choice(non_empty_split_keys[outer_n])
                 for isensor in range(len(self._images)):
                     # fetch the image from the h5 files
                     per_h5_len = self._images[isensor][0].shape[0]
@@ -91,7 +98,8 @@ class Dataset(object):
                     # decode the image
                     decoded = cv2.imdecode(imencoded, 1)
                     if hasattr(self._config, "hack_resize_image"):
-                        decoded = cv2.resize(decoded, self._config.hack_resize_image)
+                        sz = self._config.hack_resize_image
+                        decoded = cv2.resize(decoded, (sz[1], sz[0]))
                     sensors_batch[isensor][count, :, :, :] = decoded
 
                 generated_ids[count] = i

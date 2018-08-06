@@ -80,7 +80,7 @@ class OutputManager(object):
         if i % self._config.print_interval == 0:
             # ideally also include: Epoch, sample inputs and targets
             # print("step=%d, images/second=%f, train loss=%f, validation loss=%f\n" % (i, 1.0*self._config/duration, 0.0, 0.0))
-            print("step=%d, images/second=%f" % (i, 1.0 * self._config / duration))
+            print("step=%d, images/second=%f" % (i, 1.0 * self._config.batch_size / duration))
 
         """ Writing summary """
         if i % self._config.summary_writing_period == 0 or self.first_time:

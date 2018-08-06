@@ -170,11 +170,22 @@ class CarlaHuman(Driver):
               or self._latest_measurements.player_measurements.collision_vehicles    > 0.0 \
               or self._latest_measurements.player_measurements.collision_pedestrians > 0.0 \
               or self._latest_measurements.player_measurements.collision_other       > 0.0 \
-              or self._stucked_counter > 10 :
+              or self._stucked_counter > 100:
+                if self._stucked_counter > 100:
+                    reset_because_stuck = True
+                else:
+                    reset_because_stuck = False
+
                 self._reset()
+
+                if reset_because_stuck:
+                    print("resetting because getting stucked.....")
+                    return True
         else:
             if (self.joystick.get_button(4)):
                 self._reset()
+
+        return False
 
     def get_waypoints(self):
         # TODO: waiting for German Ros to expose the waypoints

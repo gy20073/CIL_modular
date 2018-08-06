@@ -59,9 +59,13 @@ class Recorder(object):
         self.run_disk_writer()
         self._finish_writing = True
 
+    def hf_path_formatter(self, id):
+        path = self._file_prefix + 'data_' + str(id).zfill(5) + '.h5'
+        return path
+
     def _create_new_db(self):
         # TODO: change the reading part to have the image decoding
-        self._current_hf_path = self._file_prefix + 'data_' + str(self._current_file_number).zfill(5) + '.h5'
+        self._current_hf_path = self.hf_path_formatter(self._current_file_number)
         hf = h5py.File(self._current_hf_path, 'w')
         self.data_rewards = hf.create_dataset('targets', (self._number_images_per_file, self._number_rewards), 'f')
         self.sensors={}
@@ -183,3 +187,32 @@ class Recorder(object):
             # we have an incomplete file
             print("remove the not complete file")
             os.remove(self._current_hf_path)
+
+    def remove_current_and_previous(self):
+        # remove the current one if it's not finished
+        self.close()
+
+        # in the case of the current file has finished writing, remove it as well
+        if os.path.exists(self._current_hf_path):
+            os.remove(self._current_hf_path)
+
+        num_dropped = self._current_pos_on_file
+
+        # to be safe, remove the previous file as well
+        previous_path = self.hf_path_formatter(self._current_file_number - 1)
+        if os.path.exists(previous_path):
+            print("removing the previous database", previous_path)
+            os.remove(previous_path)
+
+            self._current_file_number -= 1
+            num_dropped += self._number_images_per_file
+        else:
+            if self._current_file_number !=0:
+                print("Warning!! there should be a previous file to remove, but I could not find it")
+            else:
+                print("not removing previous file because this is the 0-th file")
+
+        self._current_pos_on_file = 0
+        self._current_hf = self._create_new_db()
+
+        return num_dropped

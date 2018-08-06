@@ -58,6 +58,8 @@ if __name__ == "__main__":
     # Thus we aim to collect 100 hours of training, that is 400G, so each config has quota of 3G, which is 100 files
     # an initial config ends here
 
+    count = 5 # to flag that initially we need to start the server
+
     for config in configs:
         for weather in weather_range:
             # generate this config
@@ -74,10 +76,8 @@ if __name__ == "__main__":
             driver_conf.weather = str(weather)
 
             # experiment_name & memory not used for human
-            count = 0
+
             while True:
-                if drive("", driver_conf, this_name, 0):
-                    break
                 count += 1
                 if count >= 5:
                     count = 0
@@ -88,6 +88,10 @@ if __name__ == "__main__":
                     t.start()
 
                     time.sleep(15)
+
+                if drive("", driver_conf, this_name, 0):
+                    count = 0
+                    break
                 time.sleep(1)
 
             print("finished one setting, sleep for 3 seconds")

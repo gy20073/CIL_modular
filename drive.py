@@ -91,7 +91,7 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
             # decide whether need recording
             recording = driver.get_recording()
             # reset the environment if needed
-            driver.get_reset()
+            need_drop_recent_measurement = driver.get_reset()
 
             # compute the actions based on the image and the speed
             speed_kmh = measurements.player_measurements.forward_speed * 3.6
@@ -102,6 +102,11 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
             if recording:
                 num_has_collected += 1
                 recorder.record(measurements, sensor_data, actions, action_noisy, direction, driver.get_waypoints())
+
+            if need_drop_recent_measurement:
+                num_frames_dropped = recorder.remove_current_and_previous()
+                print("has dropped ", num_frames_dropped, " frames")
+                num_has_collected -= num_frames_dropped
 
             if drive_config.show_screen:
                 if drive_config.interface == "Carla":

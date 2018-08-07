@@ -28,6 +28,7 @@ class OutputManager(object):
         self._validater = ValidationManager(config, training_manager, sess, batch_tensor_val, self._merged)
 
         self.first_time = True
+        self.duration_sum = 0.0
 
     def tensorboard_scalars(self):
         tf.summary.scalar('Loss', tf.reduce_mean(self._training_manager.get_loss()))
@@ -76,11 +77,13 @@ class OutputManager(object):
         self._train_writer.add_summary(summary, i)
 
     def print_outputs(self, i, duration):
+        self.duration_sum += duration
         # the dictonary of the data used for training
         if i % self._config.print_interval == 0:
             # ideally also include: Epoch, sample inputs and targets
             # print("step=%d, images/second=%f, train loss=%f, validation loss=%f\n" % (i, 1.0*self._config/duration, 0.0, 0.0))
-            print("step=%d, images/second=%f" % (i, 1.0 * self._config.batch_size / duration))
+            print("step=%d, images/second=%f" % (i, 1.0 * self._config.batch_size / self.duration_sum * self._config.print_interval))
+            self.duration_sum = 0.0
 
         """ Writing summary """
         if i % self._config.summary_writing_period == 0 or self.first_time:

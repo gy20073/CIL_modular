@@ -74,17 +74,13 @@ class DatasetManager(object):
                                   self._datasets_val, config, [None] * len(config.sensor_names))
 
     def start_training_queueing(self, sess):
-        enqueue_thread = threading.Thread(target=self.train.enqueue, args=[sess])
-        enqueue_thread.isDaemon()
-        enqueue_thread.start()
+        self.train.start_all_threads(sess)
 
         coord = tf.train.Coordinator()
         self._threads_train = tf.train.start_queue_runners(coord=coord, sess=sess)
 
     def start_validation_queueing(self, sess):
-        enqueue_thread = threading.Thread(target=self.validation.enqueue, args=[sess])
-        enqueue_thread.isDaemon()
-        enqueue_thread.start()
+        self.validation.start_all_threads(sess)
 
         coord = tf.train.Coordinator()
         self._threads_val = tf.train.start_queue_runners(coord=coord, sess=sess)

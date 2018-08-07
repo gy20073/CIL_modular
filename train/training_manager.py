@@ -23,7 +23,7 @@ def get_last_iteration(ckpt):
     else:
         return 1
 
-
+# with the name of TrainManager, it actually is a Network manager
 class TrainManager(object):
     def __init__(self, config, reuse, old_mode=True, batch_tensor=None):
         # TODO: update the initializer
@@ -33,7 +33,7 @@ class TrainManager(object):
 
         with tf.device('/gpu:0'):
             if old_mode:
-                self._input_images = tf.placeholder("float", shape=[None,
+                self._input_images = tf.placeholder(tf.uint8, shape=[None,
                                                                     config.image_size[0],
                                                                     config.image_size[1],
                                                                     config.image_size[2]], name="input_image")
@@ -49,6 +49,12 @@ class TrainManager(object):
                 self._input_images = batch_tensor[0]
                 self._targets_data = batch_tensor[1:(1+len(self._config.targets_names))]
                 self._input_data   = batch_tensor[(1+len(self._config.targets_names)):]
+
+            assert(len(config.sensors_normalize)==1)
+            self._input_images_f = tf.cast(self._input_images, tf.float32)
+            if config.sensors_normalize[0]:
+                self._input_images_f = self._input_images_f / 255.0
+
             self._dout = tf.placeholder("float", shape=[len(config.dropout)])
             self._variable_learning = tf.placeholder("float", name="learning")
 
@@ -62,7 +68,7 @@ class TrainManager(object):
         """ Depends on the actual input """
         with tf.name_scope("Network"):
             self._output_network, self._vis_images, self._features, self._weights = self._create_structure(tf,
-                                                                                                           self._input_images,
+                                                                                                           self._input_images_f,
                                                                                                            self._input_data,
                                                                                                            self._config.image_size,
                                                                                                            self._dout,
@@ -70,7 +76,7 @@ class TrainManager(object):
 
     def build_seg_network_erfnet_one_hot(self):
         """ Depends on the actual input """
-        self._seg_network = ErfNet_Small(self._input_images[:, :, :, 0:3], self._config.number_of_labels,
+        self._seg_network = ErfNet_Small(self._input_images_f[:, :, :, 0:3], self._config.number_of_labels,
                                          batch_size=self._config.batch_size, reuse=self._reuse,
                                          is_training=self._config.train_segmentation)[0]
         with tf.name_scope("Network"):

@@ -76,7 +76,9 @@ def train(experiment_name, memory_fraction):
                 save_model(saver, sess, config_main.models_path + '/ctrl', i)
             save_model(all_saver, sess, config_main.models_path, i)
 
+        #print("running a step")
         training_manager.run_train_step(batch_tensor, sess, i)
+        #print("finished a step")
 
         duration = time.time() - start_time
 

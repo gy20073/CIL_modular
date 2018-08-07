@@ -1,6 +1,9 @@
-import random, cv2
+import random, cv2, time, threading
 
 import numpy as np
+#from joblib import Parallel, delayed
+from multiprocessing import Process, Pool
+from multiprocessing import Queue as mQueue
 import tensorflow as tf
 from codification import *
 from codification import encode, check_distance
@@ -24,7 +27,7 @@ class Dataset(object):
         self._batch_size = config_input.batch_size
 
         # prepare all the placeholders: 3 sources: _queue_image_input, _queue_targets, _queue_inputs
-        self._queue_image_input = tf.placeholder(tf.float32, shape=[config_input.batch_size,
+        self._queue_image_input = tf.placeholder(tf.uint8, shape=[config_input.batch_size,
                                                                     config_input.image_size[0],
                                                                     config_input.image_size[1],
                                                                     config_input.image_size[2]])
@@ -46,10 +49,14 @@ class Dataset(object):
             self._queue_shapes.append([config_input.batch_size, self._config.inputs_sizes[i]])
 
         self._queue = tf.FIFOQueue(capacity=config_input.queue_capacity,
-                                   dtypes=[tf.float32] * (len(self._config.targets_names) + len(self._config.inputs_names) + 1),
+                                   dtypes=[tf.uint8] + [tf.float32] * (len(self._config.targets_names) + len(self._config.inputs_names)),
                                    shapes=self._queue_shapes)
         self._enqueue_op = self._queue.enqueue([self._queue_image_input] + self._queue_targets + self._queue_inputs)
         self._dequeue_op = self._queue.dequeue()
+
+        #self.parallel_workers = Parallel(n_jobs=8, backend="threading")
+        self.input_queue = mQueue(5)
+        self.output_queue = mQueue(5)
 
     def get_batch_tensor(self):
         return self._dequeue_op
@@ -79,6 +86,7 @@ class Dataset(object):
         generated_ids = np.zeros((batch_size, ), dtype='int32')
 
         count = 0
+        to_be_decoded = [[] for _ in range(len(self._images))]
         for control_part in range(0, number_control_divisions):
             num_to_sample = int(batch_size // number_control_divisions)
             if control_part == (number_control_divisions - 1):
@@ -95,34 +103,45 @@ class Dataset(object):
                     ibatch = i // per_h5_len
                     iinbatch = i % per_h5_len
                     imencoded = self._images[isensor][ibatch][iinbatch]
-                    # decode the image
-                    decoded = cv2.imdecode(imencoded, 1)
-                    if hasattr(self._config, "hack_resize_image"):
-                        sz = self._config.hack_resize_image
-                        decoded = cv2.resize(decoded, (sz[1], sz[0]))
-                    sensors_batch[isensor][count, :, :, :] = decoded
+                    to_be_decoded[isensor].append(imencoded)
 
                 generated_ids[count] = i
                 count += 1
-        return sensors_batch, generated_ids
+
+        return to_be_decoded, generated_ids
 
     """Return the next `batch_size` examples from this data set."""
 
     # Used by enqueue
-    def next_batch(self):
+    def next_batch(self, sensors, generated_ids):
         # generate unbiased samples;
         # apply augmentation on sensors and segmentation labels
         # normalize images
         # fill in targets and inputs. with reasonable valid condition checking
 
         batch_size = self._batch_size
-        sensors, generated_ids = self.datagen(batch_size, len(self._splited_keys))
 
         # Get the images -- Perform Augmentation!!!
         for i in range(len(sensors)):
+            # decode each of the sensor in parallel
+            func = lambda x: cv2.imdecode(x, 1)
+            if hasattr(self._config, "hack_resize_image"):
+                height, width = self._config.hack_resize_image
+                func_previous = func
+                func = lambda x: cv2.resize(func_previous(x), (width, height))
+
+            # func = delayed(func)
+            # results = self.parallel_workers(func(x) for x in to_be_decoded[isensor])
+            results = []
+            for x in sensors[i]:
+                results.append(func(x))
+            sensors[i] = np.stack(results, 0)
+
+            # from bgr to rgb
+            sensors[i] = sensors[i][:, :, :, ::-1]
+
             if self._augmenter[i] != None:
                 sensors[i] = self._augmenter[i].augment_images(sensors[i])
-            sensors[i] = sensors[i].astype(np.float32)
 
         # self._targets is the targets variables concatenated
         # Get the targets
@@ -138,10 +157,6 @@ class Dataset(object):
             inputs.append(np.zeros((batch_size, self._config.inputs_sizes[i])))
 
         for ibatch in range(0, batch_size):
-            for isensor in range(len(self._images)):  # number sensors
-                if self._config.sensors_normalize[isensor]:
-                    sensors[isensor][ibatch, :, :, :] = np.multiply(sensors[isensor][ibatch, :, :, :], 1.0 / 255.0)
-
             for itarget in range(len(self._config.targets_names)):
                 # Yang: This is assuming that all target names has size 1
                 k = self._config.variable_names.index(self._config.targets_names[itarget])
@@ -186,10 +201,50 @@ class Dataset(object):
 
         sess.run(self._enqueue_op, feed_dict=queue_feed_dict)
 
-    # the main entrance from other process
-    def enqueue(self, sess):
+    def __getstate__(self):
+        """Return state values to be pickled."""
+        print("pickling")
+        return (self._splited_keys, self._targets, self._config, self._augmenter, self._batch_size)
+
+    def __setstate__(self, state):
+        """Restore state from the unpickled state values."""
+        print("unpickling")
+        self._splited_keys, self._targets, self._config, self._augmenter, self._batch_size = state
+
+    def disk_reader(self):
         while True:
-            # data_loaded[0] is the images, [1] is the target_names [2] is the input names
-            data_loaded = self.next_batch()
-            # process run enqueue the prepared dict
-            self.process_run(sess, data_loaded)
+            #start = time.time()
+            sensors, generated_ids = self.datagen(self._batch_size, len(self._splited_keys))
+            self.input_queue.put((sensors, generated_ids))
+            #print('putting ele into input queue, cost', time.time()-start)
+
+    @staticmethod
+    def worker(dataset, input_queue, output_queue):
+        while True:
+            sensors, generated_ids = input_queue.get()
+            out = dataset.next_batch(sensors, generated_ids)
+            output_queue.put(out)
+
+    def start_multiple_workers(self):
+        n_jobs = 8
+        for i in range(n_jobs):
+            p = Process(target=self.worker, args=(self, self.input_queue, self.output_queue))
+            p.start()
+
+    def put_in_tf(self, sess):
+        while True:
+            #start = time.time()
+            one_batch = self.output_queue.get()
+            self.process_run(sess, one_batch)
+            #print("fetched one output, cost ", time.time()-start)
+
+    def start_all_threads(self, sess):
+        t = threading.Thread(target=self.disk_reader)
+        t.isDaemon()
+        t.start()
+
+        self.start_multiple_workers()
+
+        t = threading.Thread(target=self.put_in_tf, args=(sess, ))
+        t.isDaemon()
+        t.start()

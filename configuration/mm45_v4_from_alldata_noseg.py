@@ -5,8 +5,8 @@ class configMain:
     def __init__(self):
         self.steering_bins_perc = [0.05, 0.05, 0.1, 0.3, 0.3, 0.1, 0.05, 0.05]
         self.number_steering_bins = len(self.steering_bins_perc)
-        self.batch_size = self.number_steering_bins * 15
-        self.batch_size_val = self.number_steering_bins * 15
+        self.batch_size = self.number_steering_bins * 75
+        self.batch_size_val = self.number_steering_bins * 75
         self.number_images_val = self.batch_size_val  # Number of images used in a validation Section - Default: 20*
 
         self.image_size = (88, 200, 3)
@@ -84,7 +84,7 @@ class configInput(configMain):
         # e.g. for [[0,1],[2]] there will be 50% samples with labels 0 and 1, and 50% samples with label 2
         self.labels_per_division = [[0, 2, 5], [3], [4]]
         self.dataset_names = ['targets']
-        self.queue_capacity = 10 # now measured in how many batches
+        self.queue_capacity = 5 # now measured in how many batches
 
         # TODO: move from this hacky way of resizing to something more systematic
         self.hack_resize_image = (88, 200)
@@ -115,7 +115,7 @@ class configTrain(configMain):
 class configOutput(configMain):
     def __init__(self):
         configMain.__init__(self)
-        self.print_interval = 100 # how often in output manager to print
+        self.print_interval = 10 # how often in output manager to print
         self.summary_writing_period = 100 # for output manager
         self.validation_period = 1000  # For output manager, I consider validation as an output thing since it does not directly affects the training in general
 

@@ -88,6 +88,7 @@ class configInput(configMain):
 
         # TODO: move from this hacky way of resizing to something more systematic
         self.hack_resize_image = (88, 200)
+        self.use_perception_stack = False
 
     # TODO NOT IMPLEMENTED Felipe: True/False switches to turn data balancing on or off
 

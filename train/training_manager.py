@@ -25,14 +25,14 @@ def get_last_iteration(ckpt):
 
 # with the name of TrainManager, it actually is a Network manager
 class TrainManager(object):
-    def __init__(self, config, reuse, old_mode=True, batch_tensor=None):
+    def __init__(self, config, reuse, placeholder_input=True, batch_tensor=None):
         # TODO: update the initializer
         self._config = config
         self._reuse = reuse
-        self._old_mode = old_mode
+        self._placeholder_input = placeholder_input
 
         with tf.device('/gpu:0'):
-            if old_mode:
+            if placeholder_input:
                 self._input_images = tf.placeholder(tf.uint8, shape=[None,
                                                                     config.image_size[0],
                                                                     config.image_size[1],
@@ -128,18 +128,8 @@ class TrainManager(object):
                 break
         self._feedDict = {self._variable_learning: decrease_factor * self._config.learning_rate,
                           self._dout: self._config.dropout}
-        if self._old_mode:
-            batch = sess.run(batch_tensor)
-            self._feedDict.update({self._input_images: batch[0]})
 
-            count = 1
-            for i in range(len(self._config.targets_names)):
-                self._feedDict.update({self._targets_data[i]: batch[count]})
-                count += 1
-
-            for i in range(len(self._config.inputs_names)):
-                self._feedDict.update({self._input_data[i]: batch[count]})
-                count += 1
+        assert(self._placeholder_input == False)
 
         sess.run(self._train_step, feed_dict=self._feedDict)
 

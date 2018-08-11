@@ -1,4 +1,6 @@
-import random, cv2, time, threading
+import random, cv2, time, threading, sys, Queue
+sys.path.append("../")
+from all_perceptions import Perceptions
 
 import numpy as np
 #from joblib import Parallel, delayed
@@ -27,29 +29,29 @@ class Dataset(object):
         self._batch_size = config_input.batch_size
 
         # prepare all the placeholders: 3 sources: _queue_image_input, _queue_targets, _queue_inputs
-        self._queue_image_input = tf.placeholder(tf.uint8, shape=[config_input.batch_size,
-                                                                    config_input.image_size[0],
-                                                                    config_input.image_size[1],
-                                                                    config_input.image_size[2]])
+        self._queue_image_input = tf.placeholder(tf.float32, shape=[config_input.batch_size,
+                                                                    config_input.feature_input_size[0],
+                                                                    config_input.feature_input_size[1],
+                                                                    config_input.feature_input_size[2]])
 
-        self._queue_shapes = [[config_input.batch_size, config_input.image_size[0], config_input.image_size[1], config_input.image_size[2]]]
+        self._queue_shapes = [self._queue_image_input.shape]
 
         # config.targets_names: ['wp1_angle', 'wp2_angle', 'Steer', 'Gas', 'Brake', 'Speed']
         self._queue_targets = []
         for i in range(len(self._config.targets_names)):
             self._queue_targets.append(tf.placeholder(tf.float32, shape=[config_input.batch_size,
                                                                          self._config.targets_sizes[i]]))
-            self._queue_shapes.append([config_input.batch_size, self._config.targets_sizes[i]])
+            self._queue_shapes.append(self._queue_targets[-1].shape)
 
         # self.inputs_names = ['Control', 'Speed']
         self._queue_inputs = []
         for i in range(len(self._config.inputs_names)):
             self._queue_inputs.append(tf.placeholder(tf.float32, shape=[config_input.batch_size,
                                                                         self._config.inputs_sizes[i]]))
-            self._queue_shapes.append([config_input.batch_size, self._config.inputs_sizes[i]])
+            self._queue_shapes.append(self._queue_inputs[-1].shape)
 
         self._queue = tf.FIFOQueue(capacity=config_input.queue_capacity,
-                                   dtypes=[tf.uint8] + [tf.float32] * (len(self._config.targets_names) + len(self._config.inputs_names)),
+                                   dtypes=[tf.float32] + [tf.float32] * (len(self._config.targets_names) + len(self._config.inputs_names)),
                                    shapes=self._queue_shapes)
         self._enqueue_op = self._queue.enqueue([self._queue_image_input] + self._queue_targets + self._queue_inputs)
         self._dequeue_op = self._queue.dequeue()
@@ -57,6 +59,25 @@ class Dataset(object):
         #self.parallel_workers = Parallel(n_jobs=8, backend="threading")
         self.input_queue = mQueue(5)
         self.output_queue = mQueue(5)
+
+        if config_input.use_perception_stack:
+            use_mode = {}
+            for key in config_input.perception_num_replicates:
+                if config_input.perception_num_replicates[key] > 0:
+                    assert (config_input.batch_size % config_input.perception_batch_sizes[key] == 0)
+                    use_mode[key] = True
+                else:
+                    use_mode[key] = False
+
+            self.perception_interface = Perceptions(
+                batch_size=config_input.perception_batch_sizes,
+                gpu_assignment=config_input.perception_gpus,
+                compute_methods={},
+                viz_methods={},
+                num_replicates=config_input.perception_num_replicates,
+                path_config =config_input.perception_paths,
+                **use_mode
+            )
 
     def get_batch_tensor(self):
         return self._dequeue_op
@@ -76,13 +97,6 @@ class Dataset(object):
     def datagen(self, batch_size, number_control_divisions):
         # typical input: batch_size, number_control_divisions=3, since 3 blocks
         # Goal: uniformly select from different control signals (group), different steering percentiles.
-        sensors_batch = []
-        for i in range(len(self._images)):
-            # typical config.sensors_size = [(88, 200, 3)]
-            sensors_batch.append(np.zeros((batch_size,
-                                           self._config.sensors_size[i][0],
-                                           self._config.sensors_size[i][1],
-                                           self._config.sensors_size[i][2]), dtype='uint8'))
         generated_ids = np.zeros((batch_size, ), dtype='int32')
 
         count = 0
@@ -142,6 +156,11 @@ class Dataset(object):
 
             if self._augmenter[i] != None:
                 sensors[i] = self._augmenter[i].augment_images(sensors[i])
+
+            if self._config.image_as_float[i]:
+                sensors[i] = sensors[i].astype(np.float32)
+            if self._config.sensors_normalize[i]:
+                sensors[i] /= 255.0
 
         # self._targets is the targets variables concatenated
         # Get the targets
@@ -211,7 +230,7 @@ class Dataset(object):
         print("unpickling")
         self._splited_keys, self._targets, self._config, self._augmenter, self._batch_size = state
 
-    def disk_reader(self):
+    def _thread_disk_reader(self):
         while True:
             #start = time.time()
             sensors, generated_ids = self.datagen(self._batch_size, len(self._splited_keys))
@@ -219,32 +238,57 @@ class Dataset(object):
             #print('putting ele into input queue, cost', time.time()-start)
 
     @staticmethod
-    def worker(dataset, input_queue, output_queue):
+    def _thread_decode_augment(dataset, input_queue, output_queue):
         while True:
             sensors, generated_ids = input_queue.get()
             out = dataset.next_batch(sensors, generated_ids)
             output_queue.put(out)
 
-    def start_multiple_workers(self):
+    def start_multiple_decoders_augmenters(self):
         n_jobs = 8
         for i in range(n_jobs):
-            p = Process(target=self.worker, args=(self, self.input_queue, self.output_queue))
+            p = Process(target=self._thread_decode_augment, args=(self, self.input_queue, self.output_queue))
             p.start()
 
-    def put_in_tf(self, sess):
+    def _thread_perception_splitting(self, input_queue):
+        self.output_image_queue = Queue.Queue(5)
+        self.output_remaining_queue = Queue.Queue(5)
+        while True:
+            one_batch = input_queue.get()
+            self.output_remaining_queue.put(one_batch[1:])
+            self.output_image_queue.put(one_batch[0])
+
+    def _thread_perception_concat(self, perception_output):
+        self.final_output_queue = Queue.Queue(5)
+        while True:
+            remain = self.output_remaining_queue.get()
+            image_feature = perception_output.get()
+            self.final_output_queue.put([image_feature] + remain)
+
+    def _thread_feed_dict(self, sess, output_queue):
         while True:
             #start = time.time()
-            one_batch = self.output_queue.get()
+            one_batch = output_queue.get()
             self.process_run(sess, one_batch)
             #print("fetched one output, cost ", time.time()-start)
 
     def start_all_threads(self, sess):
-        t = threading.Thread(target=self.disk_reader)
+        t = threading.Thread(target=self._thread_disk_reader)
         t.isDaemon()
         t.start()
 
-        self.start_multiple_workers()
+        self.start_multiple_decoders_augmenters()
 
-        t = threading.Thread(target=self.put_in_tf, args=(sess, ))
+        if self._config.use_perception_stack:
+            t = threading.Thread(target=self._thread_perception_splitting, args=(self.output_queue,))
+            t.start()
+            perception_output = self.perception_interface.compute_async_thread(self.output_image_queue)
+            t = threading.Thread(target=self._thread_perception_concat, args=(perception_output,))
+            t.start()
+            output_queue = self.final_output_queue
+        else:
+            output_queue = self.output_queue
+
+        t = threading.Thread(target=self._thread_feed_dict, args=(sess, output_queue))
         t.isDaemon()
         t.start()

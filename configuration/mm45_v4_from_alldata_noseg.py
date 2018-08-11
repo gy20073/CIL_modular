@@ -9,6 +9,7 @@ class configMain:
         self.batch_size_val = self.number_steering_bins * 75
         self.number_images_val = self.batch_size_val  # Number of images used in a validation Section - Default: 20*
 
+        # TODO: perception, change this ()
         self.image_size = (88, 200, 3)
         self.network_input_size = self.image_size
         # the speed unit has changed, when reading from the h5 file, we change the speed_factor to adjust for this
@@ -88,7 +89,23 @@ class configInput(configMain):
 
         # TODO: move from this hacky way of resizing to something more systematic
         self.hack_resize_image = (88, 200)
+        self.image_as_float = [True]
+
+        # perception module related
         self.use_perception_stack = False
+        self.perception_gpus = [0, 1, 4, 5]
+        self.perception_paths = "path_jormungandr"
+        self.perception_batch_sizes = {"det_COCO":3, "det_TL":3, "seg":4, "depth":4, "det_TS": -1}
+        self.perception_num_replicates = {"det_COCO": 6, "det_TL": 6, "seg": 4, "depth": 4, "det_TS": -1}
+        if self.use_perception_stack:
+            self.feature_input_size = (39, 52, 295) # hardcoded for now
+            self.image_as_float = [False]
+            self.sensors_normalize = [False]
+            del self.hack_resize_image
+            # TODO: debug
+            self.feature_input_size = (39, 52, 25)
+        else:
+            self.feature_input_size = self.image_size
 
     # TODO NOT IMPLEMENTED Felipe: True/False switches to turn data balancing on or off
 

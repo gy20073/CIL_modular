@@ -10,7 +10,7 @@ def single_branch(image_input, speed, control_input, config, sess, train_manager
     control_to_branch = {2:0, 0:0, 3:2, 4:3, 5:1}
     all_net = branches[control_to_branch[int(control_input)]]
 
-    image_input = image_input.reshape((1, config.image_size[0], config.image_size[1], config.image_size[2]))
+    image_input = image_input.reshape((1, config.feature_input_size[0], config.feature_input_size[1], config.feature_input_size[2]))
     speed = np.array(speed / config.speed_factor)
     speed = speed.reshape((1, 1))
     feedDict = {train_manager._input_images: image_input,
@@ -46,7 +46,7 @@ def single_branch(image_input, speed, control_input, config, sess, train_manager
         return predicted_steers, predicted_acc, predicted_brake
 
 def seg_viz(image_input, speed, config, sess, train_manager):
-    image_input = image_input.reshape((1, config.image_size[0], config.image_size[1], config.image_size[2]))
+    image_input = image_input.reshape((1, config.feature_input_size[0], config.feature_input_size[1], config.feature_input_size[2]))
 
     speed = np.array(speed / config.speed_factor)
     speed = speed.reshape((1, 1))

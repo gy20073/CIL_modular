@@ -5,6 +5,7 @@ import numpy as np
 from PIL import ImageDraw, Image, ImageFont
 
 sys.path.append('../train')
+sys.path.append("../")
 sldist = lambda c1, c2: math.sqrt((c2[0] - c1[0])**2 + (c2[1] - c1[1])**2)
 # carla related import
 from carla.agent.agent import Agent
@@ -19,6 +20,8 @@ import machine_output_functions
 from driver import Driver
 from drawing_tools import *
 from common_util import restore_session, preprocess_image
+from all_perceptions import Perceptions
+
 slim = tf.contrib.slim
 
 def load_system(config):
@@ -70,6 +73,25 @@ class CarlaMachine(Agent, Driver):
 
         self.debug_i = 0
         self.temp_image_path = "./temp/"
+
+        if self._config.use_perception_stack:
+            use_mode = {}
+            for key in self._config.perception_num_replicates:
+                if self._config.perception_num_replicates[key] > 0:
+                    self._config.perception_num_replicates[key] = 1
+                    use_mode[key] = True
+                else:
+                    use_mode[key] = False
+
+            self.perception_interface = Perceptions(
+                batch_size={key: 1 for key in use_mode if use_mode[key]},
+                gpu_assignment=self._config.perception_gpus,
+                compute_methods={},
+                viz_methods={},
+                num_replicates=self._config.perception_num_replicates,
+                path_config =self._config.perception_paths,
+                **use_mode
+            )
 
     def start(self):
         self.carla = CarlaClient(self._host, int(self._port), timeout=120)
@@ -179,8 +201,15 @@ class CarlaMachine(Agent, Driver):
             image_input = cv2.resize(image_input, self._config.hack_resize_image)
         self.save_image(image_input, direction)
 
-        image_input = image_input.astype(np.float32)
-        image_input = np.multiply(image_input, 1.0 / 255.0)
+        if self._config.image_as_float[0]:
+            image_input = image_input.astype(np.float32)
+        if self._config.sensors_normalize[0]:
+            image_input = np.multiply(image_input, 1.0 / 255.0)
+
+        if self._config.use_perception_stack:
+            image_input = np.expand_dims(image_input, 0)
+            image_input = self.perception_interface.compute(image_input)
+            image_input = self.perception_interface._merge_logits_all_perception(image_input)
 
         if (self._train_manager._config.control_mode == 'single_branch_wp'):
             # Yang: use the waypoints to predict the steer, in theory PID controller, but in reality just P controller
@@ -222,10 +251,19 @@ class CarlaMachine(Agent, Driver):
 
         return measurements, sensor_data, direction
 
-    def compute_perception_activations(self, sensor, speed_kmh):
-        sensor = scipy.misc.imresize(sensor, [self._config.network_input_size[0], self._config.network_input_size[1]])
-        image_input = sensor.astype(np.float32)
-        image_input = np.multiply(image_input, 1.0 / 255.0)
+    def compute_perception_activations(self, image_input, speed_kmh):
+        image_input = scipy.misc.imresize(image_input, [self._config.network_input_size[0], self._config.network_input_size[1]])
+
+        if self._config.image_as_float[0]:
+            image_input = image_input.astype(np.float32)
+        if self._config.sensors_normalize[0]:
+            image_input = np.multiply(image_input, 1.0 / 255.0)
+
+        if self._config.use_perception_stack:
+            image_input = np.expand_dims(image_input, 0)
+            image_input = self.perception_interface.compute(image_input)
+            image_input = self.perception_interface._merge_logits_all_perception(image_input)
+
         vbp_image = machine_output_functions.seg_viz(image_input, speed_kmh, self._config, self._sess, self._train_manager)
 
         return 0.4 * grayscale_colormap(np.squeeze(vbp_image), 'jet') + 0.6 * image_input  # inferno

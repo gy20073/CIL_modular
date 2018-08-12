@@ -100,15 +100,25 @@ class TrainManager(object):
         #		beta1=0.7,beta2=0.85
         #		beta1=0.99,beta2=0.999
         with tf.name_scope("Optimization"):
+            print("using optimizer ", self._config.optimizer)
+            if self._config.optimizer == "sgd":
+                opt = tf.train.MomentumOptimizer
+                opt_kwargs = {"momentum": 0.9}
+            elif self._config.optimizer == "adam":
+                opt = tf.train.AdamOptimizer
+                opt_kwargs = {}
+            else:
+                raise ValueError()
+
             if hasattr(self._config, 'finetune_segmentation') or \
                     not (hasattr(self._config, 'segmentation_model_name')) or \
                     self._config.segmentation_model is None:
-                self._train_step = tf.train.AdamOptimizer(self._variable_learning).minimize(self._loss)
+                self._train_step = opt(self._variable_learning, **opt_kwargs).minimize(self._loss)
                 print("Optimizer: All variables")
             else:
                 train_vars = list(set(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)) -
                                   set(slim.get_variables(scope=str(self._config.segmentation_model_name))))
-                self._train_step = tf.train.AdamOptimizer(self._variable_learning).minimize(self._loss, var_list=train_vars)
+                self._train_step = opt(self._variable_learning, **opt_kwargs).minimize(self._loss, var_list=train_vars)
                 print("Optimizer: Exclude variables from: ", str(self._config.segmentation_model_name))
 
     def run_train_step(self, batch_tensor, sess, i):

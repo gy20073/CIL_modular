@@ -43,6 +43,7 @@ def train(experiment_name, memory_fraction):
             path_config=config_input.perception_paths,
             **use_mode
         )
+        time.sleep(config_input.perception_initialization_sleep)
     else:
         perception_interface = None
 

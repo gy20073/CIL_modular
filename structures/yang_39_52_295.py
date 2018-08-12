@@ -1,5 +1,4 @@
 import numpy as np
-
 from network import Network
 
 
@@ -10,28 +9,35 @@ def create_structure(tf, input_image, input_data, input_size, dropout, config):
 
     network_manager = Network(config, dropout, tf.shape(x))
 
-    """conv1"""  # kernel sz, stride, num feature maps
-    xc = network_manager.conv_block(x, 5, 2, 32, padding_in='VALID')
+    '''dimension reduction'''
+    # size 39*52*295
+    xc = network_manager.conv_block(x, 1, 1, 64, padding_in='VALID')
+    # size 39*52*64
     print(xc)
-    xc = network_manager.conv_block(xc, 3, 1, 32, padding_in='VALID')
+    """conv1"""  # kernel sz, stride, num feature maps
+    xc = network_manager.conv_block(xc, 3, 1, 64, padding_in='VALID')
+    # size 37*50*64
     print(xc)
 
     """conv2"""
-    xc = network_manager.conv_block(xc, 3, 2, 64, padding_in='VALID')
+    xc = network_manager.conv_block(xc, 3, 2, 128, padding_in='VALID')
+    # size 18*24*128
     print(xc)
-    xc = network_manager.conv_block(xc, 3, 1, 64, padding_in='VALID')
+    xc = network_manager.conv_block(xc, 3, 1, 128, padding_in='VALID')
+    # size 16*22*128
     print(xc)
 
     """conv3"""
-    xc = network_manager.conv_block(xc, 3, 2, 128, padding_in='VALID')
+    xc = network_manager.conv_block(xc, 3, 2, 256, padding_in='VALID')
+    # size 7*10*256
     print(xc)
-    xc = network_manager.conv_block(xc, 3, 1, 128, padding_in='VALID')
+    xc = network_manager.conv_block(xc, 3, 1, 256, padding_in='VALID')
+    # size 5*8*256
     print(xc)
 
     """conv4"""
-    xc = network_manager.conv_block(xc, 3, 1, 256, padding_in='VALID')
-    print(xc)
-    xc = network_manager.conv_block(xc, 3, 1, 256, padding_in='VALID')
+    xc = network_manager.conv_block(xc, 3, 2, 512, padding_in='VALID')
+    # size 2*3*512
     print(xc)
     """mp3 (default values)"""
 

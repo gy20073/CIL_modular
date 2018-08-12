@@ -5,12 +5,15 @@ sys.path.append('input')
 sys.path.append('train')
 sys.path.append('output')
 sys.path.append('utils')
+sys.path.append('../')
 
 from common_util import restore_session
 
 from dataset_manager import *
 from training_manager import TrainManager, get_last_iteration, save_model
 from output_manager import OutputManager
+
+from all_perceptions import Perceptions
 
 import tensorflow as tf
 slim = tf.contrib.slim
@@ -20,12 +23,35 @@ def train(experiment_name, memory_fraction):
     """ Initialize the input class to get the configuration """
     conf_module = __import__(experiment_name)
     config_main = conf_module.configMain()
+    config_input = conf_module.configInput()
+
+    if config_input.use_perception_stack:
+        use_mode = {}
+        for key in config_input.perception_num_replicates:
+            if config_input.perception_num_replicates[key] > 0:
+                assert (config_input.batch_size % config_input.perception_batch_sizes[key] == 0)
+                use_mode[key] = True
+            else:
+                use_mode[key] = False
+
+        perception_interface = Perceptions(
+            batch_size=config_input.perception_batch_sizes,
+            gpu_assignment=config_input.perception_gpus,
+            compute_methods={},
+            viz_methods={},
+            num_replicates=config_input.perception_num_replicates,
+            path_config=config_input.perception_paths,
+            **use_mode
+        )
+    else:
+        perception_interface = None
 
     config_gpu = tf.ConfigProto()
     config_gpu.gpu_options.per_process_gpu_memory_fraction = float(memory_fraction)
     sess = tf.Session(config=config_gpu)
 
-    dataset_manager = DatasetManager(conf_module.configInput())
+
+    dataset_manager = DatasetManager(conf_module.configInput(), perception_interface)
     batch_tensor = dataset_manager.train.get_batch_tensor()
     batch_tensor_val = dataset_manager.validation.get_batch_tensor()
     dataset_manager.start_training_queueing(sess)

@@ -196,7 +196,7 @@ class CarlaMachine(Agent, Driver):
             direction = self.compute_direction((0, 0, 0), (0, 0, 0))
 
         assert(self._config.sensor_names == ['CameraMiddle'])
-        image_input = preprocess_image(sensor, self._image_cut, self._config.sensors_size[0])
+        image_input = preprocess_image(sensor, self._image_cut, self._config.image_size)
         if hasattr(self._config, "hack_resize_image"):
             image_input = cv2.resize(image_input, self._config.hack_resize_image)
         self.save_image(image_input, direction)
@@ -252,7 +252,7 @@ class CarlaMachine(Agent, Driver):
         return measurements, sensor_data, direction
 
     def compute_perception_activations(self, image_input, speed_kmh):
-        image_input = scipy.misc.imresize(image_input, [self._config.network_input_size[0], self._config.network_input_size[1]])
+        image_input = scipy.misc.imresize(image_input, [self._config.image_size[0], self._config.image_size[1]])
 
         if self._config.image_as_float[0]:
             image_input = image_input.astype(np.float32)

@@ -43,7 +43,7 @@ def split(controls, steers, labels_per_division, steering_bins_perc):
     return output
 
 class DatasetManager(object):
-    def __init__(self, config):
+    def __init__(self, config, perception_interface=None):
         # self._datasets_train is a list of totNum* dim, no transposed
         self._images_train, self._datasets_train = self.read_all_files(config.train_db_path,
                                                                        config.sensor_names,
@@ -62,7 +62,8 @@ class DatasetManager(object):
 
         self.train = Dataset(splited_keys_train,
                              self._images_train,
-                             self._datasets_train, config, config.augment)
+                             self._datasets_train, config, config.augment,
+                             perception_interface)
 
         splited_keys_val = split(controls=self._datasets_val[0][:, config.variable_names.index("Control")],
                                    steers=self._datasets_val[0][:, config.variable_names.index("Steer")],
@@ -71,7 +72,8 @@ class DatasetManager(object):
 
         self.validation = Dataset(splited_keys_val,
                                   self._images_val,
-                                  self._datasets_val, config, [None] * len(config.sensor_names))
+                                  self._datasets_val, config, [None] * len(config.sensor_names),
+                                  perception_interface)
 
     def start_training_queueing(self, sess):
         self.train.start_all_threads(sess)

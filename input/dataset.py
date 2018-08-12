@@ -1,6 +1,4 @@
 import random, cv2, time, threading, sys, Queue
-sys.path.append("../")
-from all_perceptions import Perceptions
 
 import numpy as np
 #from joblib import Parallel, delayed
@@ -11,7 +9,7 @@ from codification import *
 from codification import encode, check_distance
 
 class Dataset(object):
-    def __init__(self, splited_keys, images, datasets, config_input, augmenter):
+    def __init__(self, splited_keys, images, datasets, config_input, augmenter, perception_interface):
         # sample inputs
         # splited_keys: _splited_keys_train[i_labels_per_division][i_steering_bins_perc][a list of keys]
         # images: [i_sensor][i_file_number] = (lastidx, lastidx + x.shape[0], x)
@@ -60,24 +58,8 @@ class Dataset(object):
         self.input_queue = mQueue(5)
         self.output_queue = mQueue(5)
 
-        if config_input.use_perception_stack:
-            use_mode = {}
-            for key in config_input.perception_num_replicates:
-                if config_input.perception_num_replicates[key] > 0:
-                    assert (config_input.batch_size % config_input.perception_batch_sizes[key] == 0)
-                    use_mode[key] = True
-                else:
-                    use_mode[key] = False
+        self.perception_interface = perception_interface
 
-            self.perception_interface = Perceptions(
-                batch_size=config_input.perception_batch_sizes,
-                gpu_assignment=config_input.perception_gpus,
-                compute_methods={},
-                viz_methods={},
-                num_replicates=config_input.perception_num_replicates,
-                path_config =config_input.perception_paths,
-                **use_mode
-            )
 
     def get_batch_tensor(self):
         return self._dequeue_op
@@ -251,19 +233,16 @@ class Dataset(object):
             p.start()
 
     def _thread_perception_splitting(self, input_queue):
-        self.output_image_queue = Queue.Queue(5)
-        self.output_remaining_queue = Queue.Queue(5)
         while True:
             one_batch = input_queue.get()
             self.output_remaining_queue.put(one_batch[1:])
             self.output_image_queue.put(one_batch[0])
 
     def _thread_perception_concat(self, perception_output):
-        self.final_output_queue = Queue.Queue(5)
         while True:
             remain = self.output_remaining_queue.get()
             image_feature = perception_output.get()
-            self.final_output_queue.put([image_feature] + remain)
+            self.final_output_queue.put([image_feature, remain[0], remain[1]])
 
     def _thread_feed_dict(self, sess, output_queue):
         while True:
@@ -280,9 +259,14 @@ class Dataset(object):
         self.start_multiple_decoders_augmenters()
 
         if self._config.use_perception_stack:
+            self.output_image_queue = Queue.Queue(5)
+            self.output_remaining_queue = Queue.Queue(5)
             t = threading.Thread(target=self._thread_perception_splitting, args=(self.output_queue,))
             t.start()
-            perception_output = self.perception_interface.compute_async_thread(self.output_image_queue)
+
+            perception_output = self.perception_interface.compute_async_thread_channel(self.output_image_queue)
+
+            self.final_output_queue = Queue.Queue(5)
             t = threading.Thread(target=self._thread_perception_concat, args=(perception_output,))
             t.start()
             output_queue = self.final_output_queue

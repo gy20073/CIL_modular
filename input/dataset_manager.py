@@ -4,7 +4,7 @@ import tensorflow as tf
 sys.path.append('spliter')
 from dataset import *
 
-def split(controls, steers, labels_per_division, steering_bins_perc):
+def split_bugfixed(controls, steers, labels_per_division, steering_bins_perc):
     # labels_per_division: [[0, 2, 5], [3], [4]]
     # steering_bins_perc: [0.05, 0.05, 0.1, 0.3, 0.3, 0.1, 0.05, 0.05]
     initial_partition = [[] for _ in range(len(labels_per_division))]
@@ -41,6 +41,28 @@ def split(controls, steers, labels_per_division, steering_bins_perc):
         output.append(this_output)
 
     return output
+
+
+def split_original(controls, steers, labels_per_division, steering_bins_perc):
+    # labels_per_division: [[0, 2, 5], [3], [4]]
+    # steering_bins_perc: [0.05, 0.05, 0.1, 0.3, 0.3, 0.1, 0.05, 0.05]
+    initial_partition = [[] for _ in range(len(labels_per_division))]
+    for i in range(len(controls)):
+        index = None
+        for k in range(len(labels_per_division)):
+            if int(controls[i]) in labels_per_division[k]:
+                index = k
+        initial_partition[index].append(i)
+
+    # then we continue to partition the steers
+    output = []
+    for i in range(len(initial_partition)):
+        output.append([initial_partition[i]])
+
+    return output
+
+split = split_original
+
 
 class DatasetManager(object):
     def __init__(self, config, perception_interface=None):

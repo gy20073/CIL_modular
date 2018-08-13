@@ -48,6 +48,25 @@ class CarlaMachine(Agent, Driver):
         self._config.train_segmentation = False
         self._train_manager = load_system(conf_module.configTrain())
 
+        if self._config.use_perception_stack:
+            use_mode = {}
+            for key in self._config.perception_num_replicates:
+                if self._config.perception_num_replicates[key] > 0:
+                    self._config.perception_num_replicates[key] = 1
+                    use_mode[key] = True
+                else:
+                    use_mode[key] = False
+
+            self.perception_interface = Perceptions(
+                batch_size={key: 1 for key in use_mode if use_mode[key]},
+                gpu_assignment=self._config.perception_gpus,
+                compute_methods={},
+                viz_methods={},
+                num_replicates=self._config.perception_num_replicates,
+                path_config =self._config.perception_paths,
+                **use_mode
+            )
+
         config_gpu = tf.ConfigProto()
         config_gpu.gpu_options.visible_device_list = gpu_number
         config_gpu.gpu_options.per_process_gpu_memory_fraction = memory_fraction
@@ -73,25 +92,6 @@ class CarlaMachine(Agent, Driver):
 
         self.debug_i = 0
         self.temp_image_path = "./temp/"
-
-        if self._config.use_perception_stack:
-            use_mode = {}
-            for key in self._config.perception_num_replicates:
-                if self._config.perception_num_replicates[key] > 0:
-                    self._config.perception_num_replicates[key] = 1
-                    use_mode[key] = True
-                else:
-                    use_mode[key] = False
-
-            self.perception_interface = Perceptions(
-                batch_size={key: 1 for key in use_mode if use_mode[key]},
-                gpu_assignment=self._config.perception_gpus,
-                compute_methods={},
-                viz_methods={},
-                num_replicates=self._config.perception_num_replicates,
-                path_config =self._config.perception_paths,
-                **use_mode
-            )
 
     def start(self):
         self.carla = CarlaClient(self._host, int(self._port), timeout=120)
@@ -156,13 +156,11 @@ class CarlaMachine(Agent, Driver):
 
     # TODO: change to the agent interface, this depend on the sensor names
     def run_step(self, measurements, sensor_data, direction, target):
-        sensors = []
         assert(self._config.sensor_names == ["CameraMiddle"])
-        for name in self._config.sensor_names:
-            sensors.append(image_converter.to_bgra_array(sensor_data[name]))
+        sensor = image_converter.to_bgra_array(sensor_data["CameraMiddle"])
 
         speed_kmh = measurements.player_measurements.forward_speed * 3.6
-        control = self.compute_action(sensors, speed_kmh, direction)
+        control = self.compute_action(sensor, speed_kmh, direction)
 
         return control
 
@@ -187,7 +185,7 @@ class CarlaMachine(Agent, Driver):
         viz = self.write_text_on_image(sensor, txtdt[direction], 10)
         cv2.imwrite(debug_path +
                     str(self.debug_i).zfill(9) +
-                    ".png", viz)
+                    ".png", viz[:,:,::-1])
         self.debug_i += 1
         print("output image id is: ", self.debug_i)
 
@@ -198,7 +196,7 @@ class CarlaMachine(Agent, Driver):
         assert(self._config.sensor_names == ['CameraMiddle'])
         image_input = preprocess_image(sensor, self._image_cut, self._config.image_size)
         if hasattr(self._config, "hack_resize_image"):
-            image_input = cv2.resize(image_input, self._config.hack_resize_image)
+            image_input = cv2.resize(image_input, (self._config.hack_resize_image[1], self._config.hack_resize_image[0]))
         self.save_image(image_input, direction)
 
         if self._config.image_as_float[0]:

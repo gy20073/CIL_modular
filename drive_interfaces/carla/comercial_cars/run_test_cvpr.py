@@ -1,19 +1,11 @@
-# from scene_parameters import SceneParams
-
-import argparse
-import logging
-import sys
+import argparse, logging, sys
 
 sys.path.append('drive_interfaces/configuration')
-
 sys.path.append('drive_interfaces')
 sys.path.append('drive_interfaces/carla')
 sys.path.append('drive_interfaces/carla/carla_client')
-
 sys.path.append('drive_interfaces/carla/carla_client/planner')
-
 sys.path.append('drive_interfaces/carla/carla_client/testing')
-
 sys.path.append('test_interfaces')
 sys.path.append('utils')
 sys.path.append('dataset_manipulation')
@@ -27,20 +19,16 @@ sys.path.append('structures')
 from carla_machine import *
 
 from carla.driving_benchmark import run_driving_benchmark
-from carla.driving_benchmark.experiment_suites import CVPR2017
+from carla.driving_benchmark.experiment_suites import YangExp
 from common_util import parse_drive_arguments
-
-
-
 
 def main(host, port, city, summary_name, agent):
     #TODO: make an agent; define the camera in the testing env; change city name
-    # debug Yang, after debug, change continue experiment to True
-    experiment_suite = CVPR2017(city)
+    experiment_suite = YangExp(city)
     run_driving_benchmark(agent, experiment_suite,
                           city_name=city,
                           log_name=summary_name,
-                          continue_experiment=False,
+                          continue_experiment=True,
                           host=host,
                           port=int(port),
                           save_images=True)
@@ -61,16 +49,10 @@ if (__name__ == '__main__'):
 
     parser.add_argument('-m', '--memory', default=1.0, help='The amount of memory this process is going to use')
     # Drive
-    parser.add_argument('-cc', '--carla-config', help="Carla config file used for driving")
     parser.add_argument('-l', '--host', type=str, default='127.0.0.1', help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
-    parser.add_argument('-pt', '--path', type=str, default="/media/adas/012B4138528FF294/TestBranchNoCol2/",
-                        help='Path to Store outputs')
-    parser.add_argument('-res', '--resolution', default="800,600", help='If we are showing the screen of the player')
-    parser.add_argument('--driver', default="Human", help='Select who is driving, a human or a machine')
     parser.add_argument('-s', '--summary', default="summary_number_1", help='summary')
     parser.add_argument('-cy', '--city', help='select the graph from the city being used')
-    parser.add_argument('-imc', '--image_cut', help='Set the positions where the image is cut')
 
     args = parser.parse_args()
     if args.log or args.debug:
@@ -85,13 +67,18 @@ if (__name__ == '__main__'):
             ch.setFormatter(formatter)
             root.addHandler(ch)
 
-    driver_conf_module = __import__("9cam_agent_carla_test_rc")
-    driver_conf = driver_conf_module.configDrive()
-    driver_conf.use_planner = True
+    driver_conf = lambda: None # an object that could add attributes dynamically
+    driver_conf.image_cut = [0, 100000]
+    driver_conf.host = "127.0.0.1"
+    driver_conf.port = 2000
+    driver_conf.use_planner = False # fixed
+    driver_conf.carla_config = None # This is not used by CarlaMachine but it's required
+    # used by main
+    driver_conf.city="Town01"
+
     driver_conf = parse_drive_arguments(args,
                                         driver_conf,
-                                        attributes=['carla_config', 'host',
-                                                    'path', 'type_of_driver', 'city'])
+                                        attributes=['host', 'city'])
     print (driver_conf)
 
     with  open(args.summary + '.stats.csv', 'w+') as f:

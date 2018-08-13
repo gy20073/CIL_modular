@@ -90,8 +90,8 @@ class configInput(configMain):
             random_order=True  # do all of the above in random order
         )]
 
-        all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/2/*/data_*.h5")
-        self.val_db_path = glob.glob("/data/yang/code/aws/scratch/carla_collect/2/*WeatherId=13/data_*.h5")
+        all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/4/*/data_*.h5")
+        self.val_db_path = glob.glob("/data/yang/code/aws/scratch/carla_collect/4/*WeatherId=13/data_*.h5")
         self.train_db_path = list(set(all_files) - set(self.val_db_path))
 
         self.speed_factor = 40.0  # In KM/H

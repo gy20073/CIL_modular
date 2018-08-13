@@ -1,9 +1,22 @@
 import sys, h5py, cv2, os, shutil, glob
 import numpy as np
 from subprocess import call
+from PIL import Image, ImageDraw, ImageFont
 
 num_images_per_h5 = 200
 temp_folder = "./temp/"
+
+
+def write_text_on_image(image, string, fontsize=10):
+    image = image.copy()
+    image = np.uint8(image)
+    j = Image.fromarray(image)
+    draw = ImageDraw.Draw(j)
+    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", fontsize)
+    draw.text((0, 0), string, (255, 0, 0), font=font)
+
+    return np.array(j)
+
 
 def sample_images_from_h5(path, temp, show_all):
     f=h5py.File(path, "r")
@@ -31,8 +44,17 @@ def sample_images_from_h5(path, temp, show_all):
         for imid in range(num_images_per_h5):
             key = 'CameraMiddle'
             path = os.path.join(temp, str(imid).zfill(5)+".jpg")
-            with open(path, "wb") as g:
-                g.write(f[key][imid])
+
+            image = cv2.imdecode(f[key][imid], 1)
+            #image = image[:,:,::-1]
+            image = write_text_on_image(image,
+                                        "steer   :" + "{:.2f}".format(f["targets"][imid, 0]) + "\n" +
+                                        "throttle:" + str(f["targets"][imid, 1]) + "\n" +
+                                        "brake   :" + str(f["targets"][imid, 2]) + "\n",
+                                        fontsize=30)
+            #image = image[:,:,::-1]
+            cv2.imwrite(path, image)
+
 
     print("done")
 

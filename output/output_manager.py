@@ -33,6 +33,8 @@ class OutputManager(object):
     def tensorboard_scalars(self):
         tf.summary.scalar('Loss', tf.reduce_mean(self._training_manager.get_loss()))
 
+        tf.summary.scalar('learning_rate', tf.reduce_mean(self._training_manager._variable_learning))
+
         """ This is the loss energy vec """
         # indexed by [ibranch][i_within_branch]
         energy_tensor_vec = convert_mat_to_tensor(self._training_manager.get_variable_energy(),

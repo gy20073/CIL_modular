@@ -27,6 +27,8 @@ class ValidationManager(object):
             count += 1
         feedDict.update({self._training_manager._dout: [1] * len(self._config.dropout)})
 
+        feedDict.update({self._training_manager._variable_learning: 0.0})
+
         return feedDict
 
     def run(self, iter_number):

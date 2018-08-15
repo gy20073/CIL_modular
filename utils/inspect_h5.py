@@ -42,7 +42,8 @@ def sample_images_from_h5(path, temp, show_all, is3):
 
     else:
         if is3:
-            rg = range(0, num_images_per_h5*3, 3)
+            rg = range(0, num_images_per_h5*3)
+            image_list = [None, None, None]
         else:
             rg = range(num_images_per_h5)
 
@@ -52,6 +53,8 @@ def sample_images_from_h5(path, temp, show_all, is3):
             path = os.path.join(temp, str(counter).zfill(5)+".jpg")
 
             image = cv2.imdecode(f[key][imid], 1)
+            image = image[::2, ::2, :]
+
             #image = image[:,:,::-1]
             td = lambda fl: "{:.2f}".format(fl)
             image = write_text_on_image(image,
@@ -61,12 +64,22 @@ def sample_images_from_h5(path, temp, show_all, is3):
                                         "direction:" + str(f["targets"][imid, 24]) + "\n" +
                                         "speed    :" + td(f["targets"][imid, 10]) + "\n" +
                                         "ori    :" + td(f["targets"][imid, 21]) + " " + td(f["targets"][imid, 22]) + " " + td(f["targets"][imid, 23]) + "\n",
-                                        fontsize=30)
-            #image = image[:,:,::-1]
-            cv2.imwrite(path, image)
-
-            counter += 1
-
+                                        fontsize=15)
+            if not is3:
+                #image = image[:,:,::-1]
+                cv2.imwrite(path, image)
+                counter += 1
+            else:
+                mod = imid % 3
+                # 0 middle
+                # 1 left
+                # 2 right
+                mapping = {0: 1, 1: 0, 2: 2}
+                image_list[mapping[mod]] = image
+                if mod == 2:
+                    image = np.concatenate(image_list, axis=1)
+                    cv2.imwrite(path, image)
+                    counter += 1
 
     print("done")
 

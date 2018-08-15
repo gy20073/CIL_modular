@@ -2,11 +2,11 @@
 
 # resource related
 gpu_carla="0"
-gpu_agent="6"
+gpu_agent="0"
 port="2000"
 # test related
 city_name="Town01" # first test the train town
-exp_id="mm45_v4_from_alldata_noseg_splitv0_v4"
+exp_id="mm45_v4_from_alldata_noseg_splitv0_v8"
 
 
 # launch carla

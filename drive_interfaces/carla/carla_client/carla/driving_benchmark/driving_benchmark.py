@@ -252,6 +252,11 @@ class DrivingBenchmark(object):
         agent.debug_i = 0
         agent.temp_image_path = self._recording._path
 
+        stuck_counter = 0
+        pre_x = 0.0
+        pre_y = 0.0
+        last_collision_ago = 1000000000
+
         while (current_timestamp - initial_timestamp) < (time_out * 1000) and not success:
 
             # Read data from server with the client
@@ -295,6 +300,28 @@ class DrivingBenchmark(object):
             frame += 1
             measurement_vec.append(measurements.player_measurements)
             control_vec.append(control)
+
+            pm = measurements.player_measurements
+            if pm.collision_vehicles    > 0.0 \
+              or pm.collision_pedestrians > 0.0 \
+              or pm.collision_other       > 0.0:
+                last_collision_ago = 0
+            else:
+                last_collision_ago += 1
+
+            if sldist([current_x, current_y], [pre_x, pre_y]) < 0.1:
+                stuck_counter += 1
+            else:
+                stuck_counter = 0
+            pre_x = current_x
+            pre_y = current_y
+            if stuck_counter > 200:
+                print("breaking because of stucking too long")
+                break
+
+            if stuck_counter > 30 and last_collision_ago < 50:
+                print("breaking because of collision and stuck")
+                break
 
         # convert the images saved by the underlying to a video
         if self._recording._save_images:

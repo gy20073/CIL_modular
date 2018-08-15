@@ -5,7 +5,7 @@ sys.path.append('drive_interfaces/carla/carla_client')
 from carla.planner.planner import Planner
 
 input_id = 5
-output_id = 8
+output_id = 9
 debug_start = 0
 debug_end= 14000000
 
@@ -116,7 +116,7 @@ for one_h5 in sorted(all_files)[debug_start:debug_end]:
 
         time_use = 1.0
         car_lenght = 6.0
-        speed = math.fabs(hin["targets"][i, speed_pos]) # should be in meter per second
+        speed = math.fabs(hin["targets"][i, speed_pos]) * 3.6
         delta = min(6 * (math.atan((angle * car_lenght) / (time_use * speed + 0.05))) / math.pi, 0.3)
 
         target_line = hin["targets"][i, :]

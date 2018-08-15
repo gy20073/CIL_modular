@@ -51,7 +51,7 @@ class configMain:
 
         # perception module related
         self.use_perception_stack = True
-        self.perception_gpus = [4, 5]
+        self.perception_gpus = [1, 7]
         self.perception_paths = "path_jormungandr"
         self.perception_batch_sizes = {"det_COCO": 3, "det_TL": 3, "seg": 4, "depth": 4, "det_TS": -1}
         self.perception_num_replicates = {"det_COCO": 3, "det_TL": 3, "seg": 2, "depth": 2, "det_TS": -1}
@@ -90,8 +90,8 @@ class configInput(configMain):
             random_order=True  # do all of the above in random order
         )]
 
-        all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/4/*/data_*.h5")
-        self.val_db_path = glob.glob("/data/yang/code/aws/scratch/carla_collect/4/*WeatherId=13/data_*.h5")
+        all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/6/*/data_*.h5")
+        self.val_db_path = glob.glob("/data/yang/code/aws/scratch/carla_collect/6/*WeatherId=13/data_*.h5")
         self.train_db_path = list(set(all_files) - set(self.val_db_path))
 
         self.speed_factor = 40.0  # In KM/H
@@ -118,9 +118,9 @@ class configTrain(configMain):
         #self.seg_network_erfnet_one_hot = True  # comment this line out to use the standard network
 
         # TODO: tune it
-        factor = 0.33
+        factor = 0.1
         # Number of iterations, multiplying factor
-        self.training_schedule = [[5000, factor**1], [15000, factor**2], [35000, factor**3], [40000, factor**4]]
+        self.training_schedule = [[7000, factor**1], [17000, factor**2], [37000, factor**3]]
 
         self.branch_loss_weight = [0.95, 0.95, 0.95, 0.95, 0.05]
         self.variable_weight = {'Steer': 0.1, 'Gas': 0.2, 'Brake': 0.1, 'Speed': 1.0}

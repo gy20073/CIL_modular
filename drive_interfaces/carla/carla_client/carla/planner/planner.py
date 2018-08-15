@@ -62,6 +62,8 @@ class Planner(object):
         track_source = self._city_track.project_node(source)
         track_target = self._city_track.project_node(target)
 
+        #print("source", source, "track_source", track_source, "target", target, "track_target", track_target)
+
         # reach the goal
 
         if self._city_track.is_at_goal(track_source, track_target):
@@ -156,7 +158,7 @@ class Planner(object):
 
         commands_list = []
 
-        for i in range(0, len(route)):
+        for i in range(0, len(route)-1):
             if route[i] not in self._city_track.get_intersection_nodes():
                 continue
 

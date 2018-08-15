@@ -1,10 +1,102 @@
-import h5py, glob, os, math
+import h5py, glob, os, math, sys
 import numpy as np
 
-all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/3/*/data_*.h5")
+sys.path.append('drive_interfaces/carla/carla_client')
+from carla.planner.planner import Planner
 
-for one_h5 in all_files:
-    target_path = one_h5.replace("/3/", "/4/")
+input_id = 5
+output_id = 8
+debug_start = 0
+debug_end= 14000000
+
+
+all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/"+str(input_id)+"/*/data_*.h5")
+
+# first read all pos and ori
+pos = [] # or location
+ori = []
+for one_h5 in sorted(all_files)[debug_start:debug_end]:
+    print(one_h5)
+    hin = h5py.File(one_h5, 'r')
+    pos.append(hin["targets"][:, 8: 10])
+    ori.append(hin["targets"][:, 21:24])
+
+pos0 = np.concatenate(pos, axis=0)
+pos = np.zeros((pos0.shape[0], 3))
+pos[:, 0:2] = pos0
+pos[:, 2] = 0.22
+ori = np.concatenate(ori, axis=0)
+
+# instantiate a planner
+CityName = "Town01"
+planner = Planner(CityName)
+
+# compute is this position away from an intersection?
+is_away_from_inter = []
+for i in range(pos.shape[0]):
+    res = planner.test_position(pos[i, :])
+    is_away_from_inter.append(res)
+is_away_from_inter = np.array(is_away_from_inter)
+
+
+sldist = lambda c1, c2: math.sqrt((c2[0] - c1[0]) ** 2 + (c2[1] - c1[1]) ** 2)
+
+def get_command(index, planner_in, last_end):
+    if index == pos.shape[0]-1:
+        # this is the last one, return follow
+        return 2, None, -1
+
+    if index > 0:
+        # when we have a new trajectory
+        if sldist(pos[index - 1], pos[index]) > 0.2 * 9.7 * 1.5:
+            planner_in = Planner(CityName)
+            print("starting a new trajectory")
+
+    last_inter = is_away_from_inter[index]
+    count_inter_changes = 0
+
+    #end_index = last_end - 1
+    end_index = index
+    while True:
+        end_index += 1
+
+        if sldist(pos[end_index - 1], pos[end_index]) > 0.2 * 9.7 * 1.5 or \
+            end_index == pos.shape[0] - 1:
+
+            if sldist(pos[end_index - 1], pos[end_index]) > 0.2 * 9.7 * 1.5:
+                end_index -= 1
+
+            direction = planner.get_next_command(pos[index],
+                                                 ori[index],
+                                                 pos[end_index],
+                                                 ori[end_index])
+
+            if math.fabs(direction)<0.1:
+                direction = 2.0
+
+            return direction, planner_in, end_index
+
+        if last_inter != is_away_from_inter[end_index]:
+            last_inter = not last_inter
+            count_inter_changes += 1
+
+        if count_inter_changes < 3:
+            continue
+
+        direction = planner.get_next_command(pos[index],
+                                             ori[index],
+                                             pos[end_index],
+                                             ori[end_index])
+
+        if math.fabs(direction) > 0.1:
+            return direction, planner_in, end_index
+
+planner_in = Planner(CityName)
+last_end = 1 # TODO: not finished
+
+counter = 0
+for one_h5 in sorted(all_files)[debug_start:debug_end]:
+    target_path = one_h5.replace("/"+str(input_id)+"/", "/"+str(output_id)+"/")
     print("converting ", one_h5, " to ", target_path)
     dirname = os.path.dirname(target_path)
     if not os.path.exists(dirname):
@@ -27,17 +119,22 @@ for one_h5 in all_files:
         speed = math.fabs(hin["targets"][i, speed_pos]) # should be in meter per second
         delta = min(6 * (math.atan((angle * car_lenght) / (time_use * speed + 0.05))) / math.pi, 0.3)
 
+        target_line = hin["targets"][i, :]
+        direction, planner_in, last_end = get_command(counter, planner_in, last_end)
+        target_line[24] = direction
+        counter += 1
+
         # middle
-        data_rewards[i*3, :] = hin["targets"][i, :]
+        data_rewards[i*3, :] = target_line
         sensor[i*3] = hin["CameraMiddle"][i]
 
         # left
-        data_rewards[i * 3 + 1, :] = hin["targets"][i, :]
+        data_rewards[i * 3 + 1, :] = target_line
         data_rewards[i * 3 + 1, steer_pos] += delta
         sensor[i * 3 + 1] = hin["CameraLeft"][i]
 
         # right
-        data_rewards[i * 3 + 2, :] = hin["targets"][i, :]
+        data_rewards[i * 3 + 2, :] = target_line
         data_rewards[i * 3 + 2, steer_pos] -= delta
         sensor[i * 3 + 2] = hin["CameraRight"][i]
 

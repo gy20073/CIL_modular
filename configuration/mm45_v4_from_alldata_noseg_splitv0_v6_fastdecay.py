@@ -5,11 +5,11 @@ class configMain:
     def __init__(self):
         self.steering_bins_perc = [0.05, 0.05, 0.1, 0.3, 0.3, 0.1, 0.05, 0.05]
         self.number_steering_bins = len(self.steering_bins_perc)
-        self.batch_size = self.number_steering_bins * 6
-        self.batch_size_val = self.number_steering_bins * 6
+        self.batch_size = self.number_steering_bins * 15
+        self.batch_size_val = self.number_steering_bins * 15
         self.number_images_val = self.batch_size_val  # Number of images used in a validation Section - Default: 20*
 
-        self.image_size = (576, 768, 3)
+        self.image_size = (88, 200, 3)
         # the speed unit has changed, when reading from the h5 file, we change the speed_factor to adjust for this
         self.variable_names = ['Steer', 'Gas', 'Brake', 'Hand_B', 'Reverse',
                                'Steer_N', 'Gas_N', 'Brake_N',
@@ -19,6 +19,7 @@ class configMain:
                                'wp1_x', 'wp1_y', 'wp2_x', 'wp2_y', 'wp1_angle', 'wp1_mag', 'wp2_angle', 'wp2_mag']
 
         self.sensor_names = ['CameraMiddle']
+        self.sensors_normalize = [True]
 
         self.targets_names = ['Steer', 'Gas', 'Brake', 'Speed']
         self.targets_sizes = [1, 1, 1, 1]
@@ -34,8 +35,8 @@ class configMain:
                               ["Steer", "Gas", "Brake"], ["Speed"]]
 
         # a list of keep_prob corresponding to the list of layers:
-        # 7 conv layers, 2 img FC layer, 2 speed FC layers, 1 joint FC layer, 5 branches X 2 FC layers each
-        self.dropout = [0.8] * 7 + [0.5] * 2 + [0.5] * 2 + [0.5] * 1 + [0.5, 1.] * len(self.branch_config)
+        # 8 conv layers, 2 img FC layer, 2 speed FC layers, 1 joint FC layer, 5 branches X 2 FC layers each
+        self.dropout = [0.8] * 8 + [0.5] * 2 + [0.5] * 2 + [0.5] * 1 + [0.5, 1.] * len(self.branch_config)
 
         self.models_path = os.path.join('models', os.path.basename(__file__).split('.')[0])
         self.train_path_write = os.path.join(self.models_path, 'train')
@@ -49,26 +50,10 @@ class configMain:
         self.segmentation_model = None
         #self.segmentation_model_name = "ErfNet_Small"
 
-        # perception module related
-        self.use_perception_stack = True
-        self.perception_gpus = [4, 5]
-        self.perception_paths = "path_jormungandr"
-        self.perception_batch_sizes = {"det_COCO": 3, "det_TL": 3, "seg": 4, "depth": 4, "det_TS": -1}
-        self.perception_num_replicates = {"det_COCO": 3, "det_TL": 3, "seg": 2, "depth": 2, "det_TS": -1}
-        # debug
-        #self.perception_num_replicates = {"det_COCO": -1, "det_TL": -1, "seg": -1, "depth": 1, "det_TS": -1}
-        if self.use_perception_stack:
-            self.feature_input_size = (39, 52, 295)  # hardcoded for now
-            self.image_as_float = [False]
-            self.sensors_normalize = [False]
-            self.perception_initialization_sleep=30
-            # debug
-            # self.feature_input_size = (39, 52, 25)
-        else:
-            self.feature_input_size = self.image_size
+        self.use_perception_stack = False
+        self.feature_input_size = self.image_size
 
-        self.optimizer = "sgd" # or "adam"
-
+        self.optimizer = "adam"
 
 class configInput(configMain):
     def __init__(self):
@@ -90,11 +75,11 @@ class configInput(configMain):
             random_order=True  # do all of the above in random order
         )]
 
-        all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/4/*/data_*.h5")
-        self.val_db_path = glob.glob("/data/yang/code/aws/scratch/carla_collect/4/*WeatherId=13/data_*.h5")
+        all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/6/*/data_*.h5")
+        self.val_db_path = glob.glob("/data/yang/code/aws/scratch/carla_collect/6/*WeatherId=13/data_*.h5")
         self.train_db_path = list(set(all_files) - set(self.val_db_path))
 
-        self.speed_factor = 40.0  # In KM/H
+        self.speed_factor = 40.0  # In KM/H, the new measurement unit is in m/s, thus we had to change the factor
 
         # The division is made by three diferent data kinds
         # in every mini-batch there will be equal number of samples with labels from each group
@@ -102,6 +87,10 @@ class configInput(configMain):
         self.labels_per_division = [[0, 2, 5], [3], [4]]
         self.dataset_names = ['targets']
         self.queue_capacity = 5 # now measured in how many batches
+
+        # TODO: move from this hacky way of resizing to something more systematic
+        self.hack_resize_image = (88, 200)
+        self.image_as_float = [True]
 
     # TODO NOT IMPLEMENTED Felipe: True/False switches to turn data balancing on or off
 
@@ -112,19 +101,15 @@ class configTrain(configMain):
 
         self.loss_function = 'mse_branched'  # Chose between: mse_branched, mse_branched_ladd
         self.control_mode = 'single_branch'
-        # TODO: tune it
-        self.learning_rate = 1e-3
+        self.learning_rate = 0.0002
         # use the default segmentation network
         #self.seg_network_erfnet_one_hot = True  # comment this line out to use the standard network
 
-        # TODO: tune it
-        factor = 0.33
-        # Number of iterations, multiplying factor
-        self.training_schedule = [[5000, factor**1], [15000, factor**2], [35000, factor**3], [40000, factor**4]]
+        self.training_schedule = [[50000, 0.5], [70000, 0.5 ** 5]]  # Number of iterations, multiplying factor
 
         self.branch_loss_weight = [0.95, 0.95, 0.95, 0.95, 0.05]
         self.variable_weight = {'Steer': 0.1, 'Gas': 0.2, 'Brake': 0.1, 'Speed': 1.0}
-        self.network_name = 'yang_39_52_295'
+        self.network_name = 'chauffeurNet_deeper'
         self.is_training = True
 
 

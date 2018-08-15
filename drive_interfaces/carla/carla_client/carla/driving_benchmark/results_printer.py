@@ -12,9 +12,20 @@ def print_summary(metrics_summary, weathers, path):
     """
 
     # Improve readability by adding a weather dictionary
-    weather_name_dict = {1: 'Clear Noon', 3: 'After Rain Noon',
-                         6: 'Heavy Rain Noon', 8: 'Clear Sunset',
-                         4: 'Cloudy After Rain', 14: 'Soft Rain Sunset'}
+    weather_name_dict = {1: 'Clear Noon',
+                         2: "CloudyNoon",
+                         3: 'After Rain Noon',
+                         4: 'Cloudy After Rain',
+                         5: "MidRainyNoon",
+                         6: 'Heavy Rain Noon',
+                         7: "SoftRainNoon",
+                         8: 'Clear Sunset',
+                         9: "CloudySunset",
+                         10: "WetSunset",
+                         11: "WetCloudySunset",
+                         12: "MidRainSunset",
+                         13: "HardRainSunset",
+                         14: 'Soft Rain Sunset'}
 
     # First we write the entire dictionary on the benchmark folder.
     with open(os.path.join(path, 'metrics.json'), 'w') as fo:

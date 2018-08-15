@@ -25,5 +25,5 @@ drive_interfaces/carla/comercial_cars/run_test_cvpr.py \
 -l 127.0.0.1 \
 -p $port \
 -cy $city_name \
--m 0.15 || true #TestTownTrainWeather
+-m 0.1 || true #TestTownTrainWeather
 

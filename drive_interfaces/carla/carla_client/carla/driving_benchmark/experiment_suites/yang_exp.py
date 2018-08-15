@@ -134,7 +134,8 @@ class YangExp(ExperimentSuite):
                     SendNonPlayerAgentsInfo=True,
                     NumberOfVehicles=vehicles,
                     NumberOfPedestrians=pedestrians,
-                    WeatherId=weather
+                    WeatherId=weather,
+                    QualityLevel="Low"
                 )
                 # Add all the cameras that were set for this experiments
 

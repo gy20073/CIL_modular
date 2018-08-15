@@ -18,7 +18,7 @@ def write_text_on_image(image, string, fontsize=10):
     return np.array(j)
 
 
-def sample_images_from_h5(path, temp, show_all):
+def sample_images_from_h5(path, temp, show_all, is3):
     f=h5py.File(path, "r")
     if not os.path.exists(temp):
         os.mkdir(temp)
@@ -41,32 +41,50 @@ def sample_images_from_h5(path, temp, show_all):
             cv2.imwrite(os.path.join(temp, str(imid).zfill(5)+".jpg"), merged)
 
     else:
-        for imid in range(num_images_per_h5):
+        if is3:
+            rg = range(0, num_images_per_h5*3, 3)
+        else:
+            rg = range(num_images_per_h5)
+
+        counter = 0
+        for imid in rg:
             key = 'CameraMiddle'
-            path = os.path.join(temp, str(imid).zfill(5)+".jpg")
+            path = os.path.join(temp, str(counter).zfill(5)+".jpg")
 
             image = cv2.imdecode(f[key][imid], 1)
             #image = image[:,:,::-1]
+            td = lambda fl: "{:.2f}".format(fl)
             image = write_text_on_image(image,
-                                        "steer   :" + "{:.2f}".format(f["targets"][imid, 0]) + "\n" +
-                                        "throttle:" + str(f["targets"][imid, 1]) + "\n" +
-                                        "brake   :" + str(f["targets"][imid, 2]) + "\n",
+                                        "steer    :" + td(f["targets"][imid, 0]) + "\n" +
+                                        "throttle :" + str(f["targets"][imid, 1]) + "\n" +
+                                        "brake    :" + str(f["targets"][imid, 2]) + "\n" +
+                                        "direction:" + str(f["targets"][imid, 24]) + "\n" +
+                                        "speed    :" + td(f["targets"][imid, 10]) + "\n" +
+                                        "ori    :" + td(f["targets"][imid, 21]) + " " + td(f["targets"][imid, 22]) + " " + td(f["targets"][imid, 23]) + "\n",
                                         fontsize=30)
             #image = image[:,:,::-1]
             cv2.imwrite(path, image)
+
+            counter += 1
 
 
     print("done")
 
 if __name__ == "__main__":
     path_pattern = sys.argv[1]
+
     if len(sys.argv) >= 3:
-        write_all = bool(sys.argv[2])
+        is3 = bool(sys.argv[2])
+    else:
+        is3 = False
+
+    if len(sys.argv) >= 4:
+        write_all = bool(sys.argv[3])
     else:
         write_all = False
 
     for path in glob.glob(path_pattern):
-        sample_images_from_h5(path, temp_folder, write_all)
+        sample_images_from_h5(path, temp_folder, write_all, is3)
 
         call("ffmpeg -y -i " + temp_folder + "%05d.jpg -c:v libx264 " + path + ".mp4", shell=True)
 

@@ -1,4 +1,4 @@
-import sys, pygame, scipy, cv2, random
+import sys, pygame, scipy, cv2, random, time
 import tensorflow as tf
 from pygame.locals import *
 import numpy as np
@@ -46,7 +46,6 @@ class CarlaMachine(Agent, Driver):
         conf_module = __import__(experiment_name)
         self._config = conf_module.configInput()
         self._config.train_segmentation = False
-        self._train_manager = load_system(conf_module.configTrain())
 
         if self._config.use_perception_stack:
             use_mode = {}
@@ -66,7 +65,9 @@ class CarlaMachine(Agent, Driver):
                 path_config =self._config.perception_paths,
                 **use_mode
             )
+            time.sleep(30)
 
+        self._train_manager = load_system(conf_module.configTrain())
         config_gpu = tf.ConfigProto()
         config_gpu.gpu_options.visible_device_list = gpu_number
         config_gpu.gpu_options.per_process_gpu_memory_fraction = memory_fraction

@@ -192,18 +192,26 @@ class DrivingBenchmark(object):
         original_path = "./drive_interfaces/carla/carla_client/carla/planner/" + self._city_name + ".png"
         self.trajectory_img = cv2.imread(original_path)
 
-    def update_trajectory(self, curr_x, curr_y, tar_x, tar_y):
-        cur = self.carla_map.convert_to_pixel([curr_x, curr_y, 22.0])
+    def update_trajectory(self, curr_x, curr_y, tar_x, tar_y, is_first, directions):
+        cur = self.carla_map.convert_to_pixel([curr_x, curr_y, .22])
         cur = [int(cur[1]), int(cur[0])]
-        tar = self.carla_map.convert_to_pixel([tar_x, tar_y, 22.0])
+        tar = self.carla_map.convert_to_pixel([tar_x, tar_y, .22])
         tar = [int(tar[1]), int(tar[0])]
         print("current location", cur, "final location", tar)
-        self.trajectory_img[cur[0] - 3:cur[0] + 3, cur[1] - 3:cur[1] + 3, 0] = 0
-        self.trajectory_img[cur[0] - 3:cur[0] + 3, cur[1] - 3:cur[1] + 3, 1] = 0
-        self.trajectory_img[cur[0] - 3:cur[0] + 3, cur[1] - 3:cur[1] + 3, 2] = 255
-        self.trajectory_img[tar[0] - 3:tar[0] + 3, tar[1] - 3:tar[1] + 3, 0] = 255
-        self.trajectory_img[tar[0] - 3:tar[0] + 3, tar[1] - 3:tar[1] + 3, 1] = 0
-        self.trajectory_img[tar[0] - 3:tar[0] + 3, tar[1] - 3:tar[1] + 3, 2] = 0
+        if is_first:
+            trj_sz = 10
+        else:
+            trj_sz = 3
+        directions_to_color={0.0: [255, 0, 0], 2.0: [255, 0, 0], 5.0: [255, 0, 0],
+                             3.0: [0, 255, 0], 4.0: [0, 0, 255]}
+        color = directions_to_color[directions]
+        self.trajectory_img[cur[0] - trj_sz:cur[0] + trj_sz, cur[1] - trj_sz:cur[1] + trj_sz, 0] = color[0]
+        self.trajectory_img[cur[0] - trj_sz:cur[0] + trj_sz, cur[1] - trj_sz:cur[1] + trj_sz, 1] = color[1]
+        self.trajectory_img[cur[0] - trj_sz:cur[0] + trj_sz, cur[1] - trj_sz:cur[1] + trj_sz, 2] = color[2]
+        tar_sz = 10
+        self.trajectory_img[tar[0] - tar_sz:tar[0] + tar_sz, tar[1] - tar_sz:tar[1] + tar_sz, 0] = 0
+        self.trajectory_img[tar[0] - tar_sz:tar[0] + tar_sz, tar[1] - tar_sz:tar[1] + tar_sz, 1] = 0
+        self.trajectory_img[tar[0] - tar_sz:tar[0] + tar_sz, tar[1] - tar_sz:tar[1] + tar_sz, 2] = 0
 
     def save_trajectory_image(self, episode_name):
         out_name = os.path.join(self._recording._path, '_images/episode_{:s}_trajectory.png'.format(episode_name))
@@ -256,6 +264,7 @@ class DrivingBenchmark(object):
         pre_x = 0.0
         pre_y = 0.0
         last_collision_ago = 1000000000
+        is_first = True
 
         while (current_timestamp - initial_timestamp) < (time_out * 1000) and not success:
 
@@ -284,7 +293,8 @@ class DrivingBenchmark(object):
             distance = sldist([current_x, current_y],
                               [target.location.x, target.location.y])
 
-            self.update_trajectory(current_x, current_y, target.location.x, target.location.y)
+            self.update_trajectory(current_x, current_y, target.location.x, target.location.y, is_first, directions)
+            is_first = False
 
             # Write status of the run on verbose mode
             logging.info('Status:')
@@ -315,7 +325,7 @@ class DrivingBenchmark(object):
                 stuck_counter = 0
             pre_x = current_x
             pre_y = current_y
-            if stuck_counter > 200:
+            if stuck_counter > 400:
                 print("breaking because of stucking too long")
                 break
 

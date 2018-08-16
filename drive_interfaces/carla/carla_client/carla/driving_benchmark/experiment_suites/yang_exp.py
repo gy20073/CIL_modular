@@ -19,7 +19,7 @@ class YangExp(ExperimentSuite):
 
     @property
     def train_weathers(self):
-        return [1, 4, 7, 10]
+        return [1, 10]
 
     @property
     def test_weathers(self):
@@ -108,12 +108,14 @@ class YangExp(ExperimentSuite):
             poses_tasks = self._poses_town01()
             vehicles_tasks = [0, 0, 0, 20]
             pedestrians_tasks = [0, 0, 0, 50]
-            n_samples = [1, 2, 2, 3]
+            n_samples = [1, 2, 2, 5]
+            #n_samples = [3, 6, 6, 9]
         else:
             poses_tasks = self._poses_town02()
             vehicles_tasks = [0, 0, 0, 15]
             pedestrians_tasks = [0, 0, 0, 50]
-            n_samples = [1, 2, 2, 3]
+            n_samples = [1, 2, 2, 5]
+            #n_samples = [3, 6, 6, 9]
 
         experiments_vector = []
 

@@ -3,9 +3,9 @@
 # resource related
 gpu_carla="0"
 gpu_agent="3"
-port="2000"
+port="2003"
 # test related
-city_name="Town01" # first test the train town
+city_name="Town02" # first test the train town
 exp_id="mm45_v4_from_alldata_perception_v9_nodrop"
 
 

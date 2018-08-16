@@ -36,7 +36,7 @@ class configMain:
         # a list of keep_prob corresponding to the list of layers:
         # 7 conv layers, 2 img FC layer, 2 speed FC layers, 1 joint FC layer, 5 branches X 2 FC layers each
         #                     3072*512 512**2              640*512  512*256 256**2
-        self.dropout = [0.8] * 7 + [0.5] * 2 + [0.5] * 2 + [0.5] * 1 + [0.5, 1.] * len(self.branch_config)
+        self.dropout = [1.0] * 7 + [1.0] * 2 + [1.0] * 2 + [1.0] * 1 + [1.0, 1.] * len(self.branch_config)
 
         self.models_path = os.path.join('models', os.path.basename(__file__).split('.')[0])
         self.train_path_write = os.path.join(self.models_path, 'train')
@@ -69,6 +69,7 @@ class configMain:
             self.feature_input_size = self.image_size
 
         self.optimizer = "sgd" # or "adam"
+        self.momentum = 0.9
 
 
 class configInput(configMain):

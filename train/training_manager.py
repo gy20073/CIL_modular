@@ -103,7 +103,7 @@ class TrainManager(object):
             print("using optimizer ", self._config.optimizer)
             if self._config.optimizer == "sgd":
                 opt = tf.train.MomentumOptimizer
-                opt_kwargs = {"momentum": 0.9}
+                opt_kwargs = {"momentum": self._config.momentum}
             elif self._config.optimizer == "adam":
                 opt = tf.train.AdamOptimizer
                 opt_kwargs = {}

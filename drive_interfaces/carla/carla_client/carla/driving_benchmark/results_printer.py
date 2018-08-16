@@ -61,6 +61,8 @@ def print_summary(metrics_summary, weathers, path):
                     if t == []:
                         print('    Metric Not Computed')
                     else:
+                        if not hasattr(t, '__iter__'):
+                            t = [t]
                         print('    Task:', count, ' -> ', float(sum(t)) / float(len(t)))
                         metric_sum_values[count] += (float(sum(t)) / float(len(t))) * 1.0 / float(
                             len(weathers))

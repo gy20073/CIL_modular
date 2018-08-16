@@ -45,7 +45,7 @@ class Recorder(object):
         self._image_size1 = resolution[0]
         self._image_size2 = resolution[1]
         self._image_cut = image_cut
-        # self._sensor_names = ['SegRight', 'CameraLeft', 'DepthLeft', 'CameraMiddle', 'SegLeft', 'CameraRight', 'DepthMiddle', 'SegMiddle', 'DepthRight']
+        #self._sensor_names = ['CameraLeft', 'CameraMiddle', 'CameraRight', 'SegLeft', 'SegMiddle', 'SegRight', 'DepthLeft', 'DepthMiddle', 'DepthRight']
         self._sensor_names = ['CameraLeft', 'CameraMiddle', 'CameraRight']
 
         # other rewards
@@ -101,8 +101,8 @@ class Recorder(object):
 
         for sensor_name in self._sensor_names:
             if "depth" in sensor_name.lower():
-                image = image_converter.depth_to_array(sensor_data[sensor_name])
-                image = image[self._image_cut[0]:self._image_cut[1], :]
+                image = image_converter.to_bgra_array(sensor_data[sensor_name])
+                image = image[self._image_cut[0]:self._image_cut[1], :, :3]
                 image = scipy.misc.imresize(image, [self._image_size2, self._image_size1])
                 encoded = np.fromstring(cv2.imencode(".png", image)[1], dtype=np.uint8)
             elif "camera" in sensor_name.lower():

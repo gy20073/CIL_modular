@@ -23,7 +23,7 @@ def config_change_attrs(src, dst, new_attrs):
         config.write(f)
 
 def process_collect(list_of_configs, port, gpu,
-                    tag, generated_config_cache_path, template_path, driver_config):
+                    tag, generated_config_cache_path, template_path, driver_config, TownName):
     print("port is ", port, "!!!!!!!!!!!!!!!!!!")
     port = int(port)
     count = 5  # to flag that initially we need to start the server
@@ -50,7 +50,7 @@ def process_collect(list_of_configs, port, gpu,
             if count >= 5:
                 count = 0
                 cmd = ['bash', '-c',
-                       " '/scratch/yang/aws_data/carla_0.8.4/CarlaUE4.sh  -carla-server -carla-settings=/data/yang/code/aws/CIL_modular/drive_interfaces/carla/yang_template.ini -benchmark -fps=5 -carla-world-port=%d' " % (port,)]
+                       " '/scratch/yang/aws_data/carla_0.8.4/CarlaUE4.sh /Game/Maps/%s  -carla-server -carla-settings=/data/yang/code/aws/CIL_modular/drive_interfaces/carla/yang_template.ini -benchmark -fps=5 -carla-world-port=%d' " % (TownName, port)]
                 print(" ".join(cmd))
                 print("before spawnling")
                 t = threading.Thread(target=lambda: os.system(" ".join(cmd)))
@@ -68,11 +68,22 @@ def process_collect(list_of_configs, port, gpu,
 
 
 if __name__ == "__main__":
+    collect_all = False
+
     driver_config = "9cam_agent_carla_acquire_rc_batch"
+    if collect_all:
+        driver_config = "9cam_agent_carla_acquire_rc_batch_allsensors"
+
+    TownName = "Town01"
+    if collect_all:
+        TownName = "Town01"
+
     generated_config_cache_path = "./drive_interfaces/carla/auto_gen_configs/"
     tag = "default"
     # TODO: tune those base config
     template_path = "./drive_interfaces/carla/yang_template.ini"
+    if collect_all:
+        template_path = "./drive_interfaces/carla/yang_template_all.ini"
 
     # TODO: tune those numbers
     # (propertyName, potential value)
@@ -100,9 +111,14 @@ if __name__ == "__main__":
                ("PositionZ", "1.4"),
                ("PositionZ", "1.8")]
     weather_range = range(1, 14)
+
+    if collect_all:
+        configs = [("RotationPitch", "0") ]
     # in total there are 7*14 = 100 configs, each of the 200 h5 file has size of 33M, i.e. 30 h5 = 1G
     # Thus we aim to collect 100 hours of training, that is 400G, so each config has quota of 3G, which is 100 files
     # an initial config ends here
+
+
 
     #available_gpus = [0, 2, 4, 5, 6]
     #num_processes = len(available_gpus) * 2
@@ -125,7 +141,8 @@ if __name__ == "__main__":
                                                   tag,
                                                   generated_config_cache_path,
                                                   template_path,
-                                                  driver_config))
+                                                  driver_config,
+                                                  TownName))
         p.start()
         print("after starts!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         time.sleep(5)

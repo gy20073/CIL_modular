@@ -105,3 +105,4 @@ venv.bak/
 data*
 *.csv
 *drive_interfaces/carla/auto_gen_configs/*
+*pkl

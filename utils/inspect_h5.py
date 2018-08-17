@@ -41,22 +41,22 @@ def sample_images_from_h5(path, temp, show_all, is3):
             cv2.imwrite(os.path.join(temp, str(imid).zfill(5)+".jpg"), merged)
 
     else:
-        if is3:
-            rg = range(0, num_images_per_h5*3)
-            image_list = [None, None, None]
-        else:
-            rg = range(num_images_per_h5)
-
+        image_list = [None, None, None]
         counter = 0
-        for imid in rg:
-            key = 'CameraMiddle'
+        key = 'CameraMiddle'
+        for imid in range(f[key].shape[0]):
             path = os.path.join(temp, str(counter).zfill(5)+".jpg")
 
             image = cv2.imdecode(f[key][imid], 1)
-            image = image[::2, ::2, :]
+
+            if image.shape[0] > 300:
+                image = image[::2, ::2, :]
+            if image.shape[0] < 100:
+                image = cv2.resize(image, (image.shape[1]*2, image.shape[0]*2))
 
             #image = image[:,:,::-1]
             td = lambda fl: "{:.2f}".format(fl)
+            font = int(np.ceil(25.0 / (576/2) * image.shape[0])) + 1
             image = write_text_on_image(image,
                                         "steer    :" + td(f["targets"][imid, 0]) + "\n" +
                                         "throttle :" + str(f["targets"][imid, 1]) + "\n" +
@@ -64,7 +64,7 @@ def sample_images_from_h5(path, temp, show_all, is3):
                                         "direction:" + str(f["targets"][imid, 24]) + "\n" +
                                         "speed    :" + td(f["targets"][imid, 10]) + "\n" +
                                         "ori    :" + td(f["targets"][imid, 21]) + " " + td(f["targets"][imid, 22]) + " " + td(f["targets"][imid, 23]) + "\n",
-                                        fontsize=15)
+                                        fontsize=font)
             if not is3:
                 #image = image[:,:,::-1]
                 cv2.imwrite(path, image)

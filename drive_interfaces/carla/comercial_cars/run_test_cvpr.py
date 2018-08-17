@@ -19,12 +19,13 @@ sys.path.append('structures')
 from carla_machine import *
 
 from carla.driving_benchmark import run_driving_benchmark
-from carla.driving_benchmark.experiment_suites import YangExp
+import carla.driving_benchmark.experiment_suites as ES
 from common_util import parse_drive_arguments
 
-def main(host, port, city, summary_name, agent):
+def main(host, port, city, summary_name, agent, benchmark_name):
     #TODO: make an agent; define the camera in the testing env; change city name
-    experiment_suite = YangExp(city)
+    benchmark = getattr(ES, benchmark_name)
+    experiment_suite = benchmark(city)
     run_driving_benchmark(agent, experiment_suite,
                           city_name=city,
                           log_name=summary_name,
@@ -53,6 +54,8 @@ if (__name__ == '__main__'):
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
     parser.add_argument('-s', '--summary', default="summary_number_1", help='summary')
     parser.add_argument('-cy', '--city', help='select the graph from the city being used')
+    parser.add_argument('-imc', '--image_cut', help='Set the positions where the image is cut')
+    parser.add_argument('-bn', '--benchmark_name', default="YangExp", help='What benchmark to run')
 
     args = parser.parse_args()
     if args.log or args.debug:
@@ -91,4 +94,4 @@ if (__name__ == '__main__'):
     # instance your controller here
     runnable = CarlaMachine("0", args.experiment_name, driver_conf, float(args.memory))
 
-    main(args.host, args.port, args.city, args.summary, runnable)
+    main(args.host, args.port, args.city, args.summary, runnable, args.benchmark_name)

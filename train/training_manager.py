@@ -126,10 +126,12 @@ class TrainManager(object):
         capture_time = time.time()
 
         # Get the change in the learning rate]
-        decrease_factor = 1
-        for position in self._config.training_schedule:
-            if i > position[0]:  # already got to this iteration
-                decrease_factor = position[1]
+        # let the default decrease factor to be the last one.
+        schedule = [[0, 1.0]] + self._config.training_schedule
+        decrease_factor = schedule[-1][1]
+        for j in range(len(schedule)):
+            if i < schedule[j][0]:
+                decrease_factor = schedule[j-1][1]
                 break
         self._feedDict = {self._variable_learning: decrease_factor * self._config.learning_rate,
                           self._dout: self._config.dropout}

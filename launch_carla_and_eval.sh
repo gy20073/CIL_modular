@@ -2,18 +2,17 @@
 
 # resource related
 gpu_carla="0"
-gpu_agent="1"
-port="2009"
+gpu_agent="3"
+port="2000"
 # test related
-city_name="Town02"
-exp_id="mm45_rc28_wpz_M_mm41_cityscapes_aug_cluster_yang_alldata"
+city_name="Town01"
+exp_id="mm45_v4_from_alldata_noseg_splitv0_matthias"
 
 
 # launch carla
 export CUDA_VISIBLE_DEVICES=$gpu_carla
-/scratch/yang/aws_data/carla_0.8.4/CarlaUE4.sh /Game/Maps/$city_name -carla-server -carla-world-port=$port &
-
-sleep 20
+#/scratch/yang/aws_data/carla_0.8.4/CarlaUE4.sh /Game/Maps/$city_name -carla-server -carla-world-port=$port &
+#sleep 20
 
 # launch the client
 export CUDA_VISIBLE_DEVICES=$gpu_agent
@@ -26,5 +25,6 @@ drive_interfaces/carla/comercial_cars/run_test_cvpr.py \
 -l 127.0.0.1 \
 -p $port \
 -cy $city_name \
--m 0.25 || true #TestTownTrainWeather
-
+-m 0.1 \
+--image_cut "200,550" \
+--benchmark_name "OriginalExp"

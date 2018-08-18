@@ -4,11 +4,11 @@ import numpy as np
 sys.path.append('drive_interfaces/carla/carla_client')
 from carla.planner.planner import Planner
 
-input_id = 5
-output_id = 9
+input_id = 3
+output_id = "noisy_middle_cmdfixed"
 debug_start = 0
 debug_end= 14000000
-
+use_3_cam = False
 
 all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/"+str(input_id)+"/*/data_*.h5")
 
@@ -103,40 +103,46 @@ for one_h5 in sorted(all_files)[debug_start:debug_end]:
         os.makedirs(dirname)
 
     hf = h5py.File(target_path, 'w')
-    data_rewards = hf.create_dataset('targets', (200*3, 35), 'f')
+    factor = 3*use_3_cam + 1*(not use_3_cam)
+    data_rewards = hf.create_dataset('targets', (200*factor, 35), 'f')
     dt = h5py.special_dtype(vlen=np.dtype('uint8'))
-    sensor = hf.create_dataset("CameraMiddle", (200*3,), dtype=dt)
+    sensor = hf.create_dataset("CameraMiddle", (200*factor,), dtype=dt)
 
     hin = h5py.File(one_h5, 'r')
+    count_within_file = 0
     for i in range(200):
-        speed_pos = 10
-        steer_pos = 0
-
-        angle = math.radians(30.0)
-
-        time_use = 1.0
-        car_lenght = 6.0
-        speed = math.fabs(hin["targets"][i, speed_pos]) * 3.6
-        delta = min(6 * (math.atan((angle * car_lenght) / (time_use * speed + 0.05))) / math.pi, 0.3)
-
         target_line = hin["targets"][i, :]
         direction, planner_in, last_end = get_command(counter, planner_in, last_end)
         target_line[24] = direction
         counter += 1
 
         # middle
-        data_rewards[i*3, :] = target_line
-        sensor[i*3] = hin["CameraMiddle"][i]
+        data_rewards[count_within_file, :] = target_line
+        sensor[count_within_file] = hin["CameraMiddle"][i]
+        count_within_file += 1
 
-        # left
-        data_rewards[i * 3 + 1, :] = target_line
-        data_rewards[i * 3 + 1, steer_pos] += delta
-        sensor[i * 3 + 1] = hin["CameraLeft"][i]
+        if use_3_cam:
+            speed_pos = 10
+            steer_pos = 0
 
-        # right
-        data_rewards[i * 3 + 2, :] = target_line
-        data_rewards[i * 3 + 2, steer_pos] -= delta
-        sensor[i * 3 + 2] = hin["CameraRight"][i]
+            angle = math.radians(30.0)
+
+            time_use = 1.0
+            car_lenght = 6.0
+            speed = math.fabs(hin["targets"][i, speed_pos]) * 3.6
+            delta = min(6 * (math.atan((angle * car_lenght) / (time_use * speed + 0.05))) / math.pi, 0.3)
+
+            # left
+            data_rewards[count_within_file, :] = target_line
+            data_rewards[count_within_file, steer_pos] += delta
+            sensor[count_within_file] = hin["CameraLeft"][i]
+            count_within_file += 1
+
+            # right
+            data_rewards[count_within_file, :] = target_line
+            data_rewards[count_within_file, steer_pos] -= delta
+            sensor[count_within_file] = hin["CameraRight"][i]
+            count_within_file += 1
 
     hin.close()
     hf.close()

@@ -6,8 +6,7 @@ gpu_agent="3"
 port="2000"
 # test related
 city_name="Town01"
-exp_id="mm45_v4_from_alldata_noseg_splitv0_matthias"
-
+exp_id="mm45_v4_from_alldata_noseg_splitv0_matthias_similar_wp"
 
 # launch carla
 export CUDA_VISIBLE_DEVICES=$gpu_carla

@@ -36,7 +36,8 @@ class configMain:
         # _N is noise, Yaw_S is angular speed
 
 
-        self.sensor_names = ['rgb']
+        #self.sensor_names = ['rgb']
+        self.sensor_names = ['CameraMiddle']
         self.sensors_size = [(88, 200, 3)]
         self.sensors_normalize = [True]
 
@@ -78,6 +79,10 @@ class configMain:
         # Yang: reproduce the segmentation model
         self.segmentation_model = '/data/yang/code/aws/scratch/CIL_modular_data/matthias_data/erfnet_small_cityscapes_aug'
         self.segmentation_model_name = "ErfNet_Small"
+
+        self.use_perception_stack = False
+        self.feature_input_size = (88, 200, 3)
+        self.image_as_float = [True]
 
 
 class configInput(configMain):

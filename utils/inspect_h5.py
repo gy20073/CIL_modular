@@ -63,7 +63,8 @@ def sample_images_from_h5(path, temp, show_all, is3):
                                         "brake    :" + str(f["targets"][imid, 2]) + "\n" +
                                         "direction:" + str(f["targets"][imid, 24]) + "\n" +
                                         "speed    :" + td(f["targets"][imid, 10]) + "\n" +
-                                        "ori    :" + td(f["targets"][imid, 21]) + " " + td(f["targets"][imid, 22]) + " " + td(f["targets"][imid, 23]) + "\n",
+                                        "ori      :" + td(f["targets"][imid, 21]) + " " + td(f["targets"][imid, 22]) + " " + td(f["targets"][imid, 23]) + "\n" +
+                                        "wp1_angle:" + td(f["targets"][imid, 31]) + "\n" ,
                                         fontsize=font)
             if not is3:
                 #image = image[:,:,::-1]

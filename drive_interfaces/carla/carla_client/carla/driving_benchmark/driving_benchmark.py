@@ -333,6 +333,10 @@ class DrivingBenchmark(object):
                 print("breaking because of collision and stuck")
                 break
 
+            if math.fabs(directions) < 0.1:
+                # The goal state is reached.
+                success = True
+
         # convert the images saved by the underlying to a video
         if self._recording._save_images:
             # convert the saved images to a video, and store it in the right place

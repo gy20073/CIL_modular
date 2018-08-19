@@ -47,6 +47,8 @@ class Planner(object):
 
         self._commands = []
 
+        self.debug = False
+
     def get_next_command(self, source, source_ori, target, target_ori):
         """
         Computes the full plan and returns the next command,
@@ -62,7 +64,8 @@ class Planner(object):
         track_source = self._city_track.project_node(source)
         track_target = self._city_track.project_node(target)
 
-        #print("source", source, "track_source", track_source, "target", target, "track_target", track_target)
+        if self.debug:
+            print("source", source, "track_source", track_source, "target", target, "track_target", track_target)
 
         # reach the goal
 
@@ -78,32 +81,39 @@ class Planner(object):
                 raise RuntimeError('Impossible to find route')
 
             self._commands = self._route_to_commands(route)
-            #print("new route computed, this is the command", self._commands)
+            if self.debug:
+                print("new route computed, this is the command", self._commands)
 
             if self._city_track.is_far_away_from_route_intersection(
                     track_source):
-                #print("at new node, away from intersection, far away from route intersection, outputing follow")
+                if self.debug:
+                    print("at new node, away from intersection, far away from route intersection, outputing follow")
                 return LANE_FOLLOW
             else:
                 if self._commands:
-                    #print("at new node, away from intersection, not far from route intersection, outputing command[0]")
+                    if self.debug:
+                        print("at new node, away from intersection, not far from route intersection, outputing command[0]", self._commands)
                     return self._commands[0]
                 else:
-                    #print("at new node, away from intersection, self.commands=None, output lane follow")
+                    if self.debug:
+                        print("at new node, away from intersection, self.commands=None, output lane follow")
                     return LANE_FOLLOW
         else:
 
             if self._city_track.is_far_away_from_route_intersection(
                     track_source):
-                #print("at old node, or close to intersection, far away from route intersection, output follow")
+                if self.debug:
+                    print("at old node, or close to intersection, far away from route intersection, output follow")
                 return LANE_FOLLOW
 
             # If there is computed commands
             if self._commands:
-                #print("at old node, or close to intersection, close to route intersection, has commands, output command[0]")
+                if self.debug:
+                    print("at old node, or close to intersection, close to route intersection, has commands, output command[0]", self._commands)
                 return self._commands[0]
             else:
-                #print("at old node, or close to intersection, close to route intersection, has None command, output follow")
+                if self.debug:
+                    print("at old node, or close to intersection, close to route intersection, has None command, output follow")
                 return LANE_FOLLOW
 
     def get_shortest_path_distance(

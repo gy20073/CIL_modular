@@ -66,12 +66,12 @@ class OutputManager(object):
         if self._config.segmentation_model != None:
             if not self._config.use_perception_stack:
                 tf.summary.image('Image_input', self._training_manager._input_images)
-            tf.summary.image('Image_vbp', self._training_manager._vis_images)
+            #tf.summary.image('Image_vbp', self._training_manager._vis_images)
             tf.summary.image('Segmentation_output', self._training_manager._gray)
         else:
             if not self._config.use_perception_stack:
                 tf.summary.image('Image_input', self._training_manager._input_images)
-            tf.summary.image('Image_vbp', self._training_manager._vis_images)
+            #tf.summary.image('Image_vbp', self._training_manager._vis_images)
 
     def write_tensorboard_summary(self, i):
         feedDict = self._training_manager.get_feed_dict()

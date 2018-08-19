@@ -67,12 +67,14 @@ def create_structure(tf, input_image, input_data, input_size, dropout, config):
 
     features = network_manager.get_feat_tensors_dict()
 
+    '''
     vis_images = network_manager.get_vbp_images(xc)
     print(vis_images)
 
     print(vis_images.get_shape())
+    '''
 
     # vis_images = tf.div(vis_images  -tf.reduce_min(vis_images),tf.reduce_max(vis_images) -tf.reduce_min(vis_images))
 
     # branches: each of them is a vector of the output(all vars you care) conditioned on that input control signal
-    return branches, vis_images, features, weights
+    return branches, None, features, weights

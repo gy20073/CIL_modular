@@ -227,9 +227,10 @@ class Dataset(object):
             output_queue.put(out)
 
     def start_multiple_decoders_augmenters(self):
-        n_jobs = 8
+        n_jobs = 6
         for i in range(n_jobs):
             p = Process(target=self._thread_decode_augment, args=(self, self.input_queue, self.output_queue))
+            #p = threading.Thread(target=self._thread_decode_augment, args=(self, self.input_queue, self.output_queue))
             p.start()
 
     def _thread_perception_splitting(self, input_queue):

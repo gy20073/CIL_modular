@@ -45,9 +45,6 @@ def train(experiment_name, memory_fraction):
         )
         time.sleep(config_input.perception_initialization_sleep)
 
-        # debug
-        print("sleep for a long time.")
-        #time.sleep(3000)
     else:
         perception_interface = None
 

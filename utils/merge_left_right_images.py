@@ -4,11 +4,11 @@ import numpy as np
 sys.path.append('drive_interfaces/carla/carla_client')
 from carla.planner.planner import Planner
 
-input_id = 3
-output_id = "noisy_middle_cmdfixed"
+input_id = 5
+output_id = "straight_3cam_constantaug2"
 debug_start = 0
 debug_end= 14000000
-use_3_cam = False
+use_3_cam = True
 
 all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/"+str(input_id)+"/*/data_*.h5")
 
@@ -131,6 +131,8 @@ for one_h5 in sorted(all_files)[debug_start:debug_end]:
             car_lenght = 6.0
             speed = math.fabs(hin["targets"][i, speed_pos]) * 3.6
             delta = min(6 * (math.atan((angle * car_lenght) / (time_use * speed + 0.05))) / math.pi, 0.3)
+            # TODO: this is an empirical good number
+            delta = 0.42
 
             # left
             data_rewards[count_within_file, :] = target_line

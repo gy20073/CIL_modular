@@ -44,6 +44,10 @@ def train(experiment_name, memory_fraction):
             **use_mode
         )
         time.sleep(config_input.perception_initialization_sleep)
+
+        # debug
+        print("sleep for a long time.")
+        #time.sleep(3000)
     else:
         perception_interface = None
 
@@ -98,7 +102,7 @@ def train(experiment_name, memory_fraction):
 
     for i in range(initialIteration, config_main.number_iterations):
         start_time = time.time()
-        if i % 10000 == 0:
+        if i % 3000 == 0:
             if config_main.segmentation_model != None:
                 save_model(saver, sess, config_main.models_path + '/ctrl', i)
             save_model(all_saver, sess, config_main.models_path, i)

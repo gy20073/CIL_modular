@@ -183,7 +183,8 @@ class CarlaMachine(Agent, Driver):
                  4.0: "right",
                  5.0: "straight",
                  0.0: "goal"}
-        viz = self.write_text_on_image(sensor, txtdt[direction], 10)
+        font_sz =int(10.0 / 200 * sensor.shape[1]) + 1
+        viz = self.write_text_on_image(sensor, txtdt[direction], font_sz)
         cv2.imwrite(debug_path +
                     str(self.debug_i).zfill(9) +
                     ".png", viz[:,:,::-1])

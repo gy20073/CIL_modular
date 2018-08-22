@@ -221,6 +221,14 @@ class Network(object):
 
             return self.activation(x)
 
+    def conv_block_nobn(self, x, kernel_size, stride, output_size, padding_in='SAME'):
+        print(" === Conv", self._count_conv, "  :  ", kernel_size, stride, output_size)
+        with tf.name_scope("conv_block" + str(self._count_conv)):
+            x = self.conv(x, kernel_size, stride, output_size, padding_in=padding_in)
+            x = self.dropout(x)
+
+            return self.activation(x)
+
     def fc_block(self, x, output_size):
         print(" === FC", self._count_fc, "  :  ", output_size)
         with tf.name_scope("fc" + str(self._count_fc + 1)):

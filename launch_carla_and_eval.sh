@@ -3,10 +3,10 @@
 # resource related
 gpu_carla="0"
 gpu_agent="3"
-port="2003"
+port="2000"
 # test related
 city_name="Town01"
-exp_id="mm45_v4_constantaug2"
+exp_id="mm45_v4_from_alldata_noseg_splitv0_matthias_similar_wp_noseg_nobn"
 
 # launch carla
 export CUDA_VISIBLE_DEVICES=$gpu_carla

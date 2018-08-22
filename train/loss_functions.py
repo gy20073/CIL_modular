@@ -45,4 +45,12 @@ def mse_branched(network_outputs, ground_truths, control_input, config):
         energy_vec.append(energy_branch)
         error_vec.append(error_branch)
 
+    if hasattr(config, "weight_decay"):
+        wd = config.weight_decay
+        if wd > 1e-8:
+            print("using weight decay ", wd)
+            decay_set = [tf.nn.l2_loss(v) for v in tf.trainable_variables()]
+            l2_loss = wd * tf.add_n(decay_set)
+            loss_function = loss_function + l2_loss
+
     return loss_function, error_vec, energy_vec, None, branch_selection

@@ -176,22 +176,27 @@ class CarlaMachine(Agent, Driver):
 
         return np.array(j)
 
-    def save_image(self, sensor, direction):
-        debug_path = self.temp_image_path + "/"
+    def annotate_image(self, sensor, direction, extra):
         txtdt = {2.0: "follow",
                  3.0: "left",
                  4.0: "right",
                  5.0: "straight",
                  0.0: "goal"}
-        font_sz =int(10.0 / 200 * sensor.shape[1]) + 1
-        viz = self.write_text_on_image(sensor, txtdt[direction], font_sz)
+        font_sz = int(10.0 / 88 * sensor.shape[0]) + 1
+        font_sz = min(font_sz, 35)
+        viz = self.write_text_on_image(sensor, txtdt[direction]+extra, font_sz)
+        return viz
+
+    def save_image(self, viz):
+        debug_path = self.temp_image_path + "/"
         cv2.imwrite(debug_path +
                     str(self.debug_i).zfill(9) +
                     ".png", viz[:,:,::-1])
         self.debug_i += 1
         print("output image id is: ", self.debug_i)
 
-    def compute_action(self, sensor, speed_kmh, direction=None):
+    def compute_action(self, sensor, speed_kmh, direction=None,
+                       save_image_to_disk=True, return_vis=False):
         if direction == None:
             direction = self.compute_direction((0, 0, 0), (0, 0, 0))
 
@@ -199,7 +204,7 @@ class CarlaMachine(Agent, Driver):
         image_input = preprocess_image(sensor, self._image_cut, self._config.image_size)
         if hasattr(self._config, "hack_resize_image"):
             image_input = cv2.resize(image_input, (self._config.hack_resize_image[1], self._config.hack_resize_image[0]))
-        self.save_image(image_input, direction)
+        to_be_visualized = image_input
 
         if self._config.image_as_float[0]:
             image_input = image_input.astype(np.float32)
@@ -209,6 +214,9 @@ class CarlaMachine(Agent, Driver):
         if self._config.use_perception_stack:
             image_input = np.expand_dims(image_input, 0)
             image_input = self.perception_interface.compute(image_input)
+            # here we should add the visualization
+            to_be_visualized = self.perception_interface.visualize(image_input, 0)
+            # done the visualization
             image_input = self.perception_interface._merge_logits_all_perception(image_input)
 
         if (self._train_manager._config.control_mode == 'single_branch_wp'):
@@ -242,7 +250,17 @@ class CarlaMachine(Agent, Driver):
         control.hand_brake = 0
         control.reverse = 0
 
-        return control
+        # print all info on the image
+        extra = "\nSteer {:.2f} \nThrottle {:.2f} \nBrake {:.2f}".format(float(steer), float(acc), float(brake))
+        to_be_visualized = self.annotate_image(to_be_visualized, direction, extra)
+
+        if save_image_to_disk:
+            self.save_image(to_be_visualized)
+
+        if return_vis:
+            return control, to_be_visualized
+        else:
+            return control
 
     # The augmentation should be dependent on speed
     def get_sensor_data(self):

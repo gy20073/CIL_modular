@@ -126,6 +126,10 @@ class Dataset(object):
                 func_previous = func
                 func = lambda x: cv2.resize(func_previous(x), (width, height))
 
+            if hasattr(self._config, "hack_faster_aug"):
+                func_previous = func
+                func = lambda x: func_previous(x)[::2, ::2, :]
+
             # func = delayed(func)
             # results = self.parallel_workers(func(x) for x in to_be_decoded[isensor])
             results = []

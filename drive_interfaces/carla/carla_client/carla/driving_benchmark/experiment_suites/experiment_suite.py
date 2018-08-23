@@ -15,7 +15,7 @@ class ExperimentSuite(object):
         that is calculated based on distance to goal.
         This is the same timeout as used on the CoRL paper.
         """
-        return 8*(((path_distance / 1000.0) / 10.0) * 3600.0 + 10.0)
+        return 8*(((path_distance / 1000.0) / 10.0) * 3600.0 + 5010.0)
 
     def get_number_of_poses_task(self):
         """

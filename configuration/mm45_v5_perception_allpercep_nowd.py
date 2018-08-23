@@ -52,7 +52,7 @@ class configMain:
 
         # perception module related
         self.use_perception_stack = True
-        self.perception_gpus = [6]
+        self.perception_gpus = [6, 7]
         self.perception_paths = "path_jormungandr"
         self.perception_batch_sizes = {"det_COCO": 3, "det_TL": 3, "seg": 4, "depth": 4, "det_TS": -1}
         self.perception_num_replicates = {"det_COCO": 3, "det_TL": 3, "seg": 2, "depth": 2, "det_TS": -1}
@@ -69,7 +69,6 @@ class configMain:
             self.feature_input_size = self.image_size
 
         self.optimizer = "adam" # or "adam"
-        self.weight_decay = 5e-6
 
 
 class configInput(configMain):
@@ -122,7 +121,7 @@ class configTrain(configMain):
         # TODO: tune it
         factor = 0.3333
         # Number of iterations, multiplying factor
-        self.training_schedule = [[50000, factor**1], [100000, factor**2], [150000, factor**3]]
+        self.training_schedule = [[30000, factor**1], [60000, factor**2], [90000, factor**3]]
 
         self.branch_loss_weight = [0.95, 0.95, 0.95, 0.95, 0.05]
         self.variable_weight = {'Steer': 0.3, 'Gas': 0.2, 'Brake': 0.1, 'Speed': 1.0}

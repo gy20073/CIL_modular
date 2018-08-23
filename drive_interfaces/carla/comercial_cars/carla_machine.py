@@ -236,15 +236,21 @@ class CarlaMachine(Agent, Driver):
 
             steer_gain = 0.8
             steer = steer_gain * wp1angle
-            steer =min(max(steer, -1), 1)
-
             print(('Predicted Steering: ', steer_pred, ' Waypoint Steering: ', steer))
         else:
             steer, acc, brake = self._control_function(image_input, speed_kmh, direction,
                                                        self._config, self._sess, self._train_manager)
+        steer = min(max(steer, -1), 1)
+        acc =   min(max(acc, 0), 1)
+        brake = min(max(brake, 0), 1)
 
         if brake < 0.1 or acc > brake:
             brake = 0.0
+
+        if acc < brake:
+            if acc > 0.1:
+                print("warning: prediction acc < brake")
+            acc = 0.0
 
         if speed_kmh > 35 and brake == 0.0:
             acc = 0.0

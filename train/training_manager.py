@@ -3,6 +3,7 @@ import tensorflow as tf
 import tensorflow.contrib.slim as slim
 sys.path.append('train')
 sys.path.append('utils')
+sys.path.append('structures')
 
 import loss_functions
 from enet import *

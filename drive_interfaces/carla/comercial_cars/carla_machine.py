@@ -6,6 +6,12 @@ from PIL import ImageDraw, Image, ImageFont
 
 sys.path.append('../train')
 sys.path.append("../")
+sys.path.append('drive_interfaces/carla/carla_client')
+sys.path.append('utils')
+sys.path.append('train')
+sys.path.append('drive_interfaces')
+sys.path.append('configuration')
+
 sldist = lambda c1, c2: math.sqrt((c2[0] - c1[0])**2 + (c2[1] - c1[1])**2)
 # carla related import
 from carla.agent.agent import Agent
@@ -65,7 +71,7 @@ class CarlaMachine(Agent, Driver):
                 path_config =self._config.perception_paths,
                 **use_mode
             )
-            time.sleep(30)
+            time.sleep(self._config.perception_initialization_sleep)
 
         self._train_manager = load_system(conf_module.configTrain())
         config_gpu = tf.ConfigProto()

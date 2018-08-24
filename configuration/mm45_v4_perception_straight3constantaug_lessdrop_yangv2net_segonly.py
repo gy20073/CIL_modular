@@ -52,8 +52,8 @@ class configMain:
 
         # perception module related
         self.use_perception_stack = True
-        self.perception_gpus = [7]
-        self.perception_paths = "path_jormungandr"
+        self.perception_gpus = [0]
+        self.perception_paths = "path_docker"
         self.perception_batch_sizes = {"det_COCO": 3, "det_TL": 3, "seg": 4, "depth": 4, "det_TS": -1}
         self.perception_num_replicates = {"det_COCO": -1, "det_TL": -1, "seg": 3, "depth": -1, "det_TS": -1}
         # debug

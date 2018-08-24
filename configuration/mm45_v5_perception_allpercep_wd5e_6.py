@@ -52,7 +52,7 @@ class configMain:
 
         # perception module related
         self.use_perception_stack = True
-        self.perception_gpus = [6]
+        self.perception_gpus = [1, 2]
         self.perception_paths = "path_jormungandr"
         self.perception_batch_sizes = {"det_COCO": 3, "det_TL": 3, "seg": 4, "depth": 4, "det_TS": -1}
         self.perception_num_replicates = {"det_COCO": 3, "det_TL": 3, "seg": 2, "depth": 2, "det_TS": -1}

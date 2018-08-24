@@ -1,4 +1,4 @@
-import argparse, logging, sys
+import argparse, logging, sys, os, signal
 
 sys.path.append('drive_interfaces/configuration')
 sys.path.append('drive_interfaces')
@@ -36,6 +36,7 @@ def main(host, port, city, summary_name, agent, benchmark_name):
 
 
 if (__name__ == '__main__'):
+    #os.setpgrp()
 
     parser = argparse.ArgumentParser(description='Chauffeur')
 
@@ -95,3 +96,6 @@ if (__name__ == '__main__'):
     runnable = CarlaMachine("0", args.experiment_name, driver_conf, float(args.memory))
 
     main(args.host, args.port, args.city, args.summary, runnable, args.benchmark_name)
+
+    # cleanup
+    #os.killpg(0, signal.SIGKILL)

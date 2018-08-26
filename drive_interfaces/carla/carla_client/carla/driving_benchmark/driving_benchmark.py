@@ -330,8 +330,10 @@ class DrivingBenchmark(object):
                 break
 
             if stuck_counter > 30 and last_collision_ago < 50:
-                print("breaking because of collision and stuck")
-                break
+                #print("breaking because of collision and stuck")
+                #break
+                # disable the breaking
+                pass
 
             if math.fabs(directions) < 0.1:
                 # The goal state is reached.

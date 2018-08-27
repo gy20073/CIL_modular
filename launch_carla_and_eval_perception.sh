@@ -2,11 +2,11 @@
 
 # resource related
 gpu_carla="0"
-gpu_agent="1"
+gpu_agent="3"
 port="2000"
 # test related
 city_name="Town02" # first test the train town
-exp_id="mm45_v5_perception_allpercep_nowd"
+exp_id="mm45_v4_perception_straight3constantaug_lessdrop_yangv2net_segonly"
 
 # launch carla
 export CUDA_VISIBLE_DEVICES=$gpu_carla

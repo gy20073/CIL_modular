@@ -43,7 +43,7 @@ def loop_over_video(path, func, output_path, temp_down_factor=10, batch_size=1):
 def model_function(batch_frames, vehicle_real_speed_kmh, direction, driving_model):
     out = []
     for frame in batch_frames:
-        frame = frame[:,:,::-1]
+        frame = frame[:,:,:] # the frames comes in bgr
         control, vis = driving_model.compute_action(frame, vehicle_real_speed_kmh, direction,
                                                     save_image_to_disk=False, return_vis=True)
         out.append(vis)

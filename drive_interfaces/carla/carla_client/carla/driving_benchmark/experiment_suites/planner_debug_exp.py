@@ -108,13 +108,13 @@ class PlannerDebugExp(ExperimentSuite):
             poses_tasks = self._poses_town01()
             vehicles_tasks = [0, 0, 0, 100]
             pedestrians_tasks = [0, 0, 0, 300]
-            n_samples = [2, 2, 2, 0]
+            n_samples = [1, 0, 0, 0]
             #n_samples = [3, 6, 6, 9]
         else:
             poses_tasks = self._poses_town02()
             vehicles_tasks = [0, 0, 0, 50]
             pedestrians_tasks = [0, 0, 0, 150]
-            n_samples = [2, 2, 2, 0]
+            n_samples = [1, 0, 0, 0]
             #n_samples = [3, 6, 6, 9]
 
         experiments_vector = []
@@ -133,7 +133,10 @@ class PlannerDebugExp(ExperimentSuite):
                     continue
                 poses = random.sample(poses, nsample)
                 #poses = [[65, 133], [65, 18], [111, 64], [148, 129]]
-                poses = [[111, 64]]
+                if self._city_name == 'Town01':
+                    poses = [[36, 40]]
+                else:
+                    poses = [[38, 34]]
 
                 conditions = CarlaSettings()
                 conditions.set(
@@ -154,5 +157,8 @@ class PlannerDebugExp(ExperimentSuite):
                     Repetitions=1
                 )
                 experiments_vector.append(experiment)
+
+                return experiments_vector
+
 
         return experiments_vector

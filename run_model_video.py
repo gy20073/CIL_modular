@@ -1,6 +1,7 @@
 import cv2, sys, os
 sys.path.append("drive_interfaces/carla/comercial_cars")
 from carla_machine import *
+from subprocess import call
 
 def loop_over_video(path, func, output_path, temp_down_factor=10, batch_size=1):
     # from a video, use cv2 to read each frame
@@ -28,7 +29,7 @@ def loop_over_video(path, func, output_path, temp_down_factor=10, batch_size=1):
             print("calling loop function finished")
             if not video_init:
                 fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-                video = cv2.VideoWriter(output_path, fourcc, 30 // temp_down_factor,
+                video = cv2.VideoWriter(output_path, fourcc, max(30 // temp_down_factor, 1),
                                         (frame_seq[0].shape[1], frame_seq[0].shape[0]))
                 print("in test_video.loop_over_video, loop function output size:", frame_seq[0].shape)
                 video_init = True
@@ -46,7 +47,7 @@ def model_function(batch_frames, vehicle_real_speed_kmh, direction, driving_mode
         frame = frame[:,:,:] # the frames comes in bgr
         control, vis = driving_model.compute_action(frame, vehicle_real_speed_kmh, direction,
                                                     save_image_to_disk=False, return_vis=True)
-        out.append(vis)
+        out.append(vis[:,:,::-1])
 
     return out
 
@@ -67,14 +68,17 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     real_speed_kmh = 0.0
     direction = 2.0
+    temp_down = 1
     # end of configurable params
 
-
-    output_path = path.split(".")[0] + "_" + exp_id + "_speed" + str(real_speed_kmh) + "_direction" + str(direction) + ".avi"
+    out_prefix = path.split(".")[0] + "_" + exp_id + "_speed" + str(real_speed_kmh) + "_direction" + str(direction)
+    output_path = out_prefix + ".avi"
+    output_compressed = out_prefix + "_264" + ".mp4"
 
     driving_model = CarlaMachine("0", exp_id, get_driver_config(), 0.1)
     func = lambda batch_frames: model_function(batch_frames, real_speed_kmh, direction, driving_model)
 
-    loop_over_video(path, func, output_path, 1, 1)
+    loop_over_video(path, func, output_path, temp_down, 1)
 
-    # TODO: convert it to smaller x264 video
+    cmd = "ffmpeg -i %s -vcodec libx264 %s" % (output_path, output_compressed)
+    call(cmd, shell=True)

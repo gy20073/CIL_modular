@@ -7,7 +7,7 @@ class Noiser(object):
     # NOISER CARLA CONFIGURATION
     # frequency=15, intensity = 5 ,min_noise_time_amount = 0.5
 
-    def __init__(self, noise_type, frequency=15, intensity=5, min_noise_time_amount=0.5):
+    def __init__(self, noise_type, frequency=45, intensity=5, min_noise_time_amount=0.5):
         # specifications from outside
         self.noise_type = noise_type
         self.frequency = frequency
@@ -28,6 +28,7 @@ class Noiser(object):
     def randomize_noise_sign(self):
         if self.noise_type == 'Spike':  # spike noise there are no variations on current noise over time
             self.noise_sign = float(random.randint(0, 1) * 2 - 1)
+            self.this_intensity = random.random() * 5 + 2.5
 
     def get_noise(self):
         assert(self.noise_type == 'Spike')
@@ -39,7 +40,7 @@ class Noiser(object):
         else:
             raise ValueError()
 
-        noise = 0.001 + time_offset * 0.03 * self.intensity
+        noise = 0.001 + time_offset * 0.03 * self.this_intensity
         noise = min(noise, 0.55) * self.noise_sign
 
         return noise

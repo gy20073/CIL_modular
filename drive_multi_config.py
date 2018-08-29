@@ -114,6 +114,22 @@ if __name__ == "__main__":
 
     if collect_all:
         configs = [("RotationPitch", "0") ]
+
+    # a test case
+    configs = [("RotationPitch", "0")]
+    weather_range = [1]
+    # end of test case
+
+    # the noiser setting
+    configs = [("RotationPitch", "0"),  # This is the default one
+               ("RotationPitch", "5"),
+               ("RotationPitch", "-5"),
+               ("ImageSizeX", "700"),
+               ("ImageSizeX", "800"),
+               ("PositionZ", "1.4"),
+               ("PositionZ", "1.8")]
+    weather_range = range(1, 15)
+
     # in total there are 7*14 = 100 configs, each of the 200 h5 file has size of 33M, i.e. 30 h5 = 1G
     # Thus we aim to collect 100 hours of training, that is 400G, so each config has quota of 3G, which is 100 files
     # an initial config ends here

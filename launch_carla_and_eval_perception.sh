@@ -2,7 +2,7 @@
 
 # resource related
 gpu_agent="3"
-exp_id="mm45_v4_base_newseg"
+exp_id="mm45_v5_perception_allpercep_nowd"
 # end of resource
 
 
@@ -13,7 +13,7 @@ do
     port=$(python get_unused_port.py)
     echo "using port "$port
     # launch carla
-    /scratch/yang/aws_data/carla_0.8.4/CarlaUE4.sh /Game/Maps/$city_name -carla-server -carla-world-port=$port &
+    /scratch/yang/aws_data/carla_0.8.4/CarlaUE4.sh /Game/Maps/$city_name -carla-server -carla-settings="/scratch/yang/aws_data/carla_0.8.4/carla_long_timeout.ini" -carla-world-port=$port &
     pid_carla=$!
     sleep 20
 

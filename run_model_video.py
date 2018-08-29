@@ -65,9 +65,9 @@ if __name__ == "__main__":
     # start of configurable params
     path = "/scratch/yang/aws_data/mkz/mkz2/inverted_compress.avi"
     exp_id = "mm45_v4_perception_straight3constantaug_lessdrop_yangv2net_segonly"
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "3"
     real_speed_kmh = 0.0
-    direction = 2.0
+    direction = 5.0
     temp_down = 1
     # end of configurable params
 

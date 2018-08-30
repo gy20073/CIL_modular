@@ -19,7 +19,7 @@ class YangExp(ExperimentSuite):
 
     @property
     def train_weathers(self):
-        return [1, 3, 8, 10]
+        return [1, 10]
 
     @property
     def test_weathers(self):

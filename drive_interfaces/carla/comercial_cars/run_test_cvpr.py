@@ -97,5 +97,7 @@ if (__name__ == '__main__'):
 
     main(args.host, args.port, args.city, args.summary, runnable, args.benchmark_name)
 
+    runnable.destroy()
+
     # cleanup
     #os.killpg(0, signal.SIGKILL)

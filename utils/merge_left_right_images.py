@@ -4,11 +4,11 @@ import numpy as np
 sys.path.append('drive_interfaces/carla/carla_client')
 from carla.planner.planner import Planner
 
-input_id = 5
-output_id = "straight_3cam_constantaug2"
+input_id = "noiser"
+output_id = "noiser_direction"
 debug_start = 0
 debug_end= 14000000
-use_3_cam = True
+use_3_cam = False
 
 all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/"+str(input_id)+"/*/data_*.h5")
 

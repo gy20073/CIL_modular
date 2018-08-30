@@ -300,3 +300,6 @@ class CarlaMachine(Agent, Driver):
 
     def act(self, control):
         self.carla.send_control(control)
+
+    def destroy(self):
+        self.perception_interface.destroy()

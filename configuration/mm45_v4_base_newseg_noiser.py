@@ -52,19 +52,19 @@ class configMain:
 
         # perception module related
         self.use_perception_stack = True
-        self.perception_gpus = [1, 2]
-        self.perception_paths = "path_jormungandr"
+        self.perception_gpus = [1]
+        self.perception_paths = "path_jormungandr_newseg"
         self.perception_batch_sizes = {"det_COCO": 3, "det_TL": 3, "seg": 4, "depth": 4, "det_TS": -1}
-        self.perception_num_replicates = {"det_COCO": 3, "det_TL": 3, "seg": 2, "depth": 2, "det_TS": -1}
+        self.perception_num_replicates = {"det_COCO": -1, "det_TL": -1, "seg": 4, "depth": -1, "det_TS": -1}
         # debug
         #self.perception_num_replicates = {"det_COCO": -1, "det_TL": -1, "seg": -1, "depth": 1, "det_TS": -1}
         if self.use_perception_stack:
             self.feature_input_size = (39, 52, 295)  # hardcoded for now
             self.image_as_float = [False]
             self.sensors_normalize = [False]
-            self.perception_initialization_sleep=30
+            self.perception_initialization_sleep=15
             # debug
-            #self.feature_input_size = (39, 52, 54)
+            self.feature_input_size = (39, 52, 54)
         else:
             self.feature_input_size = self.image_size
 
@@ -91,8 +91,8 @@ class configInput(configMain):
             random_order=True  # do all of the above in random order
         )]
 
-        all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/straight_3cam_constantaug2/*/data_*.h5")
-        self.val_db_path = glob.glob("/data/yang/code/aws/scratch/carla_collect/straight_3cam_constantaug2/*WeatherId=13/data_*.h5")
+        all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/noiser_direction/*/data_*.h5")
+        self.val_db_path = glob.glob("/data/yang/code/aws/scratch/carla_collect/noiser_direction/*WeatherId=1[34]/data_*.h5")
         self.train_db_path = list(set(all_files) - set(self.val_db_path))
 
         self.speed_factor = 40.0  # In KM/H
@@ -121,7 +121,7 @@ class configTrain(configMain):
         # TODO: tune it
         factor = 0.3333
         # Number of iterations, multiplying factor
-        self.training_schedule = [[30000, factor**1], [60000, factor**2], [90000, factor**3]]
+        self.training_schedule = [[50000, factor**1], [75000, factor**2], [100000, factor**3]]
 
         self.branch_loss_weight = [0.95, 0.95, 0.95, 0.95, 0.05]
         self.variable_weight = {'Steer': 0.3, 'Gas': 0.2, 'Brake': 0.1, 'Speed': 1.0}

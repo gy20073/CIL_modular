@@ -18,7 +18,7 @@ def write_text_on_image(image, string, fontsize=10):
     return np.array(j)
 
 
-def sample_images_from_h5(path, temp, show_all, is3):
+def sample_images_from_h5(path, temp, show_all, is3, pure_video):
     f=h5py.File(path, "r")
     if not os.path.exists(temp):
         os.mkdir(temp)
@@ -57,15 +57,16 @@ def sample_images_from_h5(path, temp, show_all, is3):
             #image = image[:,:,::-1]
             td = lambda fl: "{:.2f}".format(fl)
             font = int(np.ceil(25.0 / (576/2) * image.shape[0])) + 1
-            image = write_text_on_image(image,
-                                        "steer    :" + td(f["targets"][imid, 0]) + "\n" +
-                                        "throttle :" + str(f["targets"][imid, 1]) + "\n" +
-                                        "brake    :" + str(f["targets"][imid, 2]) + "\n" +
-                                        "direction:" + str(f["targets"][imid, 24]) + "\n" +
-                                        "speed    :" + td(f["targets"][imid, 10]) + "\n" +
-                                        "ori      :" + td(f["targets"][imid, 21]) + " " + td(f["targets"][imid, 22]) + " " + td(f["targets"][imid, 23]) + "\n" +
-                                        "wp1_angle:" + td(f["targets"][imid, 31]) + "\n" ,
-                                        fontsize=font)
+            if not pure_video:
+                image = write_text_on_image(image,
+                                            "steer    :" + td(f["targets"][imid, 0]) + "\n" +
+                                            "throttle :" + str(f["targets"][imid, 1]) + "\n" +
+                                            "brake    :" + str(f["targets"][imid, 2]) + "\n" +
+                                            "direction:" + str(f["targets"][imid, 24]) + "\n" +
+                                            "speed    :" + td(f["targets"][imid, 10]) + "\n" +
+                                            "ori      :" + td(f["targets"][imid, 21]) + " " + td(f["targets"][imid, 22]) + " " + td(f["targets"][imid, 23]) + "\n" +
+                                            "wp1_angle:" + td(f["targets"][imid, 31]) + "\n" ,
+                                            fontsize=font)
             if not is3:
                 #image = image[:,:,::-1]
                 cv2.imwrite(path, image)
@@ -78,7 +79,10 @@ def sample_images_from_h5(path, temp, show_all, is3):
                 mapping = {0: 1, 1: 0, 2: 2}
                 image_list[mapping[mod]] = image
                 if mod == 2:
-                    image = np.concatenate(image_list, axis=1)
+                    if pure_video:
+                        image = image_list[1]
+                    else:
+                        image = np.concatenate(image_list, axis=1)
                     cv2.imwrite(path, image)
                     counter += 1
 
@@ -97,8 +101,13 @@ if __name__ == "__main__":
     else:
         write_all = False
 
+    if len(sys.argv) >= 5:
+        pure_video = (sys.argv[4].lower() == "true")
+    else:
+        pure_video = False
+
     for path in glob.glob(path_pattern):
-        sample_images_from_h5(path, temp_folder, write_all, is3)
+        sample_images_from_h5(path, temp_folder, write_all, is3, pure_video)
 
         call("ffmpeg -y -i " + temp_folder + "%05d.jpg -c:v libx264 " + path + ".mp4", shell=True)
 

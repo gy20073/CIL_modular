@@ -191,12 +191,22 @@ class Dataset(object):
                 else:
                     raise ValueError()
 
-        assert(self._config.sensor_names == ['CameraMiddle'])
-        return sensors[self._config.sensor_names.index('CameraMiddle')], targets, inputs
+        # change the output sensors variable
+        sensors = np.concatenate(sensors, axis=0)
+
+        return sensors, targets, inputs
 
     # Used by enqueue
     def process_run(self, sess, data_loaded):
-        queue_feed_dict = {self._queue_image_input: data_loaded[0]}  # images we already put by default
+        reshaped = data_loaded[0]
+        nB, nH, nW, nC = reshaped.shape
+        num_sensors = len(self._config.sensor_names)
+        reshaped = np.reshape(reshaped, (num_sensors, nB//num_sensors, nH, nW, nC))
+        reshaped = np.transpose(reshaped, (1, 2, 0, 3, 4))
+        # now has shape nB//num_sensors, nH, num_sensors, nW, nC
+        reshaped = np.reshape(reshaped, (nB//num_sensors, nH, num_sensors*nW, nC))
+
+        queue_feed_dict = {self._queue_image_input: reshaped}  # images we already put by default
 
         for i in range(len(self._config.targets_names)):
             queue_feed_dict.update({self._queue_targets[i]: data_loaded[1][i]})

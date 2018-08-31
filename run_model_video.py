@@ -45,7 +45,9 @@ def model_function(batch_frames, vehicle_real_speed_kmh, direction, driving_mode
     out = []
     for frame in batch_frames:
         frame = frame[:,:,:] # the frames comes in bgr
-        control, vis = driving_model.compute_action(frame, vehicle_real_speed_kmh, direction,
+        # TODO: right now, this program only support eval on a single video stream, in the future it will support multiple cameras
+        sensors = [frame]
+        control, vis = driving_model.compute_action(sensors, vehicle_real_speed_kmh, direction,
                                                     save_image_to_disk=False, return_vis=True)
         out.append(vis[:,:,::-1])
 

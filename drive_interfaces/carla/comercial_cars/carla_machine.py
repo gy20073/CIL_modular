@@ -163,11 +163,14 @@ class CarlaMachine(Agent, Driver):
 
     # TODO: change to the agent interface, this depend on the sensor names
     def run_step(self, measurements, sensor_data, direction, target):
-        assert(self._config.sensor_names == ["CameraMiddle"])
-        sensor = image_converter.to_bgra_array(sensor_data["CameraMiddle"])
+        sensors = []
+        for name in self._config.sensor_names:
+            sensors.append(image_converter.to_bgra_array(sensor_data[name]))
 
         speed_kmh = measurements.player_measurements.forward_speed * 3.6
-        control = self.compute_action(sensor, speed_kmh, direction)
+
+        # TODO: change the interface of compute action for all
+        control = self.compute_action(sensors, speed_kmh, direction)
 
         return control
 
@@ -201,29 +204,37 @@ class CarlaMachine(Agent, Driver):
         self.debug_i += 1
         print("output image id is: ", self.debug_i)
 
-    def compute_action(self, sensor, speed_kmh, direction=None,
+    def compute_action(self, sensors, speed_kmh, direction=None,
                        save_image_to_disk=True, return_vis=False):
         if direction == None:
             direction = self.compute_direction((0, 0, 0), (0, 0, 0))
 
-        assert(self._config.sensor_names == ['CameraMiddle'])
-        image_input = preprocess_image(sensor, self._image_cut, self._config.image_size)
-        if hasattr(self._config, "hack_resize_image"):
-            image_input = cv2.resize(image_input, (self._config.hack_resize_image[1], self._config.hack_resize_image[0]))
-        to_be_visualized = image_input
+        out_images = []
+        out_vis = []
+        for sensor in sensors:
+            image_input = preprocess_image(sensor, self._image_cut, self._config.image_size)
+            if hasattr(self._config, "hack_resize_image"):
+                image_input = cv2.resize(image_input, (self._config.hack_resize_image[1], self._config.hack_resize_image[0]))
+            to_be_visualized = image_input
 
-        if self._config.image_as_float[0]:
-            image_input = image_input.astype(np.float32)
-        if self._config.sensors_normalize[0]:
-            image_input = np.multiply(image_input, 1.0 / 255.0)
+            if self._config.image_as_float[0]:
+                image_input = image_input.astype(np.float32)
+            if self._config.sensors_normalize[0]:
+                image_input = np.multiply(image_input, 1.0 / 255.0)
 
-        if self._config.use_perception_stack:
-            image_input = np.expand_dims(image_input, 0)
-            image_input = self.perception_interface.compute(image_input)
-            # here we should add the visualization
-            to_be_visualized = self.perception_interface.visualize(image_input, 0)
-            # done the visualization
-            image_input = self.perception_interface._merge_logits_all_perception(image_input)
+            if self._config.use_perception_stack:
+                image_input = np.expand_dims(image_input, 0)
+                image_input = self.perception_interface.compute(image_input)
+                # here we should add the visualization
+                to_be_visualized = self.perception_interface.visualize(image_input, 0)
+                # done the visualization
+                image_input = self.perception_interface._merge_logits_all_perception(image_input)
+
+            out_images.append(image_input)
+            out_vis.append(to_be_visualized)
+
+        image_input = np.concatenate(out_images, axis=2)
+        to_be_visualized = np.concatenate(out_vis, axis=1)
 
         if (self._train_manager._config.control_mode == 'single_branch_wp'):
             # Yang: use the waypoints to predict the steer, in theory PID controller, but in reality just P controller

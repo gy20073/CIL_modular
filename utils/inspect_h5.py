@@ -92,17 +92,18 @@ if __name__ == "__main__":
     path_pattern = sys.argv[1]
 
     if len(sys.argv) >= 3:
-        is3 = (sys.argv[2].lower() == "true")
+        is3 = (sys.argv[2].lower().strip() == "true")
     else:
         is3 = False
+        print("is3 False")
 
     if len(sys.argv) >= 4:
-        write_all = (sys.argv[3].lower() == "true")
+        write_all = (sys.argv[3].lower().strip() == "true")
     else:
         write_all = False
 
     if len(sys.argv) >= 5:
-        pure_video = (sys.argv[4].lower() == "true")
+        pure_video = (sys.argv[4].lower().strip() == "true")
     else:
         pure_video = False
 

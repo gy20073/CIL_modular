@@ -83,6 +83,11 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
 
         direction = 2
 
+        if drive_config.type_of_driver != "Human":
+            print(drive_config.type_of_driver, "!!!!!!!!!!!!!!!!!")
+            conf_module = __import__(experiment_name)
+            _config = conf_module.configInput()
+
 
         while direction != -1 and drive_config.num_images_to_collect > num_has_collected:
             capture_time = time.time()
@@ -95,8 +100,13 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
 
             # compute the actions based on the image and the speed
             speed_kmh = measurements.player_measurements.forward_speed * 3.6
-            actions = driver.compute_action(image_converter.to_bgra_array(sensor_data['CameraMiddle']),
-                                            speed_kmh)  # measurements.speed
+
+            sensors = []
+            if drive_config.type_of_driver != "Human":
+                for name in _config.sensor_names:
+                    sensors.append(image_converter.to_bgra_array(sensor_data[name]))
+
+            actions = driver.compute_action(sensors, speed_kmh)  # measurements.speed
             action_noisy = noiser.compute_noise(actions, speed_kmh)
 
             if recording:

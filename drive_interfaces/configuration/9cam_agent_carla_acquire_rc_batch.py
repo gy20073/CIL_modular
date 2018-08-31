@@ -6,7 +6,7 @@ class configDrive:
         # resource related
         self.host = "127.0.0.1"
         self.port = 2000
-        self.path = "/scratch/yang/aws_data/carla_collect/noiser/"  # If path is set go for it , if not expect a name set
+        self.path = "/scratch/yang/aws_data/carla_collect/noiser_3cam/"  # If path is set go for it , if not expect a name set
 
         # data collection related
         self.city_name = 'Town01'

@@ -50,7 +50,7 @@ def process_collect(list_of_configs, port, gpu,
             if count >= 5:
                 count = 0
                 cmd = ['bash', '-c',
-                       " '/scratch/yang/aws_data/carla_0.8.4/CarlaUE4.sh /Game/Maps/%s  -carla-server -carla-settings=/data/yang/code/aws/CIL_modular/drive_interfaces/carla/yang_template.ini -benchmark -fps=5 -carla-world-port=%d' " % (TownName, port)]
+                       " '/scratch/yang/aws_data/carla_0.8.4/CarlaUE4.sh /Game/Maps/%s  -carla-server -benchmark -fps=5 -carla-world-port=%d' " % (TownName, port)]
                 print(" ".join(cmd))
                 print("before spawnling")
                 t = threading.Thread(target=lambda: os.system(" ".join(cmd)))
@@ -84,6 +84,7 @@ if __name__ == "__main__":
     template_path = "./drive_interfaces/carla/yang_template.ini"
     if collect_all:
         template_path = "./drive_interfaces/carla/yang_template_all.ini"
+    template_path = "./drive_interfaces/carla/yang_template_3cams.ini"
 
     # TODO: tune those numbers
     # (propertyName, potential value)

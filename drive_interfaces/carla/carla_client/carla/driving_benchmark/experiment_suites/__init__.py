@@ -4,3 +4,4 @@ from .cvpr_2017 import CVPR2017
 from .yang_exp import YangExp
 from .original_exp import OriginalExp
 from .planner_debug_exp import PlannerDebugExp
+from .yang_exp_3cam import YangExp3cam

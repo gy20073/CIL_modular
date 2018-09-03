@@ -46,7 +46,7 @@ def load_system(config):
 
 
 class CarlaMachine(Agent, Driver):
-    def __init__(self, gpu_number="0", experiment_name='None', driver_conf=None, memory_fraction=0.9):
+    def __init__(self, gpu_number="0", experiment_name='None', driver_conf=None, memory_fraction=0.9, gpu_perception=None):
         Driver.__init__(self)
 
         conf_module = __import__(experiment_name)
@@ -61,6 +61,9 @@ class CarlaMachine(Agent, Driver):
                     use_mode[key] = True
                 else:
                     use_mode[key] = False
+
+            if gpu_perception is not None:
+                self._config.perception_gpus = gpu_perception
 
             self.perception_interface = Perceptions(
                 batch_size={key: 1 for key in use_mode if use_mode[key]},

@@ -4,11 +4,12 @@ import numpy as np
 sys.path.append('drive_interfaces/carla/carla_client')
 from carla.planner.planner import Planner
 
-input_id = "noiser"
-output_id = "noiser_direction"
+input_id = "noiser_3cam"
+output_id = "noiser_3cam_direction"
 debug_start = 0
 debug_end= 14000000
 use_3_cam = False
+copy_3cam = True
 
 all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/"+str(input_id)+"/*/data_*.h5")
 
@@ -107,6 +108,9 @@ for one_h5 in sorted(all_files)[debug_start:debug_end]:
     data_rewards = hf.create_dataset('targets', (200*factor, 35), 'f')
     dt = h5py.special_dtype(vlen=np.dtype('uint8'))
     sensor = hf.create_dataset("CameraMiddle", (200*factor,), dtype=dt)
+    if copy_3cam:
+        sensorL = hf.create_dataset("CameraLeft", (200 * factor,), dtype=dt)
+        sensorR = hf.create_dataset("CameraRight", (200 * factor,), dtype=dt)
 
     hin = h5py.File(one_h5, 'r')
     count_within_file = 0
@@ -119,6 +123,9 @@ for one_h5 in sorted(all_files)[debug_start:debug_end]:
         # middle
         data_rewards[count_within_file, :] = target_line
         sensor[count_within_file] = hin["CameraMiddle"][i]
+        if copy_3cam:
+            sensorL[count_within_file] = hin["CameraLeft"][i]
+            sensorR[count_within_file] = hin["CameraRight"][i]
         count_within_file += 1
 
         if use_3_cam:
@@ -145,6 +152,9 @@ for one_h5 in sorted(all_files)[debug_start:debug_end]:
             data_rewards[count_within_file, steer_pos] -= delta
             sensor[count_within_file] = hin["CameraRight"][i]
             count_within_file += 1
+
+
+
 
     hin.close()
     hf.close()

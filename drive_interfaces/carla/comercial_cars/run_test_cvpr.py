@@ -22,10 +22,17 @@ from carla.driving_benchmark import run_driving_benchmark
 import carla.driving_benchmark.experiment_suites as ES
 from common_util import parse_drive_arguments
 
-def main(host, port, city, summary_name, agent, benchmark_name):
+def main(host, port, city, summary_name, agent, benchmark_name, weathers):
     #TODO: make an agent; define the camera in the testing env; change city name
     benchmark = getattr(ES, benchmark_name)
-    experiment_suite = benchmark(city)
+    if weathers is not None:
+        parsed = []
+        for item in weathers.strip().split(","):
+            parsed.append(int(item))
+        experiment_suite = benchmark(city, parsed)
+    else:
+        experiment_suite = benchmark(city)
+
     run_driving_benchmark(agent, experiment_suite,
                           city_name=city,
                           log_name=summary_name,
@@ -57,6 +64,8 @@ if (__name__ == '__main__'):
     parser.add_argument('-cy', '--city', help='select the graph from the city being used')
     parser.add_argument('-imc', '--image_cut', help='Set the positions where the image is cut')
     parser.add_argument('-bn', '--benchmark_name', default="YangExp", help='What benchmark to run')
+    parser.add_argument('-weathers', '--weathers', default=None, help='The weather to evaluate on')
+    parser.add_argument('-gpu_perceptions', '--gpu_perceptions', default=None, help='which gpu to use for evaluation')
 
     args = parser.parse_args()
     if args.log or args.debug:
@@ -92,10 +101,16 @@ if (__name__ == '__main__'):
         with open(config.models_path + '/checkpoint', 'r') as content_file:
             f.write(content_file.read())
 
-    # instance your controller here
-    runnable = CarlaMachine("0", args.experiment_name, driver_conf, float(args.memory))
+    if args.gpu_perceptions is not None:
+        parsed = []
+        for item in args.gpu_perceptions.strip().split(","):
+            parsed.append(int(item))
+        args.gpu_perceptions = parsed
 
-    main(args.host, args.port, args.city, args.summary, runnable, args.benchmark_name)
+    # instance your controller here
+    runnable = CarlaMachine("0", args.experiment_name, driver_conf, float(args.memory), args.gpu_perceptions)
+
+    main(args.host, args.port, args.city, args.summary, runnable, args.benchmark_name, weathers=args.weathers)
 
     runnable.destroy()
 

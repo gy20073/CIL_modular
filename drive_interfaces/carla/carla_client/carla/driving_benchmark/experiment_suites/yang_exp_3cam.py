@@ -160,7 +160,8 @@ class YangExp3cam(ExperimentSuite):
                     NumberOfVehicles=vehicles,
                     NumberOfPedestrians=pedestrians,
                     WeatherId=weather,
-                    QualityLevel="Low"
+                    QualityLevel="Low",
+                    DisableTwoWheeledVehicles=True
                 )
                 # Add all the cameras that were set for this experiments
 

@@ -18,7 +18,7 @@ class configMain:
                                'Plat_Ts', 'Game_Ts', 'Ori_X', 'Ori_Y', 'Ori_Z', 'Control', 'Camera', 'Angle',
                                'wp1_x', 'wp1_y', 'wp2_x', 'wp2_y', 'wp1_angle', 'wp1_mag', 'wp2_angle', 'wp2_mag']
 
-        self.sensor_names = ['CameraLeft', 'CameraMiddle', 'CameraRight']
+        self.sensor_names = ['CameraMiddle']
 
         self.targets_names = ['Steer', 'Gas', 'Brake', 'Speed']
         self.targets_sizes = [1, 1, 1, 1]
@@ -52,7 +52,7 @@ class configMain:
 
         # perception module related
         self.use_perception_stack = True
-        self.perception_gpus = [1, 2, 3]
+        self.perception_gpus = [1,2,3]
         self.perception_paths = "path_jormungandr_newseg"
         self.perception_batch_sizes = {"det_COCO": 3, "det_TL": 3, "seg": 4, "depth": 4, "det_TS": -1}
         self.perception_num_replicates = {"det_COCO": -1, "det_TL": 3, "seg": 2, "depth": -1, "det_TS": -1}
@@ -60,11 +60,11 @@ class configMain:
         #self.perception_num_replicates = {"det_COCO": -1, "det_TL": -1, "seg": -1, "depth": 1, "det_TS": -1}
         if self.use_perception_stack:
             self.feature_input_size = (39, 52, 295)  # hardcoded for now
-            self.image_as_float = [False, False, False]
-            self.sensors_normalize = [False, False, False]
+            self.image_as_float = [False]
+            self.sensors_normalize = [False]
             self.perception_initialization_sleep=30
             # debug
-            self.feature_input_size = (39, 52*3, 54+72)
+            self.feature_input_size = (39, 52, 54+72)
         else:
             self.feature_input_size = self.image_size
 
@@ -89,13 +89,16 @@ class configInput(configMain):
             rl(iaa.Grayscale((0.0, 1))),  # put grayscale
             ],
             random_order=True  # do all of the above in random order
-        )] * 3
+        )]
 
-        all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/noiser_3cam_direction/*/data_*.h5")
+        all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/noiser_direction/*/data_*.h5")
         self.val_db_path = []
         for valid in range(1, 15, 3):
-            self.val_db_path += glob.glob("/data/yang/code/aws/scratch/carla_collect/noiser_3cam_direction/*WeatherId="+str(valid).zfill(2)+"/data_*.h5")
+            self.val_db_path += glob.glob(
+                "/data/yang/code/aws/scratch/carla_collect/noiser_direction/*WeatherId=" + str(valid).zfill(
+                    2) + "/data_*.h5")
         self.train_db_path = list(set(all_files) - set(self.val_db_path))
+
 
         self.speed_factor = 40.0  # In KM/H
 

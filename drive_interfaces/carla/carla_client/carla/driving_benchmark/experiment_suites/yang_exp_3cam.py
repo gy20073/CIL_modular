@@ -127,14 +127,14 @@ class YangExp3cam(ExperimentSuite):
 
         if self._city_name == 'Town01':
             poses_tasks = self._poses_town01()
-            vehicles_tasks = [0, 0, 0, 100]
-            pedestrians_tasks = [0, 0, 0, 300]
+            vehicles_tasks = [0, 0, 0, 20]
+            pedestrians_tasks = [0, 0, 0, 50]
             n_samples = [0, 0, 0, len(poses_tasks[-1])]
             #n_samples = [3, 6, 6, 9]
         else:
             poses_tasks = self._poses_town02()
-            vehicles_tasks = [0, 0, 0, 50]
-            pedestrians_tasks = [0, 0, 0, 150]
+            vehicles_tasks = [0, 0, 0, 15]
+            pedestrians_tasks = [0, 0, 0, 50]
             n_samples = [0, 0, 0, len(poses_tasks[-1])]
             #n_samples = [3, 6, 6, 9]
 

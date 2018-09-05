@@ -206,6 +206,11 @@ class Dataset(object):
         # now has shape nB//num_sensors, nH, num_sensors, nW, nC
         reshaped = np.reshape(reshaped, (nB//num_sensors, nH, num_sensors*nW, nC))
 
+        if hasattr(self._config, "add_gaussian_noise"):
+            std = self._config.add_gaussian_noise
+            print("!!!!!!!!!!!!!!!!!!adding gaussian noise", std)
+            reshaped += np.random.normal(0, std, reshaped.shape)
+
         queue_feed_dict = {self._queue_image_input: reshaped}  # images we already put by default
 
         for i in range(len(self._config.targets_names)):

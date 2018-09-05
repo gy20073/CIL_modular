@@ -3,12 +3,12 @@ from time import sleep
 import math
 
 if __name__ == "__main__":
-    gpus_agent = [5,6,7,4]
+    gpus_agent = [1,2,6,7, 3,4,5]
     gpus_carla = [0]
-    gpus_perception = [5,6,7,4]
+    gpus_perception = [1,2,6,7, 3,4,5]
     num_perception = 1
-    exp_id = "mm45_v4_base_newseg_noiser"
-    weather_batch_size = 4
+    exp_id = "mm45_v4_base_newseg_noiser_TL"
+    weather_batch_size = 5
     # num par = 14/3 * 2
 
 

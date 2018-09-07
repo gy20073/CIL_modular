@@ -3,6 +3,6 @@
 export CUDA_VISIBLE_DEVICES=0
 ulimit -Sn 60000
 python chauffeur.py train \
-    -e mm45_v4_base_newseg_noiser_TL_N0_3 \
+    -e mm45_v4_base_newseg_noiser_TL_lane \
     -m 0.1
 

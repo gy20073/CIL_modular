@@ -8,6 +8,9 @@ import tensorflow as tf
 from codification import *
 from codification import encode, check_distance
 
+from scipy.ndimage.filters import gaussian_filter
+import copy
+
 class Dataset(object):
     def __init__(self, splited_keys, images, datasets, config_input, augmenter, perception_interface):
         # sample inputs
@@ -106,6 +109,44 @@ class Dataset(object):
 
         return to_be_decoded, generated_ids
 
+    @staticmethod
+    def get_boundary(oldseg):
+        seg = copy.deepcopy(oldseg)
+        seg[seg == 2] = 8
+        ind7 = (seg == 7)
+        hyp1 = np.logical_and(np.concatenate((seg[1:, :], np.zeros((1, seg.shape[1]))), axis=0) == 8, ind7)
+        hyp2 = np.logical_and(np.concatenate((np.zeros((1, seg.shape[1])), seg[:-1, :]), axis=0) == 8, ind7)
+        hyp3 = np.logical_and(np.concatenate((seg[:, 1:], np.zeros((seg.shape[0], 1))), axis=1) == 8, ind7)
+        hyp4 = np.logical_and(np.concatenate((np.zeros((seg.shape[0], 1)), seg[:, :-1]), axis=1) == 8, ind7)
+        lor = np.logical_or
+        final = lor(lor(lor(hyp1, hyp2), hyp3), hyp4)
+
+        e = gaussian_filter(final * 1.0, 10, mode='constant')
+        e = (e * 1000).astype(np.uint8)
+        e = (e > 0)
+
+        e = np.logical_or(e, oldseg == 2)
+        return e
+
+    @staticmethod
+    def augment_lane(camera, seg):
+        camera = copy.deepcopy(camera)
+        seg = copy.deepcopy(seg)
+        seg = seg[:, :, 0]
+        ind = (seg == 6)
+
+        xs, ys = np.where(ind)
+        ysp = np.minimum(ys + np.random.randint(-30, 30), camera.shape[1] - 1)
+        camera[xs, ys, :] = camera[xs, ysp, :]
+
+        bound = Dataset.get_boundary(seg)
+        xs, ys = np.where(bound)
+        ysp = ys + np.random.randint(-40, 40, size=ys.shape)
+        ysp = np.minimum(camera.shape[1] - 1, np.maximum(0, ysp))
+        camera[xs, ys, :] = camera[xs, ysp, :]
+
+        return camera
+
     """Return the next `batch_size` examples from this data set."""
 
     # Used by enqueue
@@ -116,6 +157,10 @@ class Dataset(object):
         # fill in targets and inputs. with reasonable valid condition checking
 
         batch_size = self._batch_size
+
+        if hasattr(self._config, "sensor_augments"):
+            segmentations = sensors[len(sensors)//2 : ]
+            sensors = sensors[:len(sensors) // 2]
 
         # Get the images -- Perform Augmentation!!!
         for i in range(len(sensors)):
@@ -142,6 +187,16 @@ class Dataset(object):
 
             if self._augmenter[i] != None:
                 sensors[i] = self._augmenter[i].augment_images(sensors[i])
+
+            # TODO add augmentation for lane markers and road boundary
+            if hasattr(self._config, "prob_augment_lane") and self._augmenter[i]!=None:
+                for ib in range(sensors[i].shape[0]):
+                    if np.random.rand() < self._config.prob_augment_lane:
+                        decoded = cv2.imdecode(segmentations[i][ib], 1)
+                        sensors[i][ib, :, :, :] = self.augment_lane(sensors[i][ib, :,:,:], decoded)
+
+                        if np.random.rand() < 0.005:
+                            cv2.imwrite("debug.png", sensors[i][ib, :,:,::-1])
 
             if self._config.image_as_float[i]:
                 sensors[i] = sensors[i].astype(np.float32)
@@ -206,7 +261,7 @@ class Dataset(object):
         # now has shape nB//num_sensors, nH, num_sensors, nW, nC
         reshaped = np.reshape(reshaped, (nB//num_sensors, nH, num_sensors*nW, nC))
 
-        if hasattr(self._config, "add_gaussian_noise"):
+        if hasattr(self._config, "add_gaussian_noise") and self._augmenter[0]!=None:
             std = self._config.add_gaussian_noise
             print("!!!!!!!!!!!!!!!!!!adding gaussian noise", std)
             reshaped += np.random.normal(0, std, reshaped.shape)

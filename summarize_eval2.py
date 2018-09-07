@@ -30,6 +30,10 @@ if __name__ == "__main__":
                         results[weather] = [success]
 
         for key in sorted(results.keys()):
-            print("weather %d, success rate %f, num sample %d" % (key, np.mean(results[key]), len(results[key])) )
+            if key in range(1, 15, 3):
+                phase = "validation"
+            else:
+                phase = "training  "
+            print("phase %s, weather %d, success rate %f, num sample %d" % (phase, key, np.mean(results[key]), len(results[key])) )
 
 

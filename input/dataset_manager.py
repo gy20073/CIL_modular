@@ -67,11 +67,16 @@ split = split_original
 class DatasetManager(object):
     def __init__(self, config, perception_interface=None):
         # self._datasets_train is a list of totNum* dim, no transposed
+        if hasattr(config, "sensor_augments"):
+            all_names = config.sensor_names + config.sensor_augments
+        else:
+            all_names = config.sensor_names
+
         self._images_train, self._datasets_train = self.read_all_files(config.train_db_path,
-                                                                       config.sensor_names,
+                                                                       all_names,
                                                                        config.dataset_names)
         self._images_val, self._datasets_val = self.read_all_files(config.val_db_path,
-                                                                   config.sensor_names,
+                                                                   all_names,
                                                                    config.dataset_names)
 
         # self.labels_per_division = [[0, 2, 5], [3], [4]]

@@ -136,11 +136,10 @@ if __name__ == "__main__":
     # an initial config ends here
 
 
-
     #available_gpus = [0, 2, 4, 5, 6]
     #num_processes = len(available_gpus) * 2
     available_gpus = [0]
-    num_processes = 8
+    num_processes = 6
 
     list_of_configs = [[] for i in range(num_processes)]
 

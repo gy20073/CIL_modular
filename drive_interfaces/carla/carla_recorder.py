@@ -46,7 +46,7 @@ class Recorder(object):
         self._image_size2 = resolution[1]
         self._image_cut = image_cut
         #self._sensor_names = ['CameraLeft', 'CameraMiddle', 'CameraRight', 'SegLeft', 'SegMiddle', 'SegRight', 'DepthLeft', 'DepthMiddle', 'DepthRight']
-        self._sensor_names = ['CameraLeft', 'CameraMiddle', 'CameraRight']
+        self._sensor_names = ['CameraLeft', 'CameraMiddle', 'CameraRight', 'SegLeft', 'SegMiddle', 'SegRight']
 
         # other rewards
         self._number_rewards = 35

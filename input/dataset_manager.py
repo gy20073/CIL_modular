@@ -52,7 +52,10 @@ def split_original(controls, steers, labels_per_division, steering_bins_perc):
         for k in range(len(labels_per_division)):
             if int(controls[i]) in labels_per_division[k]:
                 index = k
-        initial_partition[index].append(i)
+        if steers[i] < -0.99 or steers[i] > 0.99:
+            print("find one bad steer")
+        else:
+            initial_partition[index].append(i)
 
     # then we continue to partition the steers
     output = []

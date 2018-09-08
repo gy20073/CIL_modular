@@ -135,11 +135,10 @@ if __name__ == "__main__":
     # Thus we aim to collect 100 hours of training, that is 400G, so each config has quota of 3G, which is 100 files
     # an initial config ends here
 
-
     #available_gpus = [0, 2, 4, 5, 6]
     #num_processes = len(available_gpus) * 2
     available_gpus = [0]
-    num_processes = 6
+    num_processes = 8
 
     list_of_configs = [[] for i in range(num_processes)]
 

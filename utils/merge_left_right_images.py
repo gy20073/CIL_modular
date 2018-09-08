@@ -4,8 +4,8 @@ import numpy as np
 sys.path.append('drive_interfaces/carla/carla_client')
 from carla.planner.planner import Planner
 
-input_id = "noiser_3cam_seg"
-output_id = "noiser_3cam_seg_direction"
+input_id = "noiser_3cam_seg_steer"
+output_id = "noiser_3cam_seg_steer_direction"
 debug_start = 0
 debug_end= 14000000
 use_3_cam = False

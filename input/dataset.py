@@ -196,7 +196,8 @@ class Dataset(object):
                         sensors[i][ib, :, :, :] = self.augment_lane(sensors[i][ib, :,:,:], decoded)
 
                         if np.random.rand() < 0.005:
-                            cv2.imwrite("debug.png", sensors[i][ib, :,:,::-1])
+                            #cv2.imwrite("debug.png", sensors[i][ib, :,:,::-1])
+                            pass
 
             if self._config.image_as_float[i]:
                 sensors[i] = sensors[i].astype(np.float32)
@@ -251,6 +252,62 @@ class Dataset(object):
 
         return sensors, targets, inputs
 
+    @staticmethod
+    def random_region(H, W, size, diversity_prob):
+        image = np.zeros((H, W), dtype=np.bool)
+        openlist = []
+
+        def check_neighbours(image, point):
+            x, y = point
+            res = []
+
+            for direction in ((-1, 0), (1, 0), (0, 1), (0, -1)):
+                newx = x + direction[0]
+                newy = y + direction[1]
+                if newx >= 0 and newx < image.shape[0] and newy >= 0 and newy < image.shape[1]:
+                    if image[newx, newy] == 0:
+                        res.append((newx, newy))
+            return res
+
+        i = 0
+        while i < size:
+            if openlist == []:
+                x = np.random.randint(0, H)
+                y = np.random.randint(0, W)
+                openlist.append((x, y))
+                image[x, y] = 1
+                i += 1
+            else:
+                if np.random.rand() < diversity_prob:
+                    x = np.random.randint(0, H)
+                    y = np.random.randint(0, W)
+                    if image[x, y] == 0:
+                        openlist.append((x, y))
+                        image[x, y] = 1
+                        i += 1
+                        continue
+
+                # random a point from the open list
+                j = np.random.randint(0, len(openlist))
+                point = openlist[j]
+                res = check_neighbours(image, point)
+                if len(res) == 0:
+                    openlist = openlist[0:j] + openlist[j + 1:]
+                else:
+                    nex = random.choice(res)
+                    openlist.append(nex)
+                    image[nex[0], nex[1]] = 1
+                    i += 1
+        return image
+
+    @staticmethod
+    def batch_random_region(B, H, W):
+        ans = []
+        for i in range(B):
+            size = np.random.randint(H*W//8, H*W//3)
+            ans.append(Dataset.random_region(H, W, size, 0.05))
+        return np.stack(ans, axis=0)
+
     # Used by enqueue
     def process_run(self, sess, data_loaded):
         reshaped = data_loaded[0]
@@ -265,6 +322,13 @@ class Dataset(object):
             std = self._config.add_gaussian_noise
             print("!!!!!!!!!!!!!!!!!!adding gaussian noise", std)
             reshaped += np.random.normal(0, std, reshaped.shape)
+
+        if hasattr(self._config, "add_random_region_noise") and self._augmenter[0] != None:
+            std = self._config.add_random_region_noise
+            print("!!!!!!!!!!!!!!!!!add random region noise", std)
+            mask = Dataset.batch_random_region(reshaped.shape[0], reshaped.shape[1], reshaped.shape[2])
+            mask = np.reshape(mask, (reshaped.shape[0], reshaped.shape[1], reshaped.shape[2], 1))
+            reshaped += np.random.normal(0, std, (reshaped.shape[0], 1, 1, reshaped.shape[3])) * mask
 
         queue_feed_dict = {self._queue_image_input: reshaped}  # images we already put by default
 

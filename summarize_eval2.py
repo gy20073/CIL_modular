@@ -14,6 +14,14 @@ if __name__ == "__main__":
 
         results = {}
         for item in glob.glob(path):
+            sp = item.split(exp_id)
+            now = sp[1]
+            sp = now.split("YangExp3cam")
+            now = sp[0][1:-1]
+            if "_" in now:
+                print("ignoring ", item)
+                continue
+
             with open(item) as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=',')
                 line_count = 0
@@ -29,11 +37,19 @@ if __name__ == "__main__":
                     else:
                         results[weather] = [success]
 
+        all_train = []
+        all_val = []
         for key in sorted(results.keys()):
             if key in range(1, 15, 3):
                 phase = "validation"
+                all_val.append(results[key])
             else:
                 phase = "training  "
+                all_train.append(results[key])
             print("phase %s, weather %d, success rate %f, num sample %d" % (phase, key, np.mean(results[key]), len(results[key])) )
 
+        all_train = np.concatenate(all_train)
+        print("training mean success rate %f, num sample %d" % (np.mean(all_train), len(all_train)))
+        all_val = np.concatenate(all_val)
+        print("validation mean success rate %f, num sample %d" % (np.mean(all_val), len(all_val)))
 

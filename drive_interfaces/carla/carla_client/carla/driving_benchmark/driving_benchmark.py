@@ -354,7 +354,7 @@ class DrivingBenchmark(object):
 
             cmd = ["ffmpeg", "-y", "-i",  agent.temp_image_path+"/%09d.png", "-c:v", "libx264", out_name]
             call(" ".join(cmd), shell=True)
-            
+
             cmd = ["find", agent.temp_image_path, "-name", "00*png", "-print | xargs rm"]
 
             call(" ".join(cmd), shell=True)

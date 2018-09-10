@@ -288,6 +288,7 @@ class DrivingBenchmark(object):
             logging.info('Steer = %f Throttle = %f Brake = %f ',
                          control.steer, control.throttle, control.brake)
 
+            # game timestamp is in microsecond
             current_timestamp = measurements.game_timestamp
             # Get the distance travelled until now
             distance = sldist([current_x, current_y],
@@ -353,7 +354,9 @@ class DrivingBenchmark(object):
 
             cmd = ["ffmpeg", "-y", "-i",  agent.temp_image_path+"/%09d.png", "-c:v", "libx264", out_name]
             call(" ".join(cmd), shell=True)
-            cmd = ["rm", agent.temp_image_path+"/00*png"]
+            
+            cmd = ["find", agent.temp_image_path, "-name", "00*png", "-print | xargs rm"]
+
             call(" ".join(cmd), shell=True)
 
             self.save_trajectory_image(episode_name)

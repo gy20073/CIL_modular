@@ -15,7 +15,9 @@ class ExperimentSuite(object):
         that is calculated based on distance to goal.
         This is the same timeout as used on the CoRL paper.
         """
-        return 8*(((path_distance / 1000.0) / 10.0) * 3600.0 + 500010.0)
+        # Yang: time out is actually second in game time, in second not in milliseconds
+        # Yang: I guess the path distance is in meters
+        return 8*(((path_distance / 1000.0) / 10.0) * 3600.0) + 600
 
     def get_number_of_poses_task(self):
         """

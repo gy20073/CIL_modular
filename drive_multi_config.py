@@ -85,6 +85,7 @@ if __name__ == "__main__":
     if collect_all:
         template_path = "./drive_interfaces/carla/yang_template_all.ini"
     template_path = "./drive_interfaces/carla/yang_template_3cams.ini"
+    template_path = "./drive_interfaces/carla/yang_template_3cams_103.ini"
 
     # TODO: tune those numbers
     # (propertyName, potential value)

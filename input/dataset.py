@@ -161,6 +161,9 @@ class Dataset(object):
         if hasattr(self._config, "sensor_augments"):
             segmentations = sensors[len(sensors)//2 : ]
             sensors = sensors[:len(sensors) // 2]
+            aug_ind = np.zeros(len(sensors[0]))
+            for ib in range(len(sensors[0])):
+                aug_ind[ib] = np.random.rand() < self._config.prob_augment_lane
 
         # Get the images -- Perform Augmentation!!!
         for i in range(len(sensors)):
@@ -191,7 +194,7 @@ class Dataset(object):
             # TODO add augmentation for lane markers and road boundary
             if hasattr(self._config, "prob_augment_lane") and self._augmenter[i]!=None:
                 for ib in range(sensors[i].shape[0]):
-                    if np.random.rand() < self._config.prob_augment_lane:
+                    if aug_ind[ib]:
                         decoded = cv2.imdecode(segmentations[i][ib], 1)
                         sensors[i][ib, :, :, :] = self.augment_lane(sensors[i][ib, :,:,:], decoded)
 
@@ -314,9 +317,17 @@ class Dataset(object):
         nB, nH, nW, nC = reshaped.shape
         num_sensors = len(self._config.sensor_names)
         reshaped = np.reshape(reshaped, (num_sensors, nB//num_sensors, nH, nW, nC))
-        reshaped = np.transpose(reshaped, (1, 2, 0, 3, 4))
-        # now has shape nB//num_sensors, nH, num_sensors, nW, nC
-        reshaped = np.reshape(reshaped, (nB//num_sensors, nH, num_sensors*nW, nC))
+        if (not hasattr(self._config, "camera_combine")) or self._config.camera_combine == "width_stack":
+            reshaped = np.transpose(reshaped, (1, 2, 0, 3, 4))
+            # now has shape nB//num_sensors, nH, num_sensors, nW, nC
+            reshaped = np.reshape(reshaped, (nB//num_sensors, nH, num_sensors*nW, nC))
+            print("width stack")
+        elif self._config.camera_combine == "channel_stack":
+            reshaped = np.transpose(reshaped, (1, 2, 3, 4, 0))
+            # now has shape nB//num_sensors, nH, nW, nC, num_sensors
+            reshaped = np.reshape(reshaped, (nB // num_sensors, nH, nW, nC * num_sensors))
+            print("channel stack")
+
 
         if hasattr(self._config, "add_gaussian_noise") and self._augmenter[0]!=None:
             std = self._config.add_gaussian_noise

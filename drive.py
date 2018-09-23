@@ -14,6 +14,8 @@ sys.path.append('evaluation')
 import time, pygame, traceback, configparser, datetime, glob
 from noiser import Noiser
 from screen_manager import ScreenManager
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 
 from drawing_tools import *
 from extra import *
@@ -62,6 +64,18 @@ def get_instance(drive_config, experiment_name, drivers_name, memory_use):
     return driver, recorder, num_files_in_folder
 
 
+def write_text_on_image(image, string, fontsize=10):
+    image = image.copy()
+    image = np.uint8(image)
+    j = Image.fromarray(image)
+    draw = ImageDraw.Draw(j)
+    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", fontsize)
+    #font = ImageFont.load_default()
+    draw.text((0, 0), string, (255, 0, 0), font=font)
+
+    return np.array(j)
+
+
 def drive(experiment_name, drive_config, name=None, memory_use=1.0):
     driver, recorder, num_files_in_folder = get_instance(drive_config, experiment_name, name, memory_use)
     noiser = Noiser(drive_config.noise)
@@ -76,10 +90,13 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
         print('before starting')
         driver.start()
         if drive_config.show_screen:
+            gameDisplay = pygame.display.set_mode(drive_config.resolution)
+            '''
             screen_manager = ScreenManager()
             screen_manager.start_screen(drive_config.resolution,
                                         drive_config.aspect_ratio,
                                         drive_config.scale_factor)  # [800,600]
+            '''
 
         direction = 2
 
@@ -124,8 +141,13 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
                     image = preprocess_image(image_converter.to_bgra_array(sensor_data['CameraMiddle']),
                                              drive_config.image_cut,
                                              None)
-                    image.setflags(write=1)
-                    screen_manager.plot_camera_steer(image, actions.steer, [0, 0])
+
+                    mapping = {2.0: "follow", 3.0: "left", 4.0: "right", 5.0: "straight"}
+                    image = write_text_on_image(image, mapping[direction], 30)
+                    image = pygame.surfarray.make_surface(np.transpose(image, (1, 0, 2)))
+                    gameDisplay.blit(image, (0, 0))
+                    pygame.display.update()
+                    # todo: display other necessary info, include but not limited to actions.steer
                 else:
                     raise ValueError("Not supported interface")
 

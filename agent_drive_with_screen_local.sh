@@ -11,5 +11,4 @@ python chauffeur.py \
     drive \
     --log \
     --debug \
-    --driver-config "9cam_agent_carla_acquire_rc_yang_machine" \
-    --experiment-name "mm45_rc28_wpz_M_mm41_cityscapes_aug_cluster_yang"
+    --driver-config "9cam_agent_carla_acquire_rc_yang_human_demo"

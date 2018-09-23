@@ -106,3 +106,6 @@ data*
 *.csv
 *drive_interfaces/carla/auto_gen_configs/*
 *pkl
+
+.DS_Store
+.idea/*

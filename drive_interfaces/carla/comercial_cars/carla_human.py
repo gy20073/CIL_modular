@@ -82,7 +82,7 @@ class CarlaHuman(Driver):
             joystick_count = pygame.joystick.get_count()
             if joystick_count > 1:
                 print("Please Connect Just One Joystick")
-                raise
+                raise ValueError()
 
             self.joystick = pygame.joystick.Joystick(0)
             self.joystick.init()
@@ -116,30 +116,6 @@ class CarlaHuman(Driver):
         self._skiped_frames = 0
         self._stucked_counter = 0
 
-    def _get_direction_buttons(self):
-        # with suppress_stdout():
-        if (self.joystick.get_button(6)):
-            self._left_button = False
-            self._right_button = False
-            self._straight_button = False
-
-        if (self.joystick.get_button(5)):
-            self._left_button = True
-            self._right_button = False
-            self._straight_button = False
-
-        if (self.joystick.get_button(4)):
-            self._right_button = True
-            self._left_button = False
-            self._straight_button = False
-
-        if (self.joystick.get_button(7)):
-            self._straight_button = True
-            self._left_button = False
-            self._right_button = False
-
-        return [self._left_button, self._right_button, self._straight_button]
-
     def get_recording(self):
         if self._autopilot:
             if self._skiped_frames >= 20:
@@ -149,11 +125,18 @@ class CarlaHuman(Driver):
                 return False
 
         else:
+            '''
             if (self.joystick.get_button(8)):
                 self._recording = True
             if (self.joystick.get_button(9)):
                 self._recording = False
-
+            '''
+            if (self.joystick.get_button(6)):
+                self._recording = True
+                print("start recording!!!!!!!!!!!!!!!!!!!!!!!!1")
+            if (self.joystick.get_button(7)):
+                self._recording = False
+                print("end recording!!!!!!!!!!!!!!!!!!!!!!!!1")
             return self._recording
 
     def get_reset(self):
@@ -184,6 +167,7 @@ class CarlaHuman(Driver):
         else:
             if (self.joystick.get_button(4)):
                 self._reset()
+                print("we are issuing a reset......")
 
         return False
 
@@ -197,7 +181,33 @@ class CarlaHuman(Driver):
         if not self._autopilot:
             steering_axis = self.joystick.get_axis(0)
             acc_axis = self.joystick.get_axis(2)
+            brake_axis = self.joystick.get_axis(5)
+            #print("axis 0 %f, axis 2 %f, axis 3 %f" % (steering_axis, acc_axis, brake_axis))
+
+            if (self.joystick.get_button(3)):
+                self._rear = True
+            if (self.joystick.get_button(2)):
+                self._rear = False
+
+            control = VehicleControl()
+            control.steer = steering_axis
+            control.throttle = (acc_axis + 1) / 2.0
+            control.brake = (brake_axis + 1) / 2.0
+            if control.brake < 0.001:
+                control.brake = 0.0
+            control.hand_brake = 0
+            control.reverse = self._rear
+
+            control.steer -= 0.0822
+
+            print("steer %f, throttle %f, brake %f" % (control.steer, control.throttle, control.brake))
+            pygame.event.pump()
+            '''
+        if not self._autopilot:
+            steering_axis = self.joystick.get_axis(0)
+            acc_axis = self.joystick.get_axis(2)
             brake_axis = self.joystick.get_axis(3)
+            print("axis 0 %f, axis 2 %f, axis 3 %f" % (steering_axis, acc_axis, brake_axis))
 
             if (self.joystick.get_button(3)):
                 self._rear = True
@@ -212,6 +222,9 @@ class CarlaHuman(Driver):
                 control.brake = 0.0
             control.hand_brake = 0
             control.reverse = self._rear
+            print(control)
+            pygame.event.pump()
+            '''
         else:
             # This relies on the calling of get_sensor_data, otherwise self._latest_measurements are not filled
             control = self._latest_measurements.player_measurements.autopilot_control

@@ -1,4 +1,4 @@
 pygame
 pid_controller
-#python-opencv
+python-opencv # opencv-python
 imgaug

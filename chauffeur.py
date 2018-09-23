@@ -22,7 +22,7 @@ if __name__ == '__main__':
     # resource related
     parser.add_argument('-g', '--gpu', type=str, default="0", help='GPU NUMBER')
     parser.add_argument('-m', '--memory', default=0.9, help='The amount of memory this process is going to use')
-    parser.add_argument('-pt', '--path', type=str, default="../Desktop/", help='Path to Store or read outputs')
+    parser.add_argument('-pt', '--path', type=str, default=None, help='Path to Store or read outputs')
     parser.add_argument('-l', '--host', type=str, help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=2000, help='The port where Any server to be connected is running')
 

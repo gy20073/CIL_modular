@@ -1,7 +1,7 @@
 import os, h5py, scipy, cv2, math, sys, time
 import numpy as np
 from threading import Thread
-from queue import Queue
+from Queue import Queue
 sys.path.append('drive_interfaces/carla/carla_client')
 from carla import image_converter
 
@@ -116,7 +116,7 @@ class Recorder(object):
                 image = scipy.misc.imresize(image, [self._image_size2, self._image_size1], interp='nearest')
                 encoded = np.fromstring(cv2.imencode(".png", image)[1], dtype=np.uint8)
             else:
-                raise
+                raise ValueError()
 
             self.sensors[sensor_name][pos] = encoded
 

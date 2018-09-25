@@ -165,7 +165,9 @@ class Dataset(object):
             for ib in range(len(sensors[0])):
                 aug_ind[ib] = np.random.rand() < self._config.prob_augment_lane
 
-        aug_det = self._augmenter[0].to_deterministic()
+        if self._augmenter[0] != None:
+            aug_det = self._augmenter[0].to_deterministic()
+
         # Get the images -- Perform Augmentation!!!
         for i in range(len(sensors)):
             # decode each of the sensor in parallel

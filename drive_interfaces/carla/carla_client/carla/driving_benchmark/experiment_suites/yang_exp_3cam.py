@@ -105,23 +105,23 @@ class YangExp3cam(ExperimentSuite):
         # This single RGB camera is used on every experiment
 
         camera = Camera('CameraMiddle')
-        camera.set(FOV=90)
+        camera.set(FOV=103)
         camera.set_image_size(768, 576)
-        camera.set_position(1.5, 0.0, 1.6)
+        camera.set_position(0.7, 0.0, 1.6)
         camera.set_rotation(0, 0, 0)
         cam1 = camera
 
         camera = Camera('CameraLeft')
-        camera.set(FOV=90)
+        camera.set(FOV=103)
         camera.set_image_size(768, 576)
-        camera.set_position(1.5, -0.7, 1.6)
+        camera.set_position(0.7, -0.4, 1.6)
         camera.set_rotation(0, -45.0, 0)
         cam2 = camera
 
         camera = Camera('CameraRight')
-        camera.set(FOV=90)
+        camera.set(FOV=103)
         camera.set_image_size(768, 576)
-        camera.set_position(1.5, 0.7, 1.6)
+        camera.set_position(0.7, 0.4, 1.6)
         camera.set_rotation(0, 45.0, 0)
         cam3 = camera
 

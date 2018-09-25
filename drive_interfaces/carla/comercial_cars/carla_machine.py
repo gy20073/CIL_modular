@@ -239,7 +239,12 @@ class CarlaMachine(Agent, Driver):
             out_images.append(image_input)
             out_vis.append(to_be_visualized)
 
-        image_input = np.concatenate(out_images, axis=2)
+        # each element in the out_images has the shape of B H W C
+        image_input = np.stack(out_images, axis=0)
+        # now has shape num_sensors B H W C
+        image_input = np.transpose(image_input, (1, 2, 3, 4, 0))
+        image_input = np.reshape(image_input, (image_input.shape[0], image_input.shape[1], image_input.shape[2], -1))
+
         to_be_visualized = np.concatenate(out_vis, axis=1)
 
         if (self._train_manager._config.control_mode == 'single_branch_wp'):

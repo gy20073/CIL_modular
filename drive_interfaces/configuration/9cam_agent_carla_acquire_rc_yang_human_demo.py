@@ -40,3 +40,5 @@ class configDrive:
         self.scale_factor = 1  # NON CARLA SETTINGS PARAM
         self.plot_vbp = False
         self.number_screens = 1 # added later
+
+        self.carla_api_version = "0.9.0"

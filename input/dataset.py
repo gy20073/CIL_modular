@@ -165,6 +165,7 @@ class Dataset(object):
             for ib in range(len(sensors[0])):
                 aug_ind[ib] = np.random.rand() < self._config.prob_augment_lane
 
+        aug_det = self._augmenter[0].to_deterministic()
         # Get the images -- Perform Augmentation!!!
         for i in range(len(sensors)):
             # decode each of the sensor in parallel
@@ -189,7 +190,7 @@ class Dataset(object):
             sensors[i] = sensors[i][:, :, :, ::-1]
 
             if self._augmenter[i] != None:
-                sensors[i] = self._augmenter[i].augment_images(sensors[i])
+                sensors[i] = aug_det.augment_images(sensors[i])
 
             # TODO add augmentation for lane markers and road boundary
             if hasattr(self._config, "prob_augment_lane") and self._augmenter[i]!=None:

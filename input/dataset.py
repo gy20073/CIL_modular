@@ -330,6 +330,7 @@ class Dataset(object):
             # now has shape nB//num_sensors, nH, nW, nC, num_sensors
             reshaped = np.reshape(reshaped, (nB // num_sensors, nH, nW, nC * num_sensors))
             print("channel stack")
+            print("shape of channel stack", reshaped.shape)
 
 
         if hasattr(self._config, "add_gaussian_noise") and self._augmenter[0]!=None:

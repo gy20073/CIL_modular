@@ -8,7 +8,7 @@ class configDrive:
 
         self.host = "127.0.0.1"
         self.port = 2000
-        self.path = "/x/yang/human/"  # If path is set go for it , if not expect a name set
+        self.path = "/Users/yang/Downloads/vladlen/human_data/"  # If path is set go for it , if not expect a name set
         self.resolution = [768, 576]
         self.noise = "None"  # NON CARLA SETTINGS PARAM # TODO: experiment with this
         self.type_of_driver = "Human"

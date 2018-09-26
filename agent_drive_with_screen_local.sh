@@ -7,7 +7,7 @@
 # --show_screen
 # --noise
 
-python chauffeur.py \
+python2 chauffeur.py \
     drive \
     --log \
     --debug \

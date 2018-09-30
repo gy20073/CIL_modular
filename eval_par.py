@@ -3,12 +3,14 @@ from time import sleep
 import math
 
 if __name__ == "__main__":
-    gpus_agent = [6,7]
+    gpus_agent = [4,5,6,7]
     gpus_carla = [0]
-    gpus_perception = [6,7]
+    gpus_perception = [4,5,6,7]
     num_perception = 1
     exp_id = "mm45_v4_base_3cam_conaug_noshare_1cam_olddata"
-    weather_batch_size = 14
+    weather_batch_size = 4
+    test_name = "YangExp3cam"
+    test_name = "YangExp3camFov90"
     # num par = 14/3 * 2
 
 
@@ -38,7 +40,8 @@ if __name__ == "__main__":
                    percep,
                    weather_id,
                    exp_id,
-                   town]
+                   town,
+                   test_name]
 
             # TODO: call the eval once code
             print(cmd)

@@ -6,6 +6,7 @@ gpu_perception=$3
 weathers=$4
 exp_id=$5
 city_name=$6
+test_name=$7
 
 
 port=$(python get_unused_port.py)
@@ -28,7 +29,7 @@ drive_interfaces/carla/comercial_cars/run_test_cvpr.py \
 -cy $city_name \
 -m 0.05 \
 --weathers $weathers \
---benchmark_name "YangExp3cam" \
+--benchmark_name $test_name \
 --gpu_perceptions $gpu_perception
 
 pkill -9 -P $pid_carla

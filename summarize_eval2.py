@@ -7,10 +7,14 @@ import csv
 
 if __name__ == "__main__":
     exp_id = sys.argv[1]
+    if len(sys.argv) > 2:
+        benchmark = sys.argv[2].strip()
+    else:
+        benchmark = "YangExp3cam"
 
     for town in ["Town01", "Town02"]:
         print(town)
-        path = "/scratch/yang/aws_data/CIL_modular_data/_benchmarks_results/" + exp_id + "_*" + "_YangExp3cam_" + town + "/summary.csv"
+        path = "/scratch/yang/aws_data/CIL_modular_data/_benchmarks_results/" + exp_id + "_*" + "_"+benchmark+"_" + town + "/summary.csv"
 
         results = {}
         for item in glob.glob(path):

@@ -78,10 +78,10 @@ def read_direction(fname):
 
 # parameters begin
 path = "/scratch/yang/aws_data/carla_collect/daggerseg"
-output_path = "/scratch/yang/aws_data/carla_collect/daggerseg_h5"
+output_path = "/scratch/yang/aws_data/carla_collect/daggerseg_h5/val"
 sensor_names = ['CameraMiddle']
-prefix = "train_"
-debug_limit = 16
+prefix = "val_"
+debug_limit = 100000000000
 num_process = 16
 # below are usually fixed
 attrs = ["brakes", "angles", "speeds", "steerings", "thottles"]
@@ -91,7 +91,7 @@ image_cut = [0, None]
 image_size = [576, 768]
 # end of params
 
-with open(os.path.join(path, "train_imgs.txt"), "r") as f:
+with open(os.path.join(path, prefix+"imgs.txt"), "r") as f:
     images = f.readlines()
     images = [i.strip() for i in images]
 
@@ -155,7 +155,7 @@ for i in range(len(original_direction)):
         # check the distance
         dist = l2norm(targets['location'][last_i], targets['location'][i])
         if dist > original_direction[last_i][1] + after_step or \
-          (i < len(original_direction) - 1 and (original_direction[i + 1][0] != original_direction[i][0] or original_direction[i + 1][1] > original_direction[i][1])):
+          ((i < len(original_direction) - 1) and (original_direction[i + 1][0] != original_direction[i][0] or original_direction[i + 1][1] > original_direction[i][1])):
             # then we should move on
             remain_last_direction = False
             last_i = None
@@ -227,6 +227,8 @@ def one_segment(images, targets, startid, num_h5):
             # store them
             sensors['CameraMiddle'][iimage] = encoded
             data_rewards[iimage, 0] = targets["steerings"][nextid]
+            if targets["brakes"][nextid]>0:
+                targets["thottles"][nextid] = 0.0
             data_rewards[iimage, 1] = targets["thottles"][nextid]
             data_rewards[iimage, 2] = targets["brakes"][nextid]
             data_rewards[iimage, 10] = targets["speeds"][nextid]

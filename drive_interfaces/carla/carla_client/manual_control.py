@@ -69,6 +69,10 @@ WINDOW_HEIGHT = 600
 MINI_WINDOW_WIDTH = 320
 MINI_WINDOW_HEIGHT = 180
 
+#TODO debug begin
+WINDOW_WIDTH = 800
+WINDOW_HEIGHT = 450
+# debug end
 
 def make_carla_settings(args):
     """Make a CarlaSettings object with the settings we need."""
@@ -82,9 +86,19 @@ def make_carla_settings(args):
         QualityLevel=args.quality_level)
     settings.randomize_seeds()
     camera0 = sensor.Camera('CameraRGB')
-    camera0.set_image_size(WINDOW_WIDTH, WINDOW_HEIGHT)
-    camera0.set_position(2.0, 0.0, 1.4)
-    camera0.set_rotation(0.0, 0.0, 0.0)
+    if True:
+        # TODO: debug of camera position
+        camera0.set_image_size(WINDOW_WIDTH, WINDOW_HEIGHT)
+        camera0.set_position(1.0, 0.0, 1.6)
+        camera0.set_rotation(0.0, 0.0, 0.0)
+        camera0.set(FOV=106.7)
+        # end of debug
+    else:
+        camera0.set_image_size(WINDOW_WIDTH, WINDOW_HEIGHT)
+        camera0.set_position(2.0, 0.0, 1.4)
+        camera0.set_rotation(0.0, 0.0, 0.0)
+
+
     settings.add_sensor(camera0)
     camera1 = sensor.Camera('CameraDepth', PostProcessing='Depth')
     camera1.set_image_size(MINI_WINDOW_WIDTH, MINI_WINDOW_HEIGHT)
@@ -204,8 +218,10 @@ class CarlaGame(object):
         measurements, sensor_data = self.client.read_data()
 
         self._main_image = sensor_data.get('CameraRGB', None)
-        self._mini_view_image1 = sensor_data.get('CameraDepth', None)
-        self._mini_view_image2 = sensor_data.get('CameraSemSeg', None)
+
+        # TODO: debug turning off the depth and seg
+        #self._mini_view_image1 = sensor_data.get('CameraDepth', None)
+        #self._mini_view_image2 = sensor_data.get('CameraSemSeg', None)
         self._lidar_measurement = sensor_data.get('Lidar32', None)
 
         # Print measurements every second.

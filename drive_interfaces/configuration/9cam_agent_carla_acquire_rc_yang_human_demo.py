@@ -1,3 +1,5 @@
+import os
+
 class configDrive:
     # The config_driver is related to carla driving stuff. All outside of the Game configuration must be placed here
     # TODO: kind of change this to be CarlaSettings Based ?
@@ -8,7 +10,7 @@ class configDrive:
 
         self.host = "127.0.0.1"
         self.port = 2000
-        self.path = "/Users/yang/Downloads/vladlen/human_data/"  # If path is set go for it , if not expect a name set
+        self.path = "./"  # If path is set go for it , if not expect a name set
         self.resolution = [768, 576]
         self.noise = "None"  # NON CARLA SETTINGS PARAM # TODO: experiment with this
         self.type_of_driver = "Human"
@@ -30,8 +32,8 @@ class configDrive:
 
         self.timeouts = [200.0]  # 130
         self.weather = "1"  # TODO: randomize the weather
-        self.cars = "50"
-        self.pedestrians = "100" # TODO: there is no car and pedestrain support in 0.9.0
+        self.cars = "0"
+        self.pedestrians = "0" # TODO: there is no car and pedestrain support in 0.9.0
 
 
         # TODO: figure out the recording capability
@@ -41,4 +43,4 @@ class configDrive:
         self.plot_vbp = False
         self.number_screens = 1 # added later
 
-        self.carla_api_version = "0.9.0"
+        self.carla_api_version =  os.getenv('CARLA_VERSION', '0.8.X')

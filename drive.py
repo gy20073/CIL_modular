@@ -1,7 +1,17 @@
-import sys
+import sys, os
 sys.path.append('drive_interfaces')
 sys.path.append('drive_interfaces/carla')
-sys.path.append('drive_interfaces/carla/carla_client')
+
+__CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.8.X')
+if __CARLA_VERSION__ == '0.8.X':
+    sys.path.append('drive_interfaces/carla/carla_client')
+    from carla import image_converter
+
+else:
+    sys.path.append('drive_interfaces/carla/carla_client_090')
+    sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.0-py%d.%d-linux-x86_64.egg' % (
+                    sys.version_info.major, sys.version_info.minor))
+
 sys.path.append('drive_interfaces/carla/comercial_cars')
 sys.path.append('drive_interfaces/carla/carla_client/testing')
 sys.path.append('test_interfaces')
@@ -20,7 +30,6 @@ from PIL import Image, ImageDraw, ImageFont
 from drawing_tools import *
 from extra import *
 from common_util import preprocess_image
-from carla import image_converter
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -109,13 +118,16 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
         while direction != -1 and drive_config.num_images_to_collect > num_has_collected:
             capture_time = time.time()
             # get the sensory data
+
+            # TODO: update all this part
+
             measurements, sensor_data, direction = driver.get_sensor_data()  # Later it would return more image like [rewards,images,segmentation]
             # decide whether need recording
             recording = driver.get_recording()
+
             # reset the environment if needed
             need_drop_recent_measurement = driver.get_reset()
 
-            # compute the actions based on the image and the speed
             speed_kmh = measurements.player_measurements.forward_speed * 3.6
 
             sensors = []
@@ -138,9 +150,13 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
             if drive_config.show_screen:
                 if drive_config.interface == "Carla":
                     print('fps', 1.0 / (time.time() - capture_time))
-                    image = preprocess_image(image_converter.to_bgra_array(sensor_data['CameraMiddle']),
+
+                    if __CARLA_VERSION__ == '0.8.X':
+                        image = preprocess_image(image_converter.to_bgra_array(sensor_data['CameraMiddle']),
                                              drive_config.image_cut,
                                              None)
+                    else:
+                        image = sensor_data['CameraMiddle']
 
                     mapping = {2.0: "follow", 3.0: "left", 4.0: "right", 5.0: "straight"}
                     image = write_text_on_image(image, mapping[direction], 30)
@@ -163,6 +179,7 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
         return False
     finally:
         pygame.quit()
+        driver.__del__()
         print("closing recorder")
         recorder.close()
         print("clean up done")

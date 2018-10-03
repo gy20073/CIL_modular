@@ -2,8 +2,11 @@ import os, h5py, scipy, cv2, math, sys, time
 import numpy as np
 from threading import Thread
 from Queue import Queue
-sys.path.append('drive_interfaces/carla/carla_client')
-from carla import image_converter
+import pdb
+
+__CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.8.X')
+if __CARLA_VERSION__ == '0.8.X':
+    from carla import image_converter
 
 # lets put a big queue for the disk. So I keep it real time while the disk is writing stuff
 def threaded(fn):
@@ -76,6 +79,7 @@ class Recorder(object):
         return hf
 
     def record(self, measurements, sensor_data, action, action_noise, direction, waypoints=None):
+        print('>>>>>>> Trully recording... !!!')
         self._data_queue.put([measurements, sensor_data, action, action_noise, direction, waypoints])
 
     @threaded
@@ -92,6 +96,7 @@ class Recorder(object):
         # Use the dictionary for this
         measurements, sensor_data, actions, action_noise, direction, waypoints = data
 
+
         if self._current_pos_on_file == self._number_images_per_file:
             self._current_file_number += 1
             self._current_pos_on_file = 0
@@ -99,19 +104,40 @@ class Recorder(object):
             self._current_hf = self._create_new_db()
         pos = self._current_pos_on_file
 
-        for sensor_name in self._sensor_names:
+        for sensor_name in sensor_data.keys():
             if "depth" in sensor_name.lower():
-                image = image_converter.to_bgra_array(sensor_data[sensor_name])
+                if __CARLA_VERSION__ == '0.8.X':
+                    image = image_converter.to_bgra_array(sensor_data[sensor_name])
+                else:
+                    image = sensor_data[sensor_name]
+                    image = image[:,:,::-1]
+
                 image = image[self._image_cut[0]:self._image_cut[1], :, :3]
                 image = scipy.misc.imresize(image, [self._image_size2, self._image_size1])
                 encoded = np.fromstring(cv2.imencode(".png", image)[1], dtype=np.uint8)
             elif "camera" in sensor_name.lower():
-                image = image_converter.to_bgra_array(sensor_data[sensor_name])
+                if __CARLA_VERSION__ == '0.8.X':
+                    image = image_converter.to_bgra_array(sensor_data[sensor_name])
+                else:
+                    image = sensor_data[sensor_name]
+                    image = image[:,:,::-1]
+
+
+
                 image = image[self._image_cut[0]:self._image_cut[1], :, :3]
                 image = scipy.misc.imresize(image, [self._image_size2, self._image_size1])
                 encoded = np.fromstring(cv2.imencode(".jpg", image, [int(cv2.IMWRITE_JPEG_QUALITY), 80])[1], dtype=np.uint8)
+
+                print(encoded.shape)
+
             elif "seg" in sensor_name.lower():
-                image = image_converter.labels_to_array(sensor_data[sensor_name])
+                if __CARLA_VERSION__ == '0.8.X':
+                    image = image_converter.to_bgra_array(sensor_data[sensor_name])
+                else:
+                    image = sensor_data[sensor_name]
+                    image = image[:,:,::-1]
+
+
                 image = image[self._image_cut[0]:self._image_cut[1], :]
                 image = scipy.misc.imresize(image, [self._image_size2, self._image_size1], interp='nearest')
                 encoded = np.fromstring(cv2.imencode(".png", image)[1], dtype=np.uint8)
@@ -120,66 +146,88 @@ class Recorder(object):
 
             self.sensors[sensor_name][pos] = encoded
 
-        self.data_rewards[pos, 0] = actions.steer
-        self.data_rewards[pos, 1] = actions.throttle
-        self.data_rewards[pos, 2] = actions.brake
-        self.data_rewards[pos, 3] = actions.hand_brake
-        self.data_rewards[pos, 4] = actions.reverse
-        self.data_rewards[pos, 5] = action_noise.steer
-        self.data_rewards[pos, 6] = action_noise.throttle
-        self.data_rewards[pos, 7] = action_noise.brake
-        self.data_rewards[pos, 8] = measurements.player_measurements.transform.location.x # cm -> m, but this is not used anywhere
-        self.data_rewards[pos, 9] = measurements.player_measurements.transform.location.y
-        self.data_rewards[pos, 10] = measurements.player_measurements.forward_speed # TODO: km/h -> m/s
-        self.data_rewards[pos, 11] = measurements.player_measurements.collision_other
-        self.data_rewards[pos, 12] = measurements.player_measurements.collision_pedestrians
-        self.data_rewards[pos, 13] = measurements.player_measurements.collision_vehicles
-        self.data_rewards[pos, 14] = measurements.player_measurements.intersection_otherlane
-        self.data_rewards[pos, 15] = measurements.player_measurements.intersection_offroad
-        self.data_rewards[pos, 16] = measurements.player_measurements.acceleration.x # This is not used anywhere
-        self.data_rewards[pos, 17] = measurements.player_measurements.acceleration.y
-        self.data_rewards[pos, 18] = measurements.player_measurements.acceleration.z
-        self.data_rewards[pos, 19] = measurements.platform_timestamp
-        self.data_rewards[pos, 20] = measurements.game_timestamp
-        self.data_rewards[pos, 21] = measurements.player_measurements.transform.orientation.x # those are deprecated, but they are not used anywhere
-        self.data_rewards[pos, 22] = measurements.player_measurements.transform.orientation.y
-        self.data_rewards[pos, 23] = measurements.player_measurements.transform.orientation.z
-        self.data_rewards[pos, 24] = direction
-        self.data_rewards[pos, 25] = 0 # originally i, now, not used, they are also not used anywhere else
-        self.data_rewards[pos, 26] = 0 # originally this camera's yaw, but now not used
+        if __CARLA_VERSION__ == '0.8.X':
+            self.data_rewards[pos, 0] = actions.steer
+            self.data_rewards[pos, 1] = actions.throttle
+            self.data_rewards[pos, 2] = actions.brake
+            self.data_rewards[pos, 3] = actions.hand_brake
+            self.data_rewards[pos, 4] = actions.reverse
+            self.data_rewards[pos, 5] = action_noise.steer
+            self.data_rewards[pos, 6] = action_noise.throttle
+            self.data_rewards[pos, 7] = action_noise.brake
+            self.data_rewards[pos, 8] = measurements.player_measurements.transform.location.x # cm -> m, but this is not used anywhere
+            self.data_rewards[pos, 9] = measurements.player_measurements.transform.location.y
+            self.data_rewards[pos, 10] = measurements.player_measurements.forward_speed # TODO: km/h -> m/s
+            self.data_rewards[pos, 11] = measurements.player_measurements.collision_other
+            self.data_rewards[pos, 12] = measurements.player_measurements.collision_pedestrians
+            self.data_rewards[pos, 13] = measurements.player_measurements.collision_vehicles
+            self.data_rewards[pos, 14] = measurements.player_measurements.intersection_otherlane
+            self.data_rewards[pos, 15] = measurements.player_measurements.intersection_offroad
+            self.data_rewards[pos, 16] = measurements.player_measurements.acceleration.x # This is not used anywhere
+            self.data_rewards[pos, 17] = measurements.player_measurements.acceleration.y
+            self.data_rewards[pos, 18] = measurements.player_measurements.acceleration.z
+            self.data_rewards[pos, 19] = measurements.platform_timestamp
+            self.data_rewards[pos, 20] = measurements.game_timestamp
+            self.data_rewards[pos, 21] = measurements.player_measurements.transform.orientation.x # those are deprecated, but they are not used anywhere
+            self.data_rewards[pos, 22] = measurements.player_measurements.transform.orientation.y
+            self.data_rewards[pos, 23] = measurements.player_measurements.transform.orientation.z
+            self.data_rewards[pos, 24] = direction
+            self.data_rewards[pos, 25] = 0 # originally i, now, not used, they are also not used anywhere else
+            self.data_rewards[pos, 26] = 0 # originally this camera's yaw, but now not used
 
-        # TODO: below is waypoints
-        self.data_rewards[pos, 27] = waypoints[0][0]
-        self.data_rewards[pos, 28] = waypoints[0][1]
-        self.data_rewards[pos, 29] = waypoints[1][0]
-        self.data_rewards[pos, 30] = waypoints[1][1]
+            # TODO: below is waypoints
+            self.data_rewards[pos, 27] = waypoints[0][0]
+            self.data_rewards[pos, 28] = waypoints[0][1]
+            self.data_rewards[pos, 29] = waypoints[1][0]
+            self.data_rewards[pos, 30] = waypoints[1][1]
 
-        # merge the convertwp functionality into this file
-        def get_angle_mag(wp0, wp1):
-            wp_vector, wp_mag = get_vec_dist(wp0, wp1,
-                                               measurements.player_measurements.transform.location.x,
-                                               measurements.player_measurements.transform.location.y)
-            if wp_mag > 0:
-                # TODO: check the definition of x and y, as well as the def of camera angle
-                wp_angle = get_angle(wp_vector, [measurements.player_measurements.transform.orientation.x,
-                                                 measurements.player_measurements.transform.orientation.y]) - \
-                            math.radians(self.data_rewards[pos, 26])
-            else:
-                wp_angle = 0
-            return wp_angle, wp_mag
 
-        wp1_angle, wp1_mag = get_angle_mag(waypoints[0][0], waypoints[0][1])
-        wp2_angle, wp2_mag = get_angle_mag(waypoints[1][0], waypoints[1][1])
+            # merge the convertwp functionality into this file
+            def get_angle_mag(wp0, wp1):
+                wp_vector, wp_mag = get_vec_dist(wp0, wp1,
+                                                   measurements.player_measurements.transform.location.x,
+                                                   measurements.player_measurements.transform.location.y)
+                if wp_mag > 0:
+                    # TODO: check the definition of x and y, as well as the def of camera angle
+                    wp_angle = get_angle(wp_vector, [measurements.player_measurements.transform.orientation.x,
+                                                     measurements.player_measurements.transform.orientation.y]) - \
+                                math.radians(self.data_rewards[pos, 26])
+                else:
+                    wp_angle = 0
+                return wp_angle, wp_mag
 
-        self.data_rewards[pos, 31] = wp1_angle
-        self.data_rewards[pos, 32] = wp1_mag
-        self.data_rewards[pos, 33] = wp2_angle
-        self.data_rewards[pos, 34] = wp2_mag
+            wp1_angle, wp1_mag = get_angle_mag(waypoints[0][0], waypoints[0][1])
+            wp2_angle, wp2_mag = get_angle_mag(waypoints[1][0], waypoints[1][1])
+
+            self.data_rewards[pos, 31] = wp1_angle
+            self.data_rewards[pos, 32] = wp1_mag
+            self.data_rewards[pos, 33] = wp2_angle
+            self.data_rewards[pos, 34] = wp2_mag
+
+        # CARLA 0.9.X
+        else:
+            self.data_rewards[pos, 0] = actions.steer
+            self.data_rewards[pos, 1] = actions.throttle
+            self.data_rewards[pos, 2] = actions.brake
+            self.data_rewards[pos, 3] = actions.hand_brake
+            self.data_rewards[pos, 4] = actions.reverse
+            self.data_rewards[pos, 5] = measurements.player_measurements.forward_speed # TODO: km/h -> m/s
+            self.data_rewards[pos, 8] = measurements.player_measurements.transform.location.x # cm -> m, but this is not used anywhere
+            self.data_rewards[pos, 9] = measurements.player_measurements.transform.location.y # cm -> m, but this is not used anywhere
+            self.data_rewards[pos, 21] = measurements.player_measurements.transform.orientation.x # pitch (degree)
+            self.data_rewards[pos, 22] = measurements.player_measurements.transform.orientation.y # roll (degree)
+            self.data_rewards[pos, 23] = measurements.player_measurements.transform.orientation.z # yaw (degree)
+            self.data_rewards[pos, 24] = direction
+
+
+
 
         self._current_pos_on_file += 1
 
     def close(self):
         while not self._data_queue.empty() or not self._finish_writing:
+            print('->>> Queue.size = {} | finish_writing = {}'.format(self._data_queue.qsize(), self._finish_writing))
+
             print("waiting to write out data")
             time.sleep(1)
         self._current_hf.close()

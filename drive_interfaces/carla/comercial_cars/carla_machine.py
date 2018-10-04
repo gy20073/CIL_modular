@@ -25,7 +25,7 @@ from training_manager import TrainManager
 import machine_output_functions
 from driver import Driver
 from drawing_tools import *
-from common_util import restore_session, preprocess_image
+from common_util import restore_session, preprocess_image, split_camera_middle
 from all_perceptions import Perceptions
 
 slim = tf.contrib.slim
@@ -217,6 +217,10 @@ class CarlaMachine(Agent, Driver):
 
         out_images = []
         out_vis = []
+
+        if hasattr(self._config, "camera_middle_split") and self._config.camera_middle_split:
+            sensors = split_camera_middle(sensors, self._config.sensor_names)
+
         for sensor in sensors:
             image_input = preprocess_image(sensor, self._image_cut, self._config.image_size)
             if hasattr(self._config, "hack_resize_image"):

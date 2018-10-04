@@ -77,12 +77,12 @@ def read_direction(fname):
     return out, original
 
 # parameters begin
-path = "/scratch/yang/aws_data/carla_collect/daggerseg"
-output_path = "/scratch/yang/aws_data/carla_collect/daggerseg_h5/val"
+path = "/Volumes/conditionR6/dagger_yang/"
+output_path = "/Volumes/Data/temp/val"
 sensor_names = ['CameraMiddle']
 prefix = "val_"
 debug_limit = 100000000000
-num_process = 16
+num_process = 4
 # below are usually fixed
 attrs = ["brakes", "angles", "speeds", "steerings", "thottles"]
 number_images_per_file = 200
@@ -209,6 +209,13 @@ def one_segment(images, targets, startid, num_h5):
             while targets["direction"][nextid] == -1 and nextid<endid:
                 nextid += 1
 
+            image_path = os.path.join(path, images[nextid])
+            this = cv2.imread(image_path)
+            while this is None and nextid < endid:
+                nextid += 1
+                image_path = os.path.join(path, images[nextid])
+                this = cv2.imread(image_path)
+
             if nextid == endid:
                 # close the file
                 hf.close()
@@ -216,9 +223,8 @@ def one_segment(images, targets, startid, num_h5):
                 os.remove(name)
                 return
 
-            # read the image from the disk
-            image_path = os.path.join(path, images[nextid])
-            this = cv2.imread(image_path)
+            # convert the image from 16:9 to 4:3 by cropping the center part
+            this = this[:, this.shape[1]//8:-this.shape[1]//8, :]
             this = this[image_cut[0]:image_cut[1], :, :]
             this = cv2.resize(this, (image_size[1], image_size[0]))
             encoded = np.fromstring(cv2.imencode(".jpg", this, [int(cv2.IMWRITE_JPEG_QUALITY), 80])[1], dtype=np.uint8)

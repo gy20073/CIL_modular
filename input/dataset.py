@@ -10,6 +10,9 @@ from codification import encode, check_distance
 
 from scipy.ndimage.filters import gaussian_filter
 import copy
+sys.path.append('utils')
+
+from common_util import split_camera_middle_batch
 
 class Dataset(object):
     def __init__(self, splited_keys, images, datasets, config_input, augmenter, perception_interface):
@@ -210,6 +213,16 @@ class Dataset(object):
             if self._config.sensors_normalize[i]:
                 sensors[i] /= 255.0
 
+        # TODO: perform image splitting here
+        if hasattr(self._config, "camera_middle_split") and self._config.camera_middle_split:
+            sensors = split_camera_middle_batch(sensors, self._config.sensor_names)
+            if np.random.rand() < 0.05:
+                print("debugging the camera split function")
+                id = np.random.randint(0, sensors[0].shape[0])
+                for i in range(len(sensors)):
+                    cv2.imwrite("debug_%d.png" % i, sensors[i][id,:,:,::-1])
+
+
         # self._targets is the targets variables concatenated
         # Get the targets
         target_selected = self._targets[generated_ids, :]
@@ -319,6 +332,9 @@ class Dataset(object):
         reshaped = data_loaded[0]
         nB, nH, nW, nC = reshaped.shape
         num_sensors = len(self._config.sensor_names)
+        if hasattr(self._config, "camera_middle_split") and self._config.camera_middle_split:
+            num_sensors += 1
+
         reshaped = np.reshape(reshaped, (num_sensors, nB//num_sensors, nH, nW, nC))
         if (not hasattr(self._config, "camera_combine")) or self._config.camera_combine == "width_stack":
             reshaped = np.transpose(reshaped, (1, 2, 0, 3, 4))

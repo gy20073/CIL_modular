@@ -1,3 +1,6 @@
+import sys
+sys.path.append("../")
+from common import resize_images
 
 def parse_drive_arguments(args, driver_conf, attributes):
     for attr in attributes:
@@ -48,3 +51,38 @@ def preprocess_image(sensor, image_cut, sensor_size):
         sensor = scipy.misc.imresize(sensor, [sensor_size[0], sensor_size[1]])
 
     return sensor
+
+import cv2
+def split_camera_middle(sensor_data, sensor_names):
+    id = sensor_names.index('CameraMiddle')
+    rest_data = sensor_data[0:id] + sensor_data[(id+1):]
+    middle = sensor_data[id]
+
+    # now splitting the image into two smaller ones
+    middle_shape = middle.shape
+    middle = middle[middle.shape[0]//4: middle.shape[0]*3//4, :, :]
+    left = middle[:, 0:middle.shape[1]//2, :]
+    left = cv2.resize(left, (middle_shape[1], middle_shape[0]))
+    right = middle[:, middle.shape[1]//2:, :]
+    right = cv2.resize(right, (middle_shape[1], middle_shape[0]))
+    rest_data += [left, right]
+
+    return rest_data
+
+
+def split_camera_middle_batch(sensor_data, sensor_names):
+    id = sensor_names.index('CameraMiddle')
+    rest_data = sensor_data[0:id] + sensor_data[(id+1):]
+    middle = sensor_data[id]
+
+    # now splitting the image into two smaller ones
+    middle_shape = middle.shape # now shape is B H W C
+    middle_shape = middle_shape[1:]
+    middle = middle[:, middle_shape[0]//4: middle_shape[0]*3//4, :, :]
+    left = middle[:, :, 0:middle_shape[1]//2, :]
+    left = resize_images(left, (middle_shape[0], middle_shape[1]))
+    right = middle[:, :, middle_shape[1]//2:, :]
+    right = resize_images(right, (middle_shape[0], middle_shape[1]))
+    rest_data += [left, right]
+
+    return rest_data

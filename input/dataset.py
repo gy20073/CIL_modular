@@ -217,10 +217,13 @@ class Dataset(object):
         if hasattr(self._config, "camera_middle_split") and self._config.camera_middle_split:
             sensors = split_camera_middle_batch(sensors, self._config.sensor_names)
             if np.random.rand() < 0.05:
+                pass
+                '''
                 print("debugging the camera split function")
                 id = np.random.randint(0, sensors[0].shape[0])
                 for i in range(len(sensors)):
                     cv2.imwrite("debug_%d.png" % i, sensors[i][id,:,:,::-1])
+                '''
 
 
         # self._targets is the targets variables concatenated

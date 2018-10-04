@@ -1,4 +1,4 @@
-import os, h5py, cv2, multiprocessing
+import os, h5py, cv2, multiprocessing, sys
 import numpy as np
 
 def read_float(fname):
@@ -77,12 +77,12 @@ def read_direction(fname):
     return out, original
 
 # parameters begin
-path = "/Volumes/conditionR6/dagger_yang/"
-output_path = "/Volumes/Data/temp/val"
+path = sys.argv[1] + "/"
+output_path = sys.argv[2]
 sensor_names = ['CameraMiddle']
-prefix = "val_"
+prefix = sys.argv[3] + "_"
 debug_limit = 100000000000
-num_process = 4
+num_process = int(sys.argv[4])
 # below are usually fixed
 attrs = ["brakes", "angles", "speeds", "steerings", "thottles"]
 number_images_per_file = 200

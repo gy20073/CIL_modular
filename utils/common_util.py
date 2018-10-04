@@ -86,3 +86,33 @@ def split_camera_middle_batch(sensor_data, sensor_names):
     rest_data += [left, right]
 
     return rest_data
+
+
+def camera_middle_zoom(sensor_data, sensor_names):
+    id = sensor_names.index('CameraMiddle')
+    middle = sensor_data[id]
+
+    # now splitting the image into two smaller ones
+    middle_shape = middle.shape
+    middle = middle[middle_shape[0] // 4: middle_shape[0] * 3 // 4,
+                    middle_shape[1] // 4: middle_shape[1] * 3 // 4, :]
+
+    middle = cv2.resize(middle, (middle_shape[1], middle_shape[0]))
+
+    return sensor_data[0:id] + [middle] + sensor_data[(id+1):]
+
+
+def camera_middle_zoom_batch(sensor_data, sensor_names):
+    id = sensor_names.index('CameraMiddle')
+    #rest_data = sensor_data[0:id] + sensor_data[(id+1):]
+    middle = sensor_data[id]
+
+    # now splitting the image into two smaller ones
+    middle_shape = middle.shape # now shape is B H W C
+    middle_shape = middle_shape[1:]
+    middle = middle[:,
+                    middle_shape[0] // 4: middle_shape[0] * 3 // 4,
+                    middle_shape[1] // 4: middle_shape[1] * 3 // 4, :]
+    middle = resize_images(middle, (middle_shape[0], middle_shape[1]))
+
+    return sensor_data[0:id] + [middle] + sensor_data[(id+1):]

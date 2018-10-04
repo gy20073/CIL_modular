@@ -12,7 +12,7 @@ from scipy.ndimage.filters import gaussian_filter
 import copy
 sys.path.append('utils')
 
-from common_util import split_camera_middle_batch
+from common_util import split_camera_middle_batch, camera_middle_zoom_batch
 
 class Dataset(object):
     def __init__(self, splited_keys, images, datasets, config_input, augmenter, perception_interface):
@@ -224,6 +224,14 @@ class Dataset(object):
                 for i in range(len(sensors)):
                     cv2.imwrite("debug_%d.png" % i, sensors[i][id,:,:,::-1])
                 '''
+
+        if hasattr(self._config, "camera_middle_zoom") and self._config.camera_middle_zoom:
+            sensors = camera_middle_zoom_batch(sensors, self._config.sensor_names)
+            if np.random.rand() < 0.05:
+                print("debugging the camera zoom function")
+                id = np.random.randint(0, sensors[0].shape[0])
+                for i in range(len(sensors)):
+                    cv2.imwrite("debug_%d.png" % i, sensors[i][id,:,:,::-1])
 
 
         # self._targets is the targets variables concatenated

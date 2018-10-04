@@ -108,7 +108,21 @@ if __name__ == "__main__":
         pure_video = False
 
     for path in glob.glob(path_pattern):
-        sample_images_from_h5(path, temp_folder, write_all, is3, pure_video)
+        try:
+            sample_images_from_h5(path, temp_folder, write_all, is3, pure_video)
+        except:
+            print("Failed to extract from ", path)
+            # moving the error file to some kind of garbage bin
+            head, tail = os.path.split(path)
+            garbage_path = os.path.join(head, "bad_h5")
+            if not os.path.exists(garbage_path):
+                os.makedirs(garbage_path)
+            target_path = os.path.join(garbage_path, tail)
+            shutil.move(path, target_path)
+
+            if os.path.exists(temp_folder):
+                shutil.rmtree(temp_folder)
+            continue
 
         call("ffmpeg -y -i " + temp_folder + "%05d.jpg -c:v libx264 " + path + ".mp4", shell=True)
 

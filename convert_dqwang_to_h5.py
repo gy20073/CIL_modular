@@ -91,6 +91,9 @@ image_cut = [0, None]
 image_size = [576, 768]
 # end of params
 
+if not os.path.exists(output_path):
+    os.makedirs(output_path)
+
 with open(os.path.join(path, prefix+"imgs.txt"), "r") as f:
     images = f.readlines()
     images = [i.strip() for i in images]

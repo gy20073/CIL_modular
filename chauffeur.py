@@ -32,6 +32,7 @@ if __name__ == '__main__':
 
     # drive related
     # TODO: breaking change, from driver to type_of_driver
+    parser.add_argument('-positions_file', type=str, help='Path to the starting positions of Town03', default='starting_points_town03.txt')
     parser.add_argument('--type_of_driver', help='Select who is driving, a human or a machine')
     parser.add_argument('-n', '--noise', help='Set the types of noise:  Spike or None')
     parser.add_argument('-imc', '--image_cut', help='Set the positions where the image is cut')
@@ -70,6 +71,7 @@ if __name__ == '__main__':
                             attributes=['carla_config', 'host', 'path', 'noise',
                                       'type_of_driver', 'interface', 'number_screens', 'scale_factor'])
 
+            driver_conf.positions_file = args.positions_file
             drive(args.experiment_name, driver_conf, args.name, float(args.memory))
 
         elif args.mode == 'train':
@@ -88,6 +90,7 @@ if __name__ == '__main__':
             raise ValueError()
 
     except KeyboardInterrupt:
+        print(' Yes...it is all my fault')
         os._exit(1)
         exitapp = True
         raise

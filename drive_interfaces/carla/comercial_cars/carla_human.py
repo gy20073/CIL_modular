@@ -1,11 +1,24 @@
+import cv2
+import copy
+import sys, os
 import pygame, io, math, time
 from configparser import ConfigParser
+from configparser import SafeConfigParser
+from datetime import datetime
 import numpy as np
+from collections import namedtuple
 
-from carla.planner.planner import Planner
-from carla.client import VehicleControl
-#from carla.client import make_carla_client
-from carla.client import CarlaClient
+
+__CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.8.X')
+if __CARLA_VERSION__ == '0.8.X':
+    from carla.planner.planner import Planner
+    from carla.client import VehicleControl
+    #from carla.client import make_carla_client
+    from carla.client import CarlaClient
+else:
+    import carla
+    from carla import Client as CarlaClient
+    from carla import VehicleControl as VehicleControl
 
 from driver import Driver
 
@@ -41,6 +54,25 @@ def find_valid_episode_position(positions, planner):
     return index_start, index_goal
 
 
+class CallBack():
+    def __init__(self, tag, obj):
+        self._tag = tag
+        self._obj = obj
+
+    def __call__(self, image):
+        self._parse_image_cb(image, self._tag)
+
+    def _parse_image_cb(self, image, tag):
+        array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
+        array = copy.deepcopy(array)
+
+        array = np.reshape(array, (image.height, image.width, 4))
+        array = array[:, :, :3]
+        array = array[:, :, ::-1]
+
+        self._obj._data_buffers[self._tag] = array
+
+
 class CarlaHuman(Driver):
     def __init__(self, driver_conf):
         Driver.__init__(self)
@@ -50,7 +82,18 @@ class CarlaHuman(Driver):
         self._goal_reaching_threshold = 3
         self.use_planner = driver_conf.use_planner
         # we need the planner to find a valid episode, so we initialize one no matter what
-        self.planner = Planner(driver_conf.city_name)
+
+        self._world = None
+        self._vehicle = None
+        self._spectator = None
+        # (last) images store for several cameras
+        self._data_buffers = dict()
+
+        if __CARLA_VERSION__ == '0.8.X':
+            self.planner = Planner(driver_conf.city_name)
+        else:
+            self.planner = None
+            self.use_planner = False
 
         # resources
         self._host = driver_conf.host
@@ -70,9 +113,38 @@ class CarlaHuman(Driver):
         self._skiped_frames = 20
         self._stucked_counter = 0
 
+        self._prev_time = datetime.now()
+
+        self._vehicle_prev_location = namedtuple("vehicle", "x z")
+        self._vehicle_prev_location.x = 0.0
+        self._vehicle_prev_location.z = 0.0
+
+        self._sensor_list = []
+
+        self._current_command = 2.0
+
+        # steering wheel
+        self._steering_wheel_flag = True
+
+        if self._steering_wheel_flag:
+            self._is_on_reverse = False
+            self._control = VehicleControl()
+            self._parser = SafeConfigParser()
+            self._parser.read('wheel_config.ini')
+            self._steer_idx = int(self._parser.get('G29 Racing Wheel', 'steering_wheel'))
+            self._throttle_idx = int(self._parser.get('G29 Racing Wheel', 'throttle'))
+            self._brake_idx = int(self._parser.get('G29 Racing Wheel', 'brake'))
+            self._reverse_idx = int(self._parser.get('G29 Racing Wheel', 'reverse'))
+            self._handbrake_idx = int(self._parser.get('G29 Racing Wheel', 'handbrake'))
+
+
     def start(self):
-        self.carla = CarlaClient(self._host, int(self._port), timeout=120)
-        self.carla.connect()
+        if __CARLA_VERSION__ == '0.8.X':
+            self.carla = CarlaClient(self._host, int(self._port), timeout=120)
+            self.carla.connect()
+        else:
+            self.carla = CarlaClient(self._host, int(self._port))
+            self.carla.set_timeout(2000)
 
         self._reset()
 
@@ -90,29 +162,109 @@ class CarlaHuman(Driver):
     def __del__(self):
         if hasattr(self, 'carla'):
             print("destructing the connection")
-            self.carla.disconnect()
+            if __CARLA_VERSION__ == '0.8.X':
+                self.carla.disconnect()
+            else:
+                if self._vehicle is not None:
+                    self._vehicle.destroy()
+                    self._vehicle = None
+                if self._camera_center is not None:
+                    self._camera_center.destroy()
+                    self._camera_center = None
+                if self._camera_left is not None:
+                    self._camera_left.destroy()
+                    self._camera_left = None
+                if self._camera_right is not None:
+                    self._camera_right.destroy()
+                    self._camera_right = None
+
+
+                    #  pygame.quit()
+            # if self._camera is not None:
+            #     self._camera.destroy()
+            #     self._camera = None
+            # if self._vehicle is not None:
+            #     self._vehicle.destroy()
+            #     self._vehicle = None
 
     def _reset(self):
         self._start_time = time.time()
 
-        # create the carla config based on template and the params passed in
-        config = ConfigParser()
-        config.optionxform = str
-        config.read(self._config_path)
-        config.set('CARLA/LevelSettings', 'NumberOfVehicles',    self._driver_conf.cars)
-        config.set('CARLA/LevelSettings', 'NumberOfPedestrians', self._driver_conf.pedestrians)
-        config.set('CARLA/LevelSettings', 'WeatherId',           self._driver_conf.weather)
-        output = io.StringIO()
-        config.write(output)
-        scene_descriptions = self.carla.load_settings(output.getvalue())
+        if __CARLA_VERSION__ == '0.8.X':
+            # create the carla config based on template and the params passed in
+            config = ConfigParser()
+            config.optionxform = str
+            config.read(self._config_path)
+            config.set('CARLA/LevelSettings', 'NumberOfVehicles',    self._driver_conf.cars)
+            config.set('CARLA/LevelSettings', 'NumberOfPedestrians', self._driver_conf.pedestrians)
+            config.set('CARLA/LevelSettings', 'WeatherId',           self._driver_conf.weather)
+            output = io.StringIO()
+            config.write(output)
+            scene_descriptions = self.carla.load_settings(output.getvalue())
 
-        # based on the scene descriptions, find the start and end positions
-        self.positions = scene_descriptions.player_start_spots
-        # the episode_config saves [start_index, end_index]
-        self.episode_config = find_valid_episode_position(self.positions, self.planner)
+            # based on the scene descriptions, find the start and end positions
+            self.positions = scene_descriptions.player_start_spots
+            # the episode_config saves [start_index, end_index]
+            self.episode_config = find_valid_episode_position(self.positions, self.planner)
 
-        self.carla.start_episode(self.episode_config[0])
-        print('RESET ON POSITION ', self.episode_config[0], ", the target location is: ", self.episode_config[1])
+            self.carla.start_episode(self.episode_config[0])
+            print('RESET ON POSITION ', self.episode_config[0], ", the target location is: ", self.episode_config[1])
+
+        else:
+            if self._vehicle is not None:
+                self._vehicle.destroy()
+                self._vehicle = None
+
+            # select one of the random starting points previously selected
+            start_positions = np.loadtxt(self._driver_conf.positions_file, delimiter=',')
+            random_position = start_positions[np.random.randint(start_positions.shape[0]), :]
+
+            # TODO: Assign random position from file
+            WINDOW_WIDTH = 768
+            WINDOW_HEIGHT = 576
+            CAMERA_FOV = 103.0
+
+            START_POSITION = carla.Transform(carla.Location(x=random_position[0], y=random_position[1], z=1.0), carla.Rotation(pitch=random_position[2], roll=random_position[3], yaw=random_position[4]))
+
+            CAMERA_CENTER_T = carla.Location(x=0.7, y=-0.0, z=1.60)
+            CAMERA_LEFT_T = carla.Location(x=0.7, y=-0.4, z=1.60)
+            CAMERA_RIGHT_T = carla.Location(x=0.7, y=0.4, z=1.60)
+
+            CAMERA_CENTER_ROTATION = carla.Rotation(roll=0.0, pitch=0.0, yaw=0.0)
+            CAMERA_LEFT_ROTATION = carla.Rotation(roll=0.0, pitch=0.0, yaw=-45.0)
+            CAMERA_RIGHT_ROTATION = carla.Rotation(roll=0.0, pitch=0.0, yaw=45.0)
+
+            CAMERA_CENTER_TRANSFORM = carla.Transform(location=CAMERA_CENTER_T, rotation=CAMERA_CENTER_ROTATION)
+            CAMERA_LEFT_TRANSFORM = carla.Transform(location=CAMERA_LEFT_T, rotation=CAMERA_LEFT_ROTATION)
+            CAMERA_RIGHT_TRANSFORM = carla.Transform(location=CAMERA_RIGHT_T, rotation=CAMERA_RIGHT_ROTATION)
+
+
+            self._world = self.carla.get_world()
+            blueprints = self._world.get_blueprint_library().filter('vehicle')
+            vechile_blueprint = [e for i, e in enumerate(blueprints) if e.id == 'chevrolet.impala'][0]
+            self._vehicle = self._world.spawn_actor(vechile_blueprint, START_POSITION)
+
+
+            self._spectator = self._world.get_spectator()
+            cam_blueprint = self._world.get_blueprint_library().find('sensor.camera')
+
+            cam_blueprint.set_attribute('image_size_x', str(WINDOW_WIDTH))
+            cam_blueprint.set_attribute('image_size_y', str(WINDOW_HEIGHT))
+            cam_blueprint.set_attribute('fov', str(CAMERA_FOV))
+
+            self._camera_center = self._world.spawn_actor(cam_blueprint, CAMERA_CENTER_TRANSFORM, attach_to=self._vehicle)
+            self._camera_left = self._world.spawn_actor(cam_blueprint, CAMERA_LEFT_TRANSFORM, attach_to=self._vehicle)
+            self._camera_right = self._world.spawn_actor(cam_blueprint, CAMERA_RIGHT_TRANSFORM, attach_to=self._vehicle)
+
+            self._camera_center.listen(CallBack('CameraMiddle', self))
+            self._camera_left.listen(CallBack('CameraLeft', self))
+            self._camera_right.listen(CallBack('CameraRight', self))
+
+            # spectator server camera
+            self._spectator = self._world.get_spectator()
+
+
+
         self._skiped_frames = 0
         self._stucked_counter = 0
 
@@ -177,90 +329,209 @@ class CarlaHuman(Driver):
         wp2 = [2.0, 2.0]
         return [wp1, wp2]
 
+    def action_joystick(self):
+        # joystick
+        steering_axis = self.joystick.get_axis(0)
+        acc_axis = self.joystick.get_axis(2)
+        brake_axis = self.joystick.get_axis(5)
+        # print("axis 0 %f, axis 2 %f, axis 3 %f" % (steering_axis, acc_axis, brake_axis))
+
+        if (self.joystick.get_button(3)):
+            self._rear = True
+        if (self.joystick.get_button(2)):
+            self._rear = False
+
+        control = VehicleControl()
+        control.steer = steering_axis
+        control.throttle = (acc_axis + 1) / 2.0
+        control.brake = (brake_axis + 1) / 2.0
+        if control.brake < 0.001:
+            control.brake = 0.0
+        control.hand_brake = 0
+        control.reverse = self._rear
+
+        control.steer -= 0.0822
+
+        print("steer %f, throttle %f, brake %f" % (control.steer, control.throttle, control.brake))
+        pygame.event.pump()
+
+        return control
+
+    def action_steering_wheel(self, jsInputs, jsButtons):
+        control = VehicleControl()
+
+        # Custom function to map range of inputs [1, -1] to outputs [0, 1] i.e 1 from inputs means nothing is pressed
+        # For the steering, it seems fine as it is
+        K1 = 1.0  # 0.55
+        steerCmd = K1 * math.tan(1.1 * jsInputs[self._steer_idx])
+
+        K2 = 1.2  # 1.6
+        throttleCmd = K2 + (2.05 * math.log10(-0.7 * jsInputs[self._throttle_idx] + 1.4) - 1.2) / 0.92
+        if throttleCmd <= 0:
+            throttleCmd = 0
+        elif throttleCmd > 1:
+            throttleCmd = 1
+
+        brakeCmd = 1.6 + (2.05 * math.log10(-0.7 * jsInputs[self._brake_idx] + 1.4) - 1.2) / 0.92
+        if brakeCmd <= 0:
+            brakeCmd = 0
+        elif brakeCmd > 1:
+            brakeCmd = 1
+
+        print("Steer Cmd, ", steerCmd, "Brake Cmd", brakeCmd, "ThrottleCmd", throttleCmd)
+        control.steer = steerCmd
+        control.brake = brakeCmd
+        control.throttle = throttleCmd
+        toggle = jsButtons[self._reverse_idx]
+
+        if toggle == 1:
+            self._is_on_reverse += 1
+        if self._is_on_reverse % 2 == 0:
+            control.reverse = False
+        if self._is_on_reverse > 1:
+            self._is_on_reverse = True
+
+        if self._is_on_reverse:
+            control.reverse = True
+
+        control.hand_brake = False  # jsButtons[self.handbrake_idx]
+
+        return control
+
+
     def compute_action(self, sensor, speed):
         if not self._autopilot:
-            steering_axis = self.joystick.get_axis(0)
-            acc_axis = self.joystick.get_axis(2)
-            brake_axis = self.joystick.get_axis(5)
-            #print("axis 0 %f, axis 2 %f, axis 3 %f" % (steering_axis, acc_axis, brake_axis))
+            # get pygame input
+            for event in pygame.event.get():
+                # Possible joystick actions: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN
+                # JOYBUTTONUP JOYHATMOTION
+                if event.type == pygame.JOYBUTTONDOWN:
+                    if event.__dict__['button'] == 0:
+                        self._current_command = 2.0
+                    if event.__dict__['button'] == 1:
+                        self._current_command = 3.0
+                    if event.__dict__['button'] == 2:
+                        self._current_command = 4.0
+                    if event.__dict__['button'] == 3:
+                        self._current_command = 5.0
+                    if event.__dict__['button'] == 23:
+                        self._current_command = 0.0
+                if event.type == pygame.JOYBUTTONUP:
+                    self._current_command = 2.0
 
-            if (self.joystick.get_button(3)):
-                self._rear = True
-            if (self.joystick.get_button(2)):
-                self._rear = False
+            #pygame.event.pump()
+            numAxes = self.joystick.get_numaxes()
+            jsInputs = [float(self.joystick.get_axis(i)) for i in range(numAxes)]
+            # print (jsInputs)
+            jsButtons = [float(self.joystick.get_button(i)) for i in range(self.joystick.get_numbuttons())]
 
-            control = VehicleControl()
-            control.steer = steering_axis
-            control.throttle = (acc_axis + 1) / 2.0
-            control.brake = (brake_axis + 1) / 2.0
-            if control.brake < 0.001:
-                control.brake = 0.0
-            control.hand_brake = 0
-            control.reverse = self._rear
 
-            control.steer -= 0.0822
 
-            print("steer %f, throttle %f, brake %f" % (control.steer, control.throttle, control.brake))
-            pygame.event.pump()
-            '''
-        if not self._autopilot:
-            steering_axis = self.joystick.get_axis(0)
-            acc_axis = self.joystick.get_axis(2)
-            brake_axis = self.joystick.get_axis(3)
-            print("axis 0 %f, axis 2 %f, axis 3 %f" % (steering_axis, acc_axis, brake_axis))
+            if self._steering_wheel_flag:
+                # btn_follow_ln = jsButtons[0]
+                # btn_turn_left = jsButtons[1]
+                # btn_turn_right = jsButtons[2]
+                # btn_straight = jsButtons[3]
+                # btn_end_episode = jsButtons[23]
+                #
+                # if btn_follow_ln:
+                #     self._current_command = 2.0
+                # elif btn_turn_left:
+                #     self._current_command = 3.0
+                # elif btn_turn_right:
+                #     self._current_command = 4.0
+                # elif btn_straight:
+                #     self._current_command = 5.0
+                # elif btn_end_episode:
+                #     self._current_command = 0.0
+                # else:
+                #     # default is follow-lane
+                #     self._current_command = 2.0
+                pass
 
-            if (self.joystick.get_button(3)):
-                self._rear = True
-            if (self.joystick.get_button(2)):
-                self._rear = False
+                control = self.action_steering_wheel(jsInputs, jsButtons)
+            else:
+                control = self.action_joystick()
 
-            control = VehicleControl()
-            control.steer = steering_axis
-            control.throttle = -(acc_axis - 1) / 2.0
-            control.brake = -(brake_axis - 1) / 2.0
-            if control.brake < 0.001:
-                control.brake = 0.0
-            control.hand_brake = 0
-            control.reverse = self._rear
-            print(control)
-            pygame.event.pump()
-            '''
         else:
             # This relies on the calling of get_sensor_data, otherwise self._latest_measurements are not filled
             control = self._latest_measurements.player_measurements.autopilot_control
 
         return control
 
+
+    def estimate_speed(self):
+        vehicle_current_location = self._vehicle.get_location()
+
+        distance = math.sqrt(((vehicle_current_location.x - self._vehicle_prev_location.x) ** 2) + ((vehicle_current_location.z - self._vehicle_prev_location.z) ** 2))
+        curr_time = datetime.now()
+        delta = curr_time - self._prev_time
+        delta = delta.seconds + delta.microseconds / 1E6
+        speed = distance / delta
+
+        # update previus
+        self._vehicle_prev_location =  vehicle_current_location
+        self._prev_time = curr_time
+
+        return speed
+
     def get_sensor_data(self, goal_pos=None, goal_ori=None):
-        # return the latest measurement and the next direction
-        measurements, sensor_data = self.carla.read_data()
-        self._latest_measurements = measurements
+        if __CARLA_VERSION__ == '0.8.X':
+            # return the latest measurement and the next direction
+            measurements, sensor_data = self.carla.read_data()
+            self._latest_measurements = measurements
 
-        if self.use_planner:
-            player_data = measurements.player_measurements
-            pos = [player_data.transform.location.x,
-                   player_data.transform.location.y,
-                   0.22]
-            ori = [player_data.transform.orientation.x,
-                   player_data.transform.orientation.y,
-                   player_data.transform.orientation.z]
+            if self.use_planner:
+                player_data = measurements.player_measurements
+                pos = [player_data.transform.location.x,
+                       player_data.transform.location.y,
+                       0.22]
+                ori = [player_data.transform.orientation.x,
+                       player_data.transform.orientation.y,
+                       player_data.transform.orientation.z]
 
-            if sldist([player_data.transform.location.x,
-                       player_data.transform.location.y],
-                      [self.positions[self.episode_config[1]].location.x,
-                       self.positions[self.episode_config[1]].location.y]) < self._goal_reaching_threshold:
-                self._reset()
+                if sldist([player_data.transform.location.x,
+                           player_data.transform.location.y],
+                          [self.positions[self.episode_config[1]].location.x,
+                           self.positions[self.episode_config[1]].location.y]) < self._goal_reaching_threshold:
+                    self._reset()
 
-            direction = self.planner.get_next_command(pos, ori,
-                                                      [self.positions[self.episode_config[1]].location.x,
-                                                       self.positions[self.episode_config[1]].location.y,
-                                                       0.22],
-                                                      (1, 0, 0))
-            print("planner output direction: ", direction)
+                direction = self.planner.get_next_command(pos, ori,
+                                                          [self.positions[self.episode_config[1]].location.x,
+                                                           self.positions[self.episode_config[1]].location.y,
+                                                           0.22],
+                                                          (1, 0, 0))
+            else:
+                direction = 2.0
         else:
-            direction = 2.0
+            sensor_data = copy.deepcopy(self._data_buffers)
+
+            second_level = namedtuple('second_level', ['forward_speed', 'transform'])
+            transform = namedtuple('transform', ['location', 'orientation'])
+            loc = namedtuple('loc', ['x', 'y'])
+            ori = namedtuple('ori', ['x', 'y', 'z'])
+            Meas = namedtuple('Meas', ['player_measurements'])
+
+            v_transform = self._vehicle.get_transform()
+            measurements = Meas(second_level(self.estimate_speed(), transform(loc(v_transform.location.y, v_transform.location.x), ori(v_transform.rotation.pitch, v_transform.rotation.roll, v_transform.rotation.yaw))))
+            direction = self._current_command
+
+        #print(">>>>> planner output direction: ", direction)
 
         return measurements, sensor_data, direction
 
     def act(self, control):
-        self.carla.send_control(control)
+        if __CARLA_VERSION__ == '0.8.X':
+            self.carla.send_control(control)
+        else:
+            self._vehicle.apply_control(control)
+
+            # location = self._vehicle.get_location()
+            # location.z = 200.0
+            # rotation = self._vehicle.get_transform().rotation
+            # rotation.pitch = -90.0
+            # rotation.yaw = 0
+            # rotation.roll = -0.07
+
+            #print('>>>>> x={}, y={}, z={}, pitch={}, yaw={}, roll={}'.format(location.x, location.y, location.z, rotation.pitch, rotation.yaw, rotation.roll))
+            #self._spectator.set_transform(carla.Transform(location=location, rotation=rotation))

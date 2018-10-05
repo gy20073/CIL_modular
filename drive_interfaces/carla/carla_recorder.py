@@ -6,6 +6,7 @@ import pdb
 
 __CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.8.X')
 if __CARLA_VERSION__ == '0.8.X':
+    sys.path.append('drive_interfaces/carla/carla_client')
     from carla import image_converter
 
 # lets put a big queue for the disk. So I keep it real time while the disk is writing stuff
@@ -211,7 +212,7 @@ class Recorder(object):
             self.data_rewards[pos, 2] = actions.brake
             self.data_rewards[pos, 3] = actions.hand_brake
             self.data_rewards[pos, 4] = actions.reverse
-            self.data_rewards[pos, 5] = measurements.player_measurements.forward_speed # TODO: km/h -> m/s
+            self.data_rewards[pos, 10] = measurements.player_measurements.forward_speed # TODO: km/h -> m/s
             self.data_rewards[pos, 8] = measurements.player_measurements.transform.location.x # cm -> m, but this is not used anywhere
             self.data_rewards[pos, 9] = measurements.player_measurements.transform.location.y # cm -> m, but this is not used anywhere
             self.data_rewards[pos, 21] = measurements.player_measurements.transform.orientation.x # pitch (degree)

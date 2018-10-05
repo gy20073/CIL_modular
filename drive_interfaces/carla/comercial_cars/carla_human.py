@@ -115,9 +115,9 @@ class CarlaHuman(Driver):
 
         self._prev_time = datetime.now()
 
-        self._vehicle_prev_location = namedtuple("vehicle", "x z")
+        self._vehicle_prev_location = namedtuple("vehicle", "x y")
         self._vehicle_prev_location.x = 0.0
-        self._vehicle_prev_location.z = 0.0
+        self._vehicle_prev_location.y = 0.0
 
         self._sensor_list = []
 
@@ -463,7 +463,7 @@ class CarlaHuman(Driver):
     def estimate_speed(self):
         vehicle_current_location = self._vehicle.get_location()
 
-        distance = math.sqrt(((vehicle_current_location.x - self._vehicle_prev_location.x) ** 2) + ((vehicle_current_location.z - self._vehicle_prev_location.z) ** 2))
+        distance = math.sqrt(((vehicle_current_location.x - self._vehicle_prev_location.x) ** 2) + ((vehicle_current_location.y - self._vehicle_prev_location.y) ** 2))
         curr_time = datetime.now()
         delta = curr_time - self._prev_time
         delta = delta.seconds + delta.microseconds / 1E6
@@ -513,7 +513,8 @@ class CarlaHuman(Driver):
             Meas = namedtuple('Meas', ['player_measurements'])
 
             v_transform = self._vehicle.get_transform()
-            measurements = Meas(second_level(self.estimate_speed(), transform(loc(v_transform.location.y, v_transform.location.x), ori(v_transform.rotation.pitch, v_transform.rotation.roll, v_transform.rotation.yaw))))
+            # TODO: might need to switch the location.x and location.y order
+            measurements = Meas(second_level(self.estimate_speed(), transform(loc(v_transform.location.x, v_transform.location.y), ori(v_transform.rotation.pitch, v_transform.rotation.roll, v_transform.rotation.yaw))))
             direction = self._current_command
 
         #print(">>>>> planner output direction: ", direction)

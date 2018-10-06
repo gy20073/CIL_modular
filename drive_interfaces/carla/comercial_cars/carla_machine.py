@@ -47,7 +47,7 @@ def load_system(config):
 
 class CarlaMachine(Agent, Driver):
     def __init__(self, gpu_number="0", experiment_name='None', driver_conf=None, memory_fraction=0.9,
-                 gpu_perception=None, perception_paths=None):
+                 gpu_perception=None, perception_paths=None, batch_size=1):
         Driver.__init__(self)
 
         conf_module = __import__(experiment_name)
@@ -69,7 +69,7 @@ class CarlaMachine(Agent, Driver):
                 self._config.perception_paths = perception_paths
 
             self.perception_interface = Perceptions(
-                batch_size={key: 1 for key in use_mode if use_mode[key]},
+                batch_size={key: batch_size for key in use_mode if use_mode[key]},
                 gpu_assignment=self._config.perception_gpus,
                 compute_methods={},
                 viz_methods={},
@@ -105,6 +105,8 @@ class CarlaMachine(Agent, Driver):
 
         self.debug_i = 0
         self.temp_image_path = "./temp/"
+
+        self.batch_size = batch_size
 
     def start(self):
         self.carla = CarlaClient(self._host, int(self._port), timeout=120)
@@ -224,35 +226,66 @@ class CarlaMachine(Agent, Driver):
         if hasattr(self._config, "camera_middle_zoom") and self._config.camera_middle_zoom:
             sensors = camera_middle_zoom(sensors, self._config.sensor_names)
 
-        for sensor in sensors:
-            image_input = preprocess_image(sensor, self._image_cut, self._config.image_size)
-            if hasattr(self._config, "hack_resize_image"):
-                image_input = cv2.resize(image_input, (self._config.hack_resize_image[1], self._config.hack_resize_image[0]))
-            to_be_visualized = image_input
+        if self.batch_size == 1:
+            for sensor in sensors:
+                image_input = preprocess_image(sensor, self._image_cut, self._config.image_size)
+                if hasattr(self._config, "hack_resize_image"):
+                    image_input = cv2.resize(image_input, (self._config.hack_resize_image[1], self._config.hack_resize_image[0]))
+                to_be_visualized = image_input
 
-            if self._config.image_as_float[0]:
-                image_input = image_input.astype(np.float32)
-            if self._config.sensors_normalize[0]:
-                image_input = np.multiply(image_input, 1.0 / 255.0)
+                if self._config.image_as_float[0]:
+                    image_input = image_input.astype(np.float32)
+                if self._config.sensors_normalize[0]:
+                    image_input = np.multiply(image_input, 1.0 / 255.0)
 
-            if self._config.use_perception_stack:
-                image_input = np.expand_dims(image_input, 0)
-                image_input = self.perception_interface.compute(image_input)
-                # here we should add the visualization
-                to_be_visualized = self.perception_interface.visualize(image_input, 0)
-                # done the visualization
-                image_input = self.perception_interface._merge_logits_all_perception(image_input)
+                if self._config.use_perception_stack:
+                    image_input = np.expand_dims(image_input, 0)
+                    image_input = self.perception_interface.compute(image_input)
+                    # here we should add the visualization
+                    to_be_visualized = self.perception_interface.visualize(image_input, 0)
+                    # done the visualization
+                    image_input = self.perception_interface._merge_logits_all_perception(image_input)
 
-            out_images.append(image_input)
-            out_vis.append(to_be_visualized)
+                out_images.append(image_input)
+                out_vis.append(to_be_visualized)
 
-        # each element in the out_images has the shape of B H W C
-        image_input = np.stack(out_images, axis=0)
-        # now has shape num_sensors B H W C
-        image_input = np.transpose(image_input, (1, 2, 3, 4, 0))
-        image_input = np.reshape(image_input, (image_input.shape[0], image_input.shape[1], image_input.shape[2], -1))
+            # each element in the out_images has the shape of B H W C
+            image_input = np.stack(out_images, axis=0)
+            # now has shape num_sensors B H W C
+            image_input = np.transpose(image_input, (1, 2, 3, 4, 0))
+            image_input = np.reshape(image_input, (image_input.shape[0], image_input.shape[1], image_input.shape[2], -1))
 
-        to_be_visualized = np.concatenate(out_vis, axis=1)
+            to_be_visualized = np.concatenate(out_vis, axis=1)
+        else:
+            image_inputs = []
+            for sensor in sensors:
+                image_input = preprocess_image(sensor, self._image_cut, self._config.image_size)
+                if hasattr(self._config, "hack_resize_image"):
+                    image_input = cv2.resize(image_input, (self._config.hack_resize_image[1], self._config.hack_resize_image[0]))
+
+                assert(self._config.image_as_float[0]==False)
+                assert(self._config.sensors_normalize[0] == False)
+                assert(self._config.use_perception_stack == True)
+                image_inputs.append(image_input)
+
+            image_input = np.stack(image_inputs, 0)
+
+            image_input = self.perception_interface.compute(image_input)
+            # here we should add the visualization
+            for i in range(self.batch_size):
+                #to_be_visualized = self.perception_interface.visualize(image_input,i)
+                to_be_visualized = np.zeros((100,100,3), dtype=np.uint8)
+                out_vis.append(to_be_visualized)
+            # done the visualization
+            image_input = self.perception_interface._merge_logits_all_perception(image_input)
+
+            BN, H, W, C = image_input.shape
+            image_input = np.reshape(image_input, (self.batch_size, BN//self.batch_size, H, W, C))
+            # now has shape num_sensors B H W C
+            image_input = np.transpose(image_input, (1, 2, 3, 4, 0))
+            image_input = np.reshape(image_input, (image_input.shape[0], image_input.shape[1], image_input.shape[2], -1))
+
+            to_be_visualized = np.concatenate(out_vis, axis=1)
 
         if (self._train_manager._config.control_mode == 'single_branch_wp'):
             # Yang: use the waypoints to predict the steer, in theory PID controller, but in reality just P controller

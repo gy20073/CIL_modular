@@ -257,24 +257,22 @@ class CarlaMachine(Agent, Driver):
 
             to_be_visualized = np.concatenate(out_vis, axis=1)
         else:
-            image_inputs = []
+            assert (self._config.image_as_float[0] == False)
+            assert (self._config.sensors_normalize[0] == False)
+            assert (self._config.use_perception_stack == True)
+            assert (not hasattr(self._config, "hack_resize_image"))
+
+            processed_images = []
             for sensor in sensors:
                 image_input = preprocess_image(sensor, self._image_cut, self._config.image_size)
-                if hasattr(self._config, "hack_resize_image"):
-                    image_input = cv2.resize(image_input, (self._config.hack_resize_image[1], self._config.hack_resize_image[0]))
+                processed_images.append(image_input)
 
-                assert(self._config.image_as_float[0]==False)
-                assert(self._config.sensors_normalize[0] == False)
-                assert(self._config.use_perception_stack == True)
-                image_inputs.append(image_input)
-
-            image_input = np.stack(image_inputs, 0)
+            image_input = np.stack(processed_images, 0)
 
             image_input = self.perception_interface.compute(image_input)
             # here we should add the visualization
-            for i in range(self.batch_size):
-                #to_be_visualized = self.perception_interface.visualize(image_input,i)
-                to_be_visualized = np.zeros((100,100,3), dtype=np.uint8)
+            for i in [1]: #range(self.batch_size):
+                to_be_visualized = self.perception_interface.visualize(image_input,i)
                 out_vis.append(to_be_visualized)
             # done the visualization
             image_input = self.perception_interface._merge_logits_all_perception(image_input)

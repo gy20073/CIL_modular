@@ -48,7 +48,8 @@ def preprocess_image(sensor, image_cut, sensor_size):
     sensor = sensor[image_cut[0]:image_cut[1], :, :3]
     sensor = sensor[:, :, ::-1]
     if sensor_size is not None:
-        sensor = scipy.misc.imresize(sensor, [sensor_size[0], sensor_size[1]])
+        #sensor = scipy.misc.imresize(sensor, [sensor_size[0], sensor_size[1]])
+        sensor = cv2.resize(sensor, (sensor_size[1], sensor_size[0]))
 
     return sensor
 

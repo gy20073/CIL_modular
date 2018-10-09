@@ -246,7 +246,7 @@ class CarlaHuman(Driver):
 
 
             self._spectator = self._world.get_spectator()
-            cam_blueprint = self._world.get_blueprint_library().find('sensor.camera')
+            cam_blueprint = self._world.get_blueprint_library().find('sensor.camera.rgb')
 
             cam_blueprint.set_attribute('image_size_x', str(WINDOW_WIDTH))
             cam_blueprint.set_attribute('image_size_y', str(WINDOW_HEIGHT))
@@ -425,30 +425,7 @@ class CarlaHuman(Driver):
             # print (jsInputs)
             jsButtons = [float(self.joystick.get_button(i)) for i in range(self.joystick.get_numbuttons())]
 
-
-
             if self._steering_wheel_flag:
-                # btn_follow_ln = jsButtons[0]
-                # btn_turn_left = jsButtons[1]
-                # btn_turn_right = jsButtons[2]
-                # btn_straight = jsButtons[3]
-                # btn_end_episode = jsButtons[23]
-                #
-                # if btn_follow_ln:
-                #     self._current_command = 2.0
-                # elif btn_turn_left:
-                #     self._current_command = 3.0
-                # elif btn_turn_right:
-                #     self._current_command = 4.0
-                # elif btn_straight:
-                #     self._current_command = 5.0
-                # elif btn_end_episode:
-                #     self._current_command = 0.0
-                # else:
-                #     # default is follow-lane
-                #     self._current_command = 2.0
-                pass
-
                 control = self.action_steering_wheel(jsInputs, jsButtons)
             else:
                 control = self.action_joystick()
@@ -513,7 +490,6 @@ class CarlaHuman(Driver):
             Meas = namedtuple('Meas', ['player_measurements'])
 
             v_transform = self._vehicle.get_transform()
-            # TODO: might need to switch the location.x and location.y order
             measurements = Meas(second_level(self.estimate_speed(), transform(loc(v_transform.location.x, v_transform.location.y), ori(v_transform.rotation.pitch, v_transform.rotation.roll, v_transform.rotation.yaw))))
             direction = self._current_command
 

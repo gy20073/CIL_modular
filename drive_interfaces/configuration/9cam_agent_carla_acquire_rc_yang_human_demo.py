@@ -23,7 +23,7 @@ class configDrive:
         # TODO: if not using planner, has to press keyboards, otherwise has to have the end goal with a planner
         self.use_planner = True # we want to get planing instruction from the planner, and human follow the rule
 
-        self.num_images_to_collect = 200 * 20  # how many images to collect in total
+        self.num_images_to_collect = 2000 * 20  # how many images to collect in total
         self.re_entry = True  # True to allow continue collecting the data, this will make changes to the folder structure
 
         self.city_name = 'Town01'

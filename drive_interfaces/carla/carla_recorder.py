@@ -212,9 +212,9 @@ class Recorder(object):
             self.data_rewards[pos, 2] = actions.brake
             self.data_rewards[pos, 3] = actions.hand_brake
             self.data_rewards[pos, 4] = actions.reverse
-            self.data_rewards[pos, 10] = measurements.player_measurements.forward_speed # TODO: km/h -> m/s
             self.data_rewards[pos, 8] = measurements.player_measurements.transform.location.x # cm -> m, but this is not used anywhere
             self.data_rewards[pos, 9] = measurements.player_measurements.transform.location.y # cm -> m, but this is not used anywhere
+            self.data_rewards[pos, 10] = measurements.player_measurements.forward_speed # TODO: km/h -> m/s
             self.data_rewards[pos, 21] = measurements.player_measurements.transform.orientation.x # pitch (degree)
             self.data_rewards[pos, 22] = measurements.player_measurements.transform.orientation.y # roll (degree)
             self.data_rewards[pos, 23] = measurements.player_measurements.transform.orientation.z # yaw (degree)

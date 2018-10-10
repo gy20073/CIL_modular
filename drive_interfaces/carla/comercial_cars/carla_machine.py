@@ -262,6 +262,7 @@ class CarlaMachine(Agent, Driver):
             assert (self._config.use_perception_stack == True)
             assert (not hasattr(self._config, "hack_resize_image"))
 
+            t0 = time.time()
             processed_images = []
             for sensor in sensors:
                 image_input = preprocess_image(sensor, self._image_cut, self._config.image_size)
@@ -269,11 +270,21 @@ class CarlaMachine(Agent, Driver):
 
             image_input = np.stack(processed_images, 0)
 
+            #print("until stack images is ", time.time() - t0)
+            t1 = time.time()
             image_input = self.perception_interface.compute(image_input)
+
+            #print("compute takes ", time.time() - t1)
+
+            t2 = time.time()
             # here we should add the visualization
             for i in [1]: #range(self.batch_size):
                 to_be_visualized = self.perception_interface.visualize(image_input,i)
                 out_vis.append(to_be_visualized)
+            #print(" visualize takes, ", time.time() - t2)
+
+
+            t3 = time.time()
             # done the visualization
             image_input = self.perception_interface._merge_logits_all_perception(image_input)
 
@@ -284,7 +295,9 @@ class CarlaMachine(Agent, Driver):
             image_input = np.reshape(image_input, (image_input.shape[0], image_input.shape[1], image_input.shape[2], -1))
 
             to_be_visualized = np.concatenate(out_vis, axis=1)
+            #print("compute logits and resizing takes", time.time() - t3)
 
+        t4 = time.time()
         if (self._train_manager._config.control_mode == 'single_branch_wp'):
             # Yang: use the waypoints to predict the steer, in theory PID controller, but in reality just P controller
             # TODO: ask, only the regression target is different, others are the same
@@ -300,6 +313,9 @@ class CarlaMachine(Agent, Driver):
         else:
             steer, acc, brake = self._control_function(image_input, speed_kmh, direction,
                                                        self._config, self._sess, self._train_manager)
+
+        #print("policy takes ", time.time() - t4)
+
         steer = min(max(steer, -1), 1)
         acc =   min(max(acc, 0), 1)
         brake = min(max(brake, 0), 1)
@@ -324,7 +340,9 @@ class CarlaMachine(Agent, Driver):
 
         # print all info on the image
         extra = "\nSteer {:.2f} \nThrottle {:.2f} \nBrake {:.2f}".format(float(steer), float(acc), float(brake))
+        t5 = time.time()
         to_be_visualized = self.annotate_image(to_be_visualized, direction, extra)
+        #print("annotate image takes ", time.time() - t5)
 
         if save_image_to_disk:
             self.save_image(to_be_visualized)

@@ -17,6 +17,23 @@ def write_text_on_image(image, string, fontsize=10):
 
     return np.array(j)
 
+def plot_waypoints_on_image(image, wps, scale_factor, dot_size):
+    imsize = image.shape
+    xoff = imsize[0] // 2
+    yoff = imsize[1] // 2
+    for i in range(wps.shape[0]):
+        wp = wps[i]
+        print(i)
+        image[xoff-int(wp[0]*scale_factor)-dot_size: xoff-int(wp[0]*scale_factor)+dot_size,
+              yoff+int(wp[1]*scale_factor)-dot_size: yoff+int(wp[1]*scale_factor)+dot_size, 0] = 0
+        image[xoff - int(wp[0] * scale_factor) - dot_size: xoff - int(wp[0] * scale_factor) + dot_size,
+        yoff + int(wp[1] * scale_factor) - dot_size: yoff + int(wp[1] * scale_factor) + dot_size, 1] = 0
+        image[xoff - int(wp[0] * scale_factor) - dot_size: xoff - int(wp[0] * scale_factor) + dot_size,
+        yoff + int(wp[1] * scale_factor) - dot_size: yoff + int(wp[1] * scale_factor) + dot_size, 2] = 255
+    return image
+
+    # TODO plotting the waypoints on the ground
+
 
 def sample_images_from_h5(path, temp, show_all, is3, pure_video):
     f=h5py.File(path, "r")
@@ -67,6 +84,15 @@ def sample_images_from_h5(path, temp, show_all, is3, pure_video):
                                             "ori      :" + td(f["targets"][imid, 21]) + " " + td(f["targets"][imid, 22]) + " " + td(f["targets"][imid, 23]) + "\n" +
                                             "wp1_angle:" + td(f["targets"][imid, 31]) + "\n" ,
                                             fontsize=font)
+
+                # plotting the waypoints on the image
+                if f["targets"].shape[1] > 40:
+                    # then we have the waypoints stored
+                    size = int(f["targets"][imid, 99])
+                    flattend = f["targets"][imid, 35:(35+size)]
+                    wp = np.reshape(flattend, (-1, 2))
+                    image = plot_waypoints_on_image(image, wp, 20, 4)
+
             if not is3:
                 #image = image[:,:,::-1]
                 cv2.imwrite(path, image)

@@ -7,7 +7,7 @@ class Noiser(object):
     # NOISER CARLA CONFIGURATION
     # frequency=15, intensity = 5 ,min_noise_time_amount = 0.5
 
-    def __init__(self, noise_type, frequency=45, intensity=5, min_noise_time_amount=0.5):
+    def __init__(self, noise_type, frequency=15, intensity=5, min_noise_time_amount=0.5):
         # specifications from outside
         self.noise_type = noise_type
         self.frequency = frequency
@@ -54,7 +54,7 @@ class Noiser(object):
 
         if not self.spike_rise_stage and not self.spike_decay_stage:
             # state no noise
-            if time.time() - self.second_counter >= 1.0:
+            if time.time() - self.second_counter >= 5.0:
                 self.second_counter = time.time()
                 if random.randint(0, 60) < self.frequency:
                     self.spike_rise_stage = True

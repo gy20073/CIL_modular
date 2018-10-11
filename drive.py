@@ -12,8 +12,7 @@ if __CARLA_VERSION__ == '0.8.X':
 
 else:
     sys.path.append('drive_interfaces/carla/carla_client_090')
-    sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.0-py%d.%d-linux-x86_64.egg' % (
-                    sys.version_info.major, sys.version_info.minor))
+    sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.0-py2.7-linux-x86_64.egg')
 
 sys.path.append('drive_interfaces/carla/comercial_cars')
 sys.path.append('drive_interfaces/carla/carla_client/testing')
@@ -76,14 +75,14 @@ def get_instance(drive_config, experiment_name, drivers_name, memory_use):
     return driver, recorder, num_files_in_folder
 
 
-def write_text_on_image(image, string, fontsize=10):
+def write_text_on_image(image, string, fontsize=10, position=(0,0)):
     image = image.copy()
     image = np.uint8(image)
     j = Image.fromarray(image)
     draw = ImageDraw.Draw(j)
     font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", fontsize)
     #font = ImageFont.load_default()
-    draw.text((0, 0), string, (255, 0, 0), font=font)
+    draw.text(position, string, (255, 0, 0), font=font)
 
     return np.array(j)
 
@@ -152,7 +151,7 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
 
             if drive_config.show_screen:
                 if drive_config.interface == "Carla":
-                    print('fps', 1.0 / (time.time() - capture_time))
+                    print('FPS: {}'.format(1.0 / (time.time() - capture_time)))
 
                     if __CARLA_VERSION__ == '0.8.X':
                         image = preprocess_image(image_converter.to_bgra_array(sensor_data['CameraMiddle']),
@@ -163,6 +162,8 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
 
                     mapping = {2.0: "follow", 3.0: "left", 4.0: "right", 5.0: "straight"}
                     image = write_text_on_image(image, mapping[direction], 30)
+                    image = write_text_on_image(image, '{:03.2f}'.format(speed_kmh), 30, (150, 0))
+
                     image = pygame.surfarray.make_surface(np.transpose(image, (1, 0, 2)))
                     gameDisplay.blit(image, (0, 0))
                     pygame.display.update()

@@ -8,7 +8,6 @@ from datetime import datetime
 import numpy as np
 from collections import namedtuple
 
-
 __CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.8.X')
 if __CARLA_VERSION__ == '0.8.X':
     from carla.planner.planner import Planner
@@ -16,6 +15,7 @@ if __CARLA_VERSION__ == '0.8.X':
     #from carla.client import make_carla_client
     from carla.client import CarlaClient
 else:
+    sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.0-py2.7-linux-x86_64.egg')
     import carla
     from carla import Client as CarlaClient
     from carla import VehicleControl as VehicleControl
@@ -114,6 +114,7 @@ class CarlaHuman(Driver):
         self._stucked_counter = 0
 
         self._prev_time = datetime.now()
+        self._episode_t0 = datetime.now()
 
         self._vehicle_prev_location = namedtuple("vehicle", "x y")
         self._vehicle_prev_location.x = 0.0
@@ -188,7 +189,10 @@ class CarlaHuman(Driver):
             #     self._vehicle = None
 
     def _reset(self):
+
         self._start_time = time.time()
+        self._episode_t0 = datetime.now()
+
 
         if __CARLA_VERSION__ == '0.8.X':
             # create the carla config based on template and the params passed in
@@ -241,7 +245,7 @@ class CarlaHuman(Driver):
 
             self._world = self.carla.get_world()
             blueprints = self._world.get_blueprint_library().filter('vehicle')
-            vechile_blueprint = [e for i, e in enumerate(blueprints) if e.id == 'chevrolet.impala'][0]
+            vechile_blueprint = [e for i, e in enumerate(blueprints) if e.id == 'vehicle.chevrolet.impala'][0]
             self._vehicle = self._world.spawn_actor(vechile_blueprint, START_POSITION)
 
 
@@ -352,7 +356,7 @@ class CarlaHuman(Driver):
 
         control.steer -= 0.0822
 
-        print("steer %f, throttle %f, brake %f" % (control.steer, control.throttle, control.brake))
+        #print("steer %f, throttle %f, brake %f" % (control.steer, control.throttle, control.brake))
         pygame.event.pump()
 
         return control
@@ -365,7 +369,7 @@ class CarlaHuman(Driver):
         K1 = 1.0  # 0.55
         steerCmd = K1 * math.tan(1.1 * jsInputs[self._steer_idx])
 
-        K2 = 1.2  # 1.6
+        K2 = 1.6  # 1.6
         throttleCmd = K2 + (2.05 * math.log10(-0.7 * jsInputs[self._throttle_idx] + 1.4) - 1.2) / 0.92
         if throttleCmd <= 0:
             throttleCmd = 0
@@ -378,7 +382,7 @@ class CarlaHuman(Driver):
         elif brakeCmd > 1:
             brakeCmd = 1
 
-        print("Steer Cmd, ", steerCmd, "Brake Cmd", brakeCmd, "ThrottleCmd", throttleCmd)
+        #print("Steer Cmd, ", steerCmd, "Brake Cmd", brakeCmd, "ThrottleCmd", throttleCmd)
         control.steer = steerCmd
         control.brake = brakeCmd
         control.throttle = throttleCmd
@@ -434,6 +438,7 @@ class CarlaHuman(Driver):
             # This relies on the calling of get_sensor_data, otherwise self._latest_measurements are not filled
             control = self._latest_measurements.player_measurements.autopilot_control
 
+        print('[Throttle = {}] [Steering = {}] [Brake = {}]'.format(control.throttle, control.steer, control.brake))
         return control
 
 
@@ -483,16 +488,18 @@ class CarlaHuman(Driver):
         else:
             sensor_data = copy.deepcopy(self._data_buffers)
 
+            current_ms_offset = int(math.ceil((datetime.now() - self._episode_t0).total_seconds() * 1000))
             second_level = namedtuple('second_level', ['forward_speed', 'transform'])
             transform = namedtuple('transform', ['location', 'orientation'])
             loc = namedtuple('loc', ['x', 'y'])
             ori = namedtuple('ori', ['x', 'y', 'z'])
-            Meas = namedtuple('Meas', ['player_measurements'])
+            Meas = namedtuple('Meas', ['player_measurements', 'game_timestamp'])
 
             v_transform = self._vehicle.get_transform()
-            measurements = Meas(second_level(self.estimate_speed(), transform(loc(v_transform.location.x, v_transform.location.y), ori(v_transform.rotation.pitch, v_transform.rotation.roll, v_transform.rotation.yaw))))
+            measurements = Meas(second_level(self.estimate_speed(), transform(loc(v_transform.location.x, v_transform.location.y), ori(v_transform.rotation.pitch, v_transform.rotation.roll, v_transform.rotation.yaw))), current_ms_offset)
             direction = self._current_command
 
+            #print('[Speed = {} Km/h] [Direction = {}]'.format(measurements.player_measurements.forward_speed, direction))
         #print(">>>>> planner output direction: ", direction)
 
         return measurements, sensor_data, direction

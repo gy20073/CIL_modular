@@ -100,8 +100,10 @@ class Noiser(object):
                 minmax = lambda x: max(x, min(x, 1.0), -1.0)
                 steer_noisy = minmax(action.steer + self.get_noise() * (30 / (1.5 * speed_kmh + 5)))
 
-                noisy_action = VehicleControl(action.throttle, action.steer, action.brake, action.hand_brake, action.reverse)
-                #noisy_action = copy.deepcopy(action)
+                if __CARLA_VERSION__ == '0.9.X':
+                    noisy_action = VehicleControl(action.throttle, action.steer, action.brake, action.hand_brake, action.reverse)
+                else:
+                    noisy_action = copy.deepcopy(action)
                 noisy_action.steer = steer_noisy
                 return noisy_action
 

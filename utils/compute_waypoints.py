@@ -3,11 +3,11 @@ import numpy as np
 
 sys.path.append('drive_interfaces/carla/carla_client')
 
-input_id = "steer103_v2_dir"
-output_id = "steer103_v2_waypoint"
+input_id = "steer103_v3_dir"
+output_id = "steer103_v3_waypoint"
 debug_start = 0
-debug_end= 14000000
-future_time = 1.0 # second
+debug_end= 140000000
+future_time = 2.0 # second
 
 all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/"+str(input_id)+"/*/data_*.h5")
 input_prefix = "/data/yang/code/aws/scratch/carla_collect/"+str(input_id)

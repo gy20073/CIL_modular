@@ -310,6 +310,14 @@ class CarlaMachine(Agent, Driver):
             steer_gain = 0.8
             steer = steer_gain * wp1angle
             print(('Predicted Steering: ', steer_pred, ' Waypoint Steering: ', steer))
+        elif (self._train_manager._config.control_mode == 'single_branch_yang_wp'):
+            waypoints, predicted_speed = self._control_function(image_input, speed_kmh, direction,
+                                                       self._config, self._sess, self._train_manager)
+            # TODO: call the MPC planner to convert it to throttle
+            # visualize the image
+            # optionally save the image to disk
+            # return the waypoints
+            return waypoints, to_be_visualized
         else:
             steer, acc, brake = self._control_function(image_input, speed_kmh, direction,
                                                        self._config, self._sess, self._train_manager)

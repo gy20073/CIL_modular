@@ -4,8 +4,8 @@ import numpy as np
 sys.path.append('drive_interfaces/carla/carla_client')
 from carla.planner.planner import Planner
 
-input_id = "steer103_v2"
-output_id = "steer103_v2_dir"
+input_id = "steer103_v3"
+output_id = "steer103_v3_dir"
 debug_start = 0
 debug_end= 14000000
 use_3_cam = False

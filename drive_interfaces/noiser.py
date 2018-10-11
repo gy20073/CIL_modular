@@ -7,7 +7,7 @@ class Noiser(object):
     # NOISER CARLA CONFIGURATION
     # frequency=15, intensity = 5 ,min_noise_time_amount = 0.5
 
-    def __init__(self, noise_type, frequency=15, intensity=5, min_noise_time_amount=0.5):
+    def __init__(self, noise_type, frequency=45, intensity=5, min_noise_time_amount=0.5):
         # specifications from outside
         self.noise_type = noise_type
         self.frequency = frequency

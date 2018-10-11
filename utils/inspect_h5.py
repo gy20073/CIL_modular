@@ -1,4 +1,4 @@
-import sys, h5py, cv2, os, shutil, glob
+import sys, h5py, cv2, os, shutil, glob, math
 import numpy as np
 from subprocess import call
 from PIL import Image, ImageDraw, ImageFont
@@ -19,20 +19,30 @@ def write_text_on_image(image, string, fontsize=10):
 
 def plot_waypoints_on_image(image, wps, scale_factor, dot_size):
     imsize = image.shape
-    xoff = imsize[0] // 2
-    yoff = imsize[1] // 2
+    wps = np.concatenate(([[0,0]], wps), axis=0)
     for i in range(wps.shape[0]):
         wp = wps[i]
-        print(i)
-        image[xoff-int(wp[0]*scale_factor)-dot_size: xoff-int(wp[0]*scale_factor)+dot_size,
-              yoff+int(wp[1]*scale_factor)-dot_size: yoff+int(wp[1]*scale_factor)+dot_size, 0] = 0
-        image[xoff - int(wp[0] * scale_factor) - dot_size: xoff - int(wp[0] * scale_factor) + dot_size,
-        yoff + int(wp[1] * scale_factor) - dot_size: yoff + int(wp[1] * scale_factor) + dot_size, 1] = 0
-        image[xoff - int(wp[0] * scale_factor) - dot_size: xoff - int(wp[0] * scale_factor) + dot_size,
-        yoff + int(wp[1] * scale_factor) - dot_size: yoff + int(wp[1] * scale_factor) + dot_size, 2] = 255
+
+        depth = wp[0] + 2.46 - 0.7 + 2.0 # TODO
+        horizontal = wp[1]
+        vertical = -1.6
+        h, v = point_to_2d(depth, horizontal, vertical)
+
+        xoff = int((-v + 0.5) * imsize[0])
+        yoff = int((h + 0.5) * imsize[1])
+        image[xoff - dot_size: xoff + dot_size, yoff - dot_size: yoff + dot_size, 0] = 0
+        image[xoff - dot_size: xoff + dot_size, yoff - dot_size: yoff + dot_size, 1] = 0
+        image[xoff - dot_size: xoff + dot_size, yoff - dot_size: yoff + dot_size, 2] = 255
+
     return image
 
     # TODO plotting the waypoints on the ground
+
+def point_to_2d(depth, horizontal, vertical, half_width_fov=math.radians(103.0)/2, half_height_fov = math.atan(0.75*math.tan(math.radians(103.0)/2))):
+    # the horizontal and vertical are both relative to the center, same as the output
+    h = horizontal / depth * 0.5 / math.tan(half_width_fov)
+    v = vertical   / depth * 0.5 / math.tan(half_height_fov)
+    return h, v
 
 
 def sample_images_from_h5(path, temp, show_all, is3, pure_video):
@@ -138,17 +148,20 @@ if __name__ == "__main__":
             sample_images_from_h5(path, temp_folder, write_all, is3, pure_video)
         except:
             print("Failed to extract from ", path)
-            # moving the error file to some kind of garbage bin
-            head, tail = os.path.split(path)
-            garbage_path = os.path.join(head, "bad_h5")
-            if not os.path.exists(garbage_path):
-                os.makedirs(garbage_path)
-            target_path = os.path.join(garbage_path, tail)
-            shutil.move(path, target_path)
+            if False:
+                # moving the error file to some kind of garbage bin
+                head, tail = os.path.split(path)
+                garbage_path = os.path.join(head, "bad_h5")
+                if not os.path.exists(garbage_path):
+                    os.makedirs(garbage_path)
+                target_path = os.path.join(garbage_path, tail)
+                shutil.move(path, target_path)
 
-            if os.path.exists(temp_folder):
-                shutil.rmtree(temp_folder)
-            continue
+                if os.path.exists(temp_folder):
+                    shutil.rmtree(temp_folder)
+                continue
+            else:
+                print("warning not moving the file to the garbage bin")
 
         call("ffmpeg -y -i " + temp_folder + "%05d.jpg -c:v libx264 " + path + ".mp4", shell=True)
 

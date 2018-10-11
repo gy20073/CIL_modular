@@ -12,7 +12,7 @@ class configDrive:
         self.port = 2000
         self.path = "./"  # If path is set go for it , if not expect a name set
         self.resolution = [768, 576]
-        self.noise = "None"  # NON CARLA SETTINGS PARAM # TODO: experiment with this
+        self.noise = "Spike"  # NON CARLA SETTINGS PARAM # TODO: experiment with this
         self.type_of_driver = "Human"
         self.interface = "Carla"
 

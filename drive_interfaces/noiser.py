@@ -1,4 +1,11 @@
-import copy, random, time
+import copy, random, time, os, sys
+
+__CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.8.X')
+if __CARLA_VERSION__ == '0.9.X':
+    sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.0-py2.7-linux-x86_64.egg')
+    import carla
+    from carla import VehicleControl as VehicleControl
+
 
 class Noiser(object):
     # define frequency into noise events per minute
@@ -93,7 +100,8 @@ class Noiser(object):
                 minmax = lambda x: max(x, min(x, 1.0), -1.0)
                 steer_noisy = minmax(action.steer + self.get_noise() * (30 / (1.5 * speed_kmh + 5)))
 
-                noisy_action = copy.deepcopy(action)
+                noisy_action = VehicleControl(action.throttle, action.steer, action.brake, action.hand_brake, action.reverse)
+                #noisy_action = copy.deepcopy(action)
                 noisy_action.steer = steer_noisy
                 return noisy_action
 

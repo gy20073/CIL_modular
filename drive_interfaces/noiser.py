@@ -14,12 +14,13 @@ class Noiser(object):
     # NOISER CARLA CONFIGURATION
     # frequency=15, intensity = 5 ,min_noise_time_amount = 0.5
 
-    def __init__(self, noise_type, frequency=45, intensity=5, min_noise_time_amount=0.5):
+    def __init__(self, noise_type, frequency=45, intensity=5, min_noise_time_amount=0.5, no_noise_decay_stage=False):
         # specifications from outside
         self.noise_type = noise_type
         self.frequency = frequency
         self.intensity = intensity
         self.min_noise_time_amount = min_noise_time_amount
+        self.no_noise_decay_stage = no_noise_decay_stage
 
         # FSM state variables
         self.noise_start_time = time.time()
@@ -61,7 +62,7 @@ class Noiser(object):
 
         if not self.spike_rise_stage and not self.spike_decay_stage:
             # state no noise
-            if time.time() - self.second_counter >= 5.0:
+            if time.time() - self.second_counter >= 3.0:
                 self.second_counter = time.time()
                 if random.randint(0, 60) < self.frequency:
                     self.spike_rise_stage = True
@@ -78,7 +79,12 @@ class Noiser(object):
             assert(self.spike_decay_stage == False)
             if time.time() - self.noise_start_time >= self.noise_time_amount:
                 self.spike_rise_stage = False
-                self.spike_decay_stage = True
+                if self.no_noise_decay_stage:
+                    self.spike_decay_stage = False
+                    self.second_counter = time.time()
+                    return False
+                else:
+                    self.spike_decay_stage = True
                 self.noise_end_time = time.time()
             return True
 

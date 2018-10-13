@@ -3,15 +3,16 @@ from time import sleep
 import math
 
 if __name__ == "__main__":
-    gpus_agent = [4,5,6,7]
+    gpus_agent = [5]
     gpus_carla = [0]
-    gpus_perception = [4,5,6,7]
+    gpus_perception = [5]
     num_perception = 1
-    exp_id = "mm45_v4_base_3cam_conaug_share_1cam_gta"
-    weather_batch_size = 4
+    exp_id = "mm45_v4_base_newseg_noiser_TL_lane_structure02_goodsteer_waypoint_zoom_eqweight"
+    weather_batch_size = 14
     test_name = "YangExp3cam"
-    test_name = "YangExp3camFov90"
-    test_name = "YangExp3camGTA"
+    only_town_01 = True
+    #test_name = "YangExp3camFov90"
+    #test_name = "YangExp3camGTA"
     # TODO make a new test setting to mimic the camera locations
     # num par = 14/3 * 2
 
@@ -52,6 +53,8 @@ if __name__ == "__main__":
             sleep(10)
 
             ithread += 1
+        if only_town_01:
+            break
 
     for p in processes:
         p.wait()

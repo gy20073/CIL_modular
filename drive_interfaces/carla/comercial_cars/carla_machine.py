@@ -1,4 +1,4 @@
-import sys, pygame, scipy, cv2, random, time
+import sys, pygame, scipy, cv2, random, time, math
 import tensorflow as tf
 from pygame.locals import *
 import numpy as np
@@ -25,7 +25,7 @@ from training_manager import TrainManager
 import machine_output_functions
 from driver import Driver
 from drawing_tools import *
-from common_util import restore_session, preprocess_image, split_camera_middle, camera_middle_zoom
+from common_util import restore_session, preprocess_image, split_camera_middle, camera_middle_zoom, plot_waypoints_on_image
 from all_perceptions import Perceptions
 
 slim = tf.contrib.slim
@@ -226,6 +226,8 @@ class CarlaMachine(Agent, Driver):
         if hasattr(self._config, "camera_middle_zoom") and self._config.camera_middle_zoom:
             sensors = camera_middle_zoom(sensors, self._config.sensor_names)
 
+        nrow = 1
+        ncol = 1
         if self.batch_size == 1:
             for sensor in sensors:
                 image_input = preprocess_image(sensor, self._image_cut, self._config.image_size)
@@ -243,6 +245,7 @@ class CarlaMachine(Agent, Driver):
                     image_input = self.perception_interface.compute(image_input)
                     # here we should add the visualization
                     to_be_visualized = self.perception_interface.visualize(image_input, 0)
+                    nrow, ncol = self.perception_interface.get_viz_nrow_ncol()
                     # done the visualization
                     image_input = self.perception_interface._merge_logits_all_perception(image_input)
 
@@ -256,6 +259,8 @@ class CarlaMachine(Agent, Driver):
             image_input = np.reshape(image_input, (image_input.shape[0], image_input.shape[1], image_input.shape[2], -1))
 
             to_be_visualized = np.concatenate(out_vis, axis=1)
+            if self._config.use_perception_stack:
+                ncol *= len(out_vis)
         else:
             assert (self._config.image_as_float[0] == False)
             assert (self._config.sensors_normalize[0] == False)
@@ -280,6 +285,7 @@ class CarlaMachine(Agent, Driver):
             # here we should add the visualization
             for i in [1]: #range(self.batch_size):
                 to_be_visualized = self.perception_interface.visualize(image_input,i)
+                nrow, ncol = self.perception_interface.get_viz_nrow_ncol()
                 out_vis.append(to_be_visualized)
             #print(" visualize takes, ", time.time() - t2)
 
@@ -295,6 +301,7 @@ class CarlaMachine(Agent, Driver):
             image_input = np.reshape(image_input, (image_input.shape[0], image_input.shape[1], image_input.shape[2], -1))
 
             to_be_visualized = np.concatenate(out_vis, axis=1)
+            ncol *= len(out_vis)
             #print("compute logits and resizing takes", time.time() - t3)
 
         t4 = time.time()
@@ -313,11 +320,37 @@ class CarlaMachine(Agent, Driver):
         elif (self._train_manager._config.control_mode == 'single_branch_yang_wp'):
             waypoints, predicted_speed = self._control_function(image_input, speed_kmh, direction,
                                                        self._config, self._sess, self._train_manager)
-            # TODO: call the MPC planner to convert it to throttle
             # visualize the image
-            # optionally save the image to disk
-            # return the waypoints
-            return waypoints, to_be_visualized
+            if ncol >= nrow*3:
+                col_i = ncol // 3
+            else:
+                col_i = 0
+            subpart = to_be_visualized[:to_be_visualized.shape[0]//nrow, col_i*to_be_visualized.shape[1]//ncol:(col_i+1)*to_be_visualized.shape[1]//ncol, :]
+            subpart = plot_waypoints_on_image(subpart, waypoints, 4, shift_ahead=2.46 - 0.7 + 2.0)
+            to_be_visualized[:to_be_visualized.shape[0] // nrow, col_i*to_be_visualized.shape[1]//ncol:(col_i+1)*to_be_visualized.shape[1]//ncol, :] = subpart
+
+            if hasattr(self._config, "waypoint_return_control") and self._config.waypoint_return_control:
+                # TODO: call the real MPC controller in the future, right now using a simple PID controller
+                if speed_kmh - predicted_speed > 5.0:
+                    acc = 0.0
+                    brake = 0.5
+                elif speed_kmh - predicted_speed < 0.0:
+                    acc = 1.0
+                    brake = 0.0
+                else:
+                    acc = 0.0
+                    brake = 0.0
+                wp = waypoints[3] # 0.8 seconds in the future
+                theta = math.atan2(max(wp[0], 0.01), wp[1]) - math.pi/2  # range from -pi/2 to pi/2
+                if waypoints[-1][0] < 0.5:
+                    theta = 0.0
+                print("wp0", wp[0], "wp1", wp[1], "theta", theta)
+                steer = theta * 0.8
+            else:
+                if save_image_to_disk:
+                    self.save_image(to_be_visualized)
+
+                return waypoints, to_be_visualized
         else:
             steer, acc, brake = self._control_function(image_input, speed_kmh, direction,
                                                        self._config, self._sess, self._train_manager)

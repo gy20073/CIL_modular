@@ -36,7 +36,7 @@ def mse_branched(network_outputs, ground_truths, control_input, config):
             square_dist = tf.pow(tf.subtract(target_gt, network_outputs_split[i_within_branch]), 2) * branch_selection
             if hasattr(config, "mse_self_normalize") and config.mse_self_normalize:
                 print("normalizing with target data")
-                square_dist /= (tf.pow(target_gt, 2) + 1.0)
+                square_dist /= (tf.pow(target_gt, 2) + 0.01)
 
             dist = tf.abs(tf.subtract(target_gt, network_outputs_split[i_within_branch])) * branch_selection
             error_branch.append(dist)

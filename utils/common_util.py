@@ -1,5 +1,9 @@
-import sys
+import sys, os, inspect
+
+curr_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+
 sys.path.append("../")
+sys.path.append(os.path.join(curr_dir, "../../"))
 from common import resize_images
 
 def parse_drive_arguments(args, driver_conf, attributes):
@@ -117,3 +121,32 @@ def camera_middle_zoom_batch(sensor_data, sensor_names):
     middle = resize_images(middle, (middle_shape[0], middle_shape[1]))
 
     return sensor_data[0:id] + [middle] + sensor_data[(id+1):]
+
+
+import numpy as np
+import math
+def plot_waypoints_on_image(image, wps, dot_size, shift_ahead=2.46 - 0.7 + 2.0, rgb=(255, 0, 0)):
+    imsize = image.shape
+    wps = np.concatenate(([[0,0]], wps), axis=0)
+    for i in range(wps.shape[0]):
+        wp = wps[i]
+        # the definition of the waypoint: wp[0] how far ahead (y), wp[1] left(-) right(+) (x)
+        depth = wp[0] + shift_ahead
+        horizontal = wp[1]
+        vertical = -1.6
+        h, v = point_to_2d(depth, horizontal, vertical)
+
+        xoff = int((-v + 0.5) * imsize[0])
+        yoff = int((h + 0.5) * imsize[1])
+        image[xoff - dot_size: xoff + dot_size, yoff - dot_size: yoff + dot_size, 0] = rgb[2]
+        image[xoff - dot_size: xoff + dot_size, yoff - dot_size: yoff + dot_size, 1] = rgb[1]
+        image[xoff - dot_size: xoff + dot_size, yoff - dot_size: yoff + dot_size, 2] = rgb[0]
+
+    return image
+
+
+def point_to_2d(depth, horizontal, vertical, half_width_fov=math.radians(103.0)/2, half_height_fov = math.radians(77.0)/2):
+    # the horizontal and vertical are both relative to the center, same as the output
+    h = horizontal / depth * 0.5 / math.tan(half_width_fov)
+    v = vertical   / depth * 0.5 / math.tan(half_height_fov)
+    return h, v

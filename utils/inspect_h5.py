@@ -1,10 +1,12 @@
-import sys, h5py, cv2, os, shutil, glob, math
+import sys, h5py, cv2, os, shutil, glob, math, pickle, copy
 import numpy as np
 from subprocess import call
 from PIL import Image, ImageDraw, ImageFont
+from common_util import plot_waypoints_on_image
 
 num_images_per_h5 = 200
 temp_folder = "./temp/"
+cluster_center = "/data1/yang/code/aws/CIL_modular/utils/cluster_centers.npy"
 
 
 def write_text_on_image(image, string, fontsize=10):
@@ -17,38 +19,14 @@ def write_text_on_image(image, string, fontsize=10):
 
     return np.array(j)
 
-def plot_waypoints_on_image(image, wps, scale_factor, dot_size):
-    imsize = image.shape
-    wps = np.concatenate(([[0,0]], wps), axis=0)
-    for i in range(wps.shape[0]):
-        wp = wps[i]
-
-        depth = wp[0] + 2.46 - 0.7 + 2.0 # TODO
-        horizontal = wp[1]
-        vertical = -1.6
-        h, v = point_to_2d(depth, horizontal, vertical)
-
-        xoff = int((-v + 0.5) * imsize[0])
-        yoff = int((h + 0.5) * imsize[1])
-        image[xoff - dot_size: xoff + dot_size, yoff - dot_size: yoff + dot_size, 0] = 0
-        image[xoff - dot_size: xoff + dot_size, yoff - dot_size: yoff + dot_size, 1] = 0
-        image[xoff - dot_size: xoff + dot_size, yoff - dot_size: yoff + dot_size, 2] = 255
-
-    return image
-
-    # TODO plotting the waypoints on the ground
-
-def point_to_2d(depth, horizontal, vertical, half_width_fov=math.radians(103.0)/2, half_height_fov = math.atan(0.75*math.tan(math.radians(103.0)/2))):
-    # the horizontal and vertical are both relative to the center, same as the output
-    h = horizontal / depth * 0.5 / math.tan(half_width_fov)
-    v = vertical   / depth * 0.5 / math.tan(half_height_fov)
-    return h, v
-
-
 def sample_images_from_h5(path, temp, show_all, is3, pure_video):
     f=h5py.File(path, "r")
     if not os.path.exists(temp):
         os.mkdir(temp)
+
+    centers = None
+    if os.path.exists(cluster_center):
+        centers = pickle.load(open(cluster_center, "rb"))
 
     if show_all:
         images = {}
@@ -101,7 +79,17 @@ def sample_images_from_h5(path, temp, show_all, is3, pure_video):
                     size = int(f["targets"][imid, 99])
                     flattend = f["targets"][imid, 35:(35+size)]
                     wp = np.reshape(flattend, (-1, 2))
-                    image = plot_waypoints_on_image(image, wp, 20, 4)
+                    image = plot_waypoints_on_image(image, wp, 4, shift_ahead=2.46 - 0.7 + 2.0)
+
+                    # also plot the cluster center corresponded
+                    ncluster = len(centers)
+                    cid = int(f["targets"][imid, 55])
+                    if cid < ncluster:
+                        wp = copy.deepcopy(centers[cid])
+                        wp *= f["targets"][imid, 56]
+                        wp = np.reshape(wp, (-1, 2))
+
+                        image = plot_waypoints_on_image(image, wp, 4, shift_ahead=2.46 - 0.7 + 2.0, rgb=(0, 255, 0))
 
             if not is3:
                 #image = image[:,:,::-1]

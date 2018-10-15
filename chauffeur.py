@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     # drive related
     # TODO: breaking change, from driver to type_of_driver
-    parser.add_argument('-positions_file', type=str, help='Path to the starting positions of Town03', default='starting_points_town03.txt')
+    parser.add_argument('--positions_file', type=str, help='Path to the starting positions of Town03', default='starting_points_town03.txt')
     parser.add_argument('--type_of_driver', help='Select who is driving, a human or a machine')
     parser.add_argument('-n', '--noise', help='Set the types of noise:  Spike or None')
     parser.add_argument('-imc', '--image_cut', help='Set the positions where the image is cut')

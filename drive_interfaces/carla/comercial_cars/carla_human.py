@@ -2,6 +2,7 @@ import cv2
 import copy
 import sys, os
 import pygame, io, math, time
+import random
 from configparser import ConfigParser
 from configparser import SafeConfigParser
 from datetime import datetime
@@ -85,6 +86,7 @@ class CarlaHuman(Driver):
 
         self._world = None
         self._vehicle = None
+        self._camera_center = None
         self._spectator = None
         # (last) images store for several cameras
         self._data_buffers = dict()
@@ -121,6 +123,10 @@ class CarlaHuman(Driver):
         self._vehicle_prev_location.y = 0.0
 
         self._sensor_list = []
+        self._weather_list = ['ClearNoon', 'ClearSunset', 'CloudyNoon', 'CloudySunset', 'HardRainNoon', 'HardRainSunset',
+                              'MidRainSunset', 'MidRainyNoon', 'SoftRainNoon', 'SoftRainSunset', 'WetCloudyNoon',
+                              'WetCloudySunset', 'WetNoon', 'WetSunset']
+        self._current_weather = 4
 
         self._current_command = 2.0
 
@@ -215,10 +221,7 @@ class CarlaHuman(Driver):
             print('RESET ON POSITION ', self.episode_config[0], ", the target location is: ", self.episode_config[1])
 
         else:
-            if self._vehicle is not None:
-                self._vehicle.destroy()
-                self._vehicle = None
-
+            self._current_weather = random.choice(self._weather_list)
             # select one of the random starting points previously selected
             start_positions = np.loadtxt(self._driver_conf.positions_file, delimiter=',')
             random_position = start_positions[np.random.randint(start_positions.shape[0]), :]
@@ -228,7 +231,7 @@ class CarlaHuman(Driver):
             WINDOW_HEIGHT = 576
             CAMERA_FOV = 103.0
 
-            START_POSITION = carla.Transform(carla.Location(x=random_position[0], y=random_position[1], z=1.0), carla.Rotation(pitch=random_position[2], roll=random_position[3], yaw=random_position[4]))
+            START_POSITION = carla.Transform(carla.Location(x=random_position[0], y=random_position[1], z=random_position[2]+2.0), carla.Rotation(pitch=random_position[3], roll=random_position[4], yaw=random_position[5]))
 
             CAMERA_CENTER_T = carla.Location(x=0.7, y=-0.0, z=1.60)
             CAMERA_LEFT_T = carla.Location(x=0.7, y=-0.4, z=1.60)
@@ -245,9 +248,16 @@ class CarlaHuman(Driver):
 
             self._world = self.carla.get_world()
             blueprints = self._world.get_blueprint_library().filter('vehicle')
-            vechile_blueprint = [e for i, e in enumerate(blueprints) if e.id == 'vehicle.chevrolet.impala'][0]
-            self._vehicle = self._world.spawn_actor(vechile_blueprint, START_POSITION)
+            vechile_blueprint = [e for i, e in enumerate(blueprints) if e.id == 'vehicle.lincoln.mkz2017'][0]
 
+            if self._vehicle == None:
+                self._vehicle = self._world.spawn_actor(vechile_blueprint, START_POSITION)
+            else:
+                self._vehicle.set_transform(START_POSITION)
+
+            # set weather
+            weather = getattr(carla.WeatherParameters, self._current_weather)
+            self._vehicle.get_world().set_weather(weather)
 
             self._spectator = self._world.get_spectator()
             cam_blueprint = self._world.get_blueprint_library().find('sensor.camera.rgb')
@@ -256,13 +266,14 @@ class CarlaHuman(Driver):
             cam_blueprint.set_attribute('image_size_y', str(WINDOW_HEIGHT))
             cam_blueprint.set_attribute('fov', str(CAMERA_FOV))
 
-            self._camera_center = self._world.spawn_actor(cam_blueprint, CAMERA_CENTER_TRANSFORM, attach_to=self._vehicle)
-            self._camera_left = self._world.spawn_actor(cam_blueprint, CAMERA_LEFT_TRANSFORM, attach_to=self._vehicle)
-            self._camera_right = self._world.spawn_actor(cam_blueprint, CAMERA_RIGHT_TRANSFORM, attach_to=self._vehicle)
+            if self._camera_center == None:
+                self._camera_center = self._world.spawn_actor(cam_blueprint, CAMERA_CENTER_TRANSFORM, attach_to=self._vehicle)
+                self._camera_left = self._world.spawn_actor(cam_blueprint, CAMERA_LEFT_TRANSFORM, attach_to=self._vehicle)
+                self._camera_right = self._world.spawn_actor(cam_blueprint, CAMERA_RIGHT_TRANSFORM, attach_to=self._vehicle)
 
-            self._camera_center.listen(CallBack('CameraMiddle', self))
-            self._camera_left.listen(CallBack('CameraLeft', self))
-            self._camera_right.listen(CallBack('CameraRight', self))
+                self._camera_center.listen(CallBack('CameraMiddle', self))
+                self._camera_left.listen(CallBack('CameraLeft', self))
+                self._camera_right.listen(CallBack('CameraRight', self))
 
             # spectator server camera
             self._spectator = self._world.get_spectator()
@@ -420,8 +431,12 @@ class CarlaHuman(Driver):
                         self._current_command = 5.0
                     if event.__dict__['button'] == 23:
                         self._current_command = 0.0
+                    if event.__dict__['button'] == 5:
+                        self._reset()
+                        return VehicleControl()
                 if event.type == pygame.JOYBUTTONUP:
                     self._current_command = 2.0
+
 
             #pygame.event.pump()
             numAxes = self.joystick.get_numaxes()

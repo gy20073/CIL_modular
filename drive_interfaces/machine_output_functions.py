@@ -46,7 +46,6 @@ def single_branch(image_input, speed, control_input, config, sess, train_manager
         return predicted_steers, predicted_acc, predicted_brake
 
 
-# TODO: finish this machine output function
 def single_branch_yang_wp(image_input, speed, control_input, config, sess, train_manager):
     branches = train_manager._output_network
 
@@ -73,6 +72,31 @@ def single_branch_yang_wp(image_input, speed, control_input, config, sess, train
         print('BOOSTING')
 
     return waypoints, real_predicted
+
+
+def single_branch_yang_cls_reg(image_input, speed, control_input, config, sess, train_manager):
+    # the machine output function for classification + scale regression
+    branches = train_manager._output_network
+
+    control_to_branch = {2: 0, 0: 0, 3: 2, 4: 3, 5: 1}
+    all_net = branches[control_to_branch[int(control_input)]]
+
+    image_input = image_input.reshape(
+        (1, config.feature_input_size[0], config.feature_input_size[1], config.feature_input_size[2]))
+    speed = np.array(speed / config.speed_factor)
+    speed = speed.reshape((1, 1))
+    feedDict = {train_manager._input_images: image_input,
+                train_manager._input_data[config.inputs_names.index("Speed")]: speed,
+                train_manager._dout: [1] * len(config.dropout)}
+
+    output_all = sess.run(all_net, feed_dict=feedDict)
+
+    logits = output_all[0]
+    logits = np.squeeze(logits)
+    shape_id = np.argmax(logits)
+    scale = output_all[1]
+
+    return shape_id, scale
 
 
 def seg_viz(image_input, speed, config, sess, train_manager):

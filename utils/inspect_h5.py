@@ -131,7 +131,7 @@ if __name__ == "__main__":
     else:
         pure_video = False
 
-    for path in glob.glob(path_pattern):
+    for path in sorted(glob.glob(path_pattern)):
         try:
             sample_images_from_h5(path, temp_folder, write_all, is3, pure_video)
         except:

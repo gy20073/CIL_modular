@@ -1,4 +1,4 @@
-import sys, pygame, scipy, cv2, random, time, math
+import sys, pygame, scipy, cv2, random, time, math, os, pickle
 import tensorflow as tf
 from pygame.locals import *
 import numpy as np
@@ -107,6 +107,10 @@ class CarlaMachine(Agent, Driver):
         self.temp_image_path = "./temp/"
 
         self.batch_size = batch_size
+
+        self.waypoint_centers = None
+        if os.path.exists("utils/cluster_centers.npy"):
+            self.waypoint_centers = pickle.load(open("utils/cluster_centers.npy", "rb"))
 
     def start(self):
         self.carla = CarlaClient(self._host, int(self._port), timeout=120)
@@ -351,6 +355,33 @@ class CarlaMachine(Agent, Driver):
                     self.save_image(to_be_visualized)
 
                 return waypoints, to_be_visualized
+        elif  (self._train_manager._config.control_mode == 'single_branch_yang_cls_reg'):
+            shape_id, scale = self._control_function(image_input, speed_kmh, direction,
+                                                     self._config, self._sess, self._train_manager)
+            shape_id = int(shape_id)
+            # visualize the image
+            if ncol >= nrow * 3:
+                col_i = ncol // 3
+            else:
+                col_i = 0
+
+            if shape_id < len(self.waypoint_centers):
+                waypoints = self.waypoint_centers[shape_id] * scale
+                waypoints = np.reshape(waypoints, (-1, 2))
+
+                subpart = to_be_visualized[:to_be_visualized.shape[0] // nrow,
+                          col_i * to_be_visualized.shape[1] // ncol:(col_i + 1) * to_be_visualized.shape[1] // ncol, :]
+                subpart = plot_waypoints_on_image(subpart, waypoints, 4, shift_ahead=2.46 - 0.7 + 2.0)
+                to_be_visualized[:to_be_visualized.shape[0] // nrow,
+                col_i * to_be_visualized.shape[1] // ncol:(col_i + 1) * to_be_visualized.shape[1] // ncol, :] = subpart
+            else:
+                waypoints = None
+
+            if save_image_to_disk:
+                self.save_image(to_be_visualized)
+
+            return waypoints, to_be_visualized, nrow, ncol, col_i
+
         else:
             steer, acc, brake = self._control_function(image_input, speed_kmh, direction,
                                                        self._config, self._sess, self._train_manager)

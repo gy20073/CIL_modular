@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 
-path = "/scratch/yang/aws_data/carla_collect/steer103_v3_waypoint/*/*h5"
+path = "/scratch/yang/aws_data/carla_collect/steer103_v4_waypoint/*/*h5"
 threshold_stop = 0.5
 ncluster_class = 30
 center_name = "cluster_centers.npy"

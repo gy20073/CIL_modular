@@ -32,12 +32,21 @@ def write_text_on_image(image, string, fontsize=10):
 exp_id = "mm45_v4_base_newseg_noiser_TL_lane_structure02_goodsteer_waypoint_zoom_cls"
 use_left_right = False
 h5path = "/data/yang/code/aws/scratch/carla_collect/steer103_v3_waypoint"
-gpu = [0]
+gpu = [5]
+use_train = True
+cluster_center_file = "/data1/yang/code/aws/CIL_modular/utils/cluster_centers.npy.v3"
+direction_filter = 4
 # end of the config
+# The color encoding is: blue predicted, green ground truth, red approximated ground truth
 
+all_files = glob.glob(h5path + "/*/data_*.h5")
 val_db_path = []
 for valid in range(1, 15, 3):
     val_db_path += glob.glob(h5path+"/*WeatherId=" + str(valid).zfill(2) + "/data_*.h5")
+train_db_path = sorted(list(set(all_files) - set(val_db_path)))
+if use_train:
+    val_db_path = train_db_path
+
 
 driving_model_code_path = os.path.join(os.path.dirname(get_file_real_path()), "../")
 os.chdir(driving_model_code_path)
@@ -49,14 +58,19 @@ driving_model = CarlaMachine("0", exp_id, get_driver_config(), 0.1,
                              perception_paths="path_jormungandr_newseg",
                              batch_size=3 if use_left_right else 1)
 
-centers = np.load(open("utils/cluster_centers.npy", "rb"))
+centers = np.load(open(cluster_center_file, "rb"))
 
 for h5 in sorted(val_db_path):
     dirname, tail = os.path.split(h5)
     print(h5)
     f = h5py.File(h5, "r")
     targets = f["targets"]
+    n_image_written = 0
+
     for i in range(200):
+        if direction_filter is not None and int(f["targets"][i, 24]) != direction_filter:
+            continue
+
         print(i)
         vehicle_real_speed_kmh = targets[i, 10] * 3.6
 
@@ -71,6 +85,8 @@ for h5 in sorted(val_db_path):
             sensors.append(img)
         direction = targets[i, 24]
 
+        # each of the sensor images should be a BGR
+        # the blue is the prediction
         waypoints, to_be_visualized, nrow, ncol, col_i = driving_model.compute_action(sensors, vehicle_real_speed_kmh, direction,
                                                 save_image_to_disk=False, return_vis=True)
 
@@ -113,13 +129,19 @@ for h5 in sorted(val_db_path):
 
         # save it to the disk
         cv2.imwrite(dirname + "/" +
-                    str(i).zfill(9) +
+                    str(n_image_written).zfill(9) +
                     ".png", to_be_visualized[:,:,::-1])
+        n_image_written += 1
 
     f.close()
 
     # make it into a video and delete the temp images
-    out_name =  h5 + "_val.mp4"
+    mapping = {2: "follow", 5: "straight", 3: "left", 4: "right"}
+    if direction_filter is not None:
+        suffix = "_" + mapping[direction_filter]
+    else:
+        suffix = ""
+    out_name =  h5 + "_val" + suffix + ".mp4"
     cmd = ["ffmpeg", "-y", "-i", dirname + "/%09d.png", "-c:v", "libx264", out_name]
     call(" ".join(cmd), shell=True)
 

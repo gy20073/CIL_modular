@@ -109,8 +109,8 @@ class CarlaMachine(Agent, Driver):
         self.batch_size = batch_size
 
         self.waypoint_centers = None
-        if os.path.exists("utils/cluster_centers.npy"):
-            self.waypoint_centers = pickle.load(open("utils/cluster_centers.npy", "rb"))
+        if os.path.exists(self._config.cluster_center_file):
+            self.waypoint_centers = pickle.load(open(self._config.cluster_center_file, "rb"))
 
     def start(self):
         self.carla = CarlaClient(self._host, int(self._port), timeout=120)
@@ -330,6 +330,7 @@ class CarlaMachine(Agent, Driver):
             else:
                 col_i = 0
             subpart = to_be_visualized[:to_be_visualized.shape[0]//nrow, col_i*to_be_visualized.shape[1]//ncol:(col_i+1)*to_be_visualized.shape[1]//ncol, :]
+            # this plots the prediction as blue
             subpart = plot_waypoints_on_image(subpart, waypoints, 4, shift_ahead=2.46 - 0.7 + 2.0)
             to_be_visualized[:to_be_visualized.shape[0] // nrow, col_i*to_be_visualized.shape[1]//ncol:(col_i+1)*to_be_visualized.shape[1]//ncol, :] = subpart
 

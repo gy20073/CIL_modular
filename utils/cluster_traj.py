@@ -6,7 +6,7 @@ from sklearn.cluster import KMeans
 path = "/scratch/yang/aws_data/carla_collect/steer103_v4_waypoint/*/*h5"
 threshold_stop = 0.5
 ncluster_class = 30
-center_name = "cluster_centers.npy"
+center_name = "cluster_centers.npy.v4"
 # below won't change
 index_id = 55
 index_scale = 56

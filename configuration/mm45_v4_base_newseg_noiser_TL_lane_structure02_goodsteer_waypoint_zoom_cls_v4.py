@@ -78,6 +78,7 @@ class configMain:
         self.camera_middle_zoom = True
 
         self.waypoint_num_shapes = 31
+        self.cluster_center_file = "utils/cluster_centers.npy.v4"
 
 
 class configInput(configMain):

@@ -126,6 +126,7 @@ def camera_middle_zoom_batch(sensor_data, sensor_names):
 import numpy as np
 import math
 def plot_waypoints_on_image(image, wps, dot_size, shift_ahead=2.46 - 0.7 + 2.0, rgb=(255, 0, 0)):
+    # assume image is bgr input
     imsize = image.shape
     wps = np.concatenate(([[0,0]], wps), axis=0)
     for i in range(wps.shape[0]):

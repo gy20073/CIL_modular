@@ -6,7 +6,7 @@ from common_util import plot_waypoints_on_image
 
 num_images_per_h5 = 200
 temp_folder = "./temp/"
-cluster_center = "/data1/yang/code/aws/CIL_modular/utils/cluster_centers.npy"
+cluster_center = "/data1/yang/code/aws/CIL_modular/utils/cluster_centers.npy.v4"
 
 
 def write_text_on_image(image, string, fontsize=10):

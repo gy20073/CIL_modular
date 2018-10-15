@@ -228,10 +228,13 @@ class Dataset(object):
         if hasattr(self._config, "camera_middle_zoom") and self._config.camera_middle_zoom:
             sensors = camera_middle_zoom_batch(sensors, self._config.sensor_names)
             if np.random.rand() < 0.05:
+                pass
+                '''
                 print("debugging the camera zoom function")
                 id = np.random.randint(0, sensors[0].shape[0])
                 for i in range(len(sensors)):
                     cv2.imwrite("debug_%d.png" % i, sensors[i][id,:,:,::-1])
+                '''
 
 
         # self._targets is the targets variables concatenated

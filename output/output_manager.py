@@ -57,8 +57,9 @@ class OutputManager(object):
 
         for i in range(len(variables_tensor_vec)):
             for j in range(len(self._config.branch_config[i])):  # for other branches
-                tf.summary.histogram('Output_B_' + str(i) + '_' + self._config.branch_config[i][j],
-                                     self._training_manager._output_network[i][:, j])
+                if not isinstance(self._training_manager._output_network[i], list):
+                    tf.summary.histogram('Output_B_' + str(i) + '_' + self._config.branch_config[i][j],
+                                         self._training_manager._output_network[i][:, j])
 
         self._train_writer = tf.summary.FileWriter(self._config.train_path_write, self._sess.graph)
 

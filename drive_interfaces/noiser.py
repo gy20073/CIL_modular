@@ -1,4 +1,4 @@
-import copy, random, os, sys
+import copy, random, time, os, sys
 
 __CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.8.X')
 if __CARLA_VERSION__ == '0.9.X':
@@ -14,39 +14,37 @@ class Noiser(object):
     # NOISER CARLA CONFIGURATION
     # frequency=15, intensity = 5 ,min_noise_time_amount = 0.5
 
-    def __init__(self, noise_type, frequency=45, intensity=5, min_noise_time_amount=0.5, no_noise_decay_stage=True):
+    def __init__(self, noise_type, frequency=45, intensity=0.004, min_noise_time_amount=0.025, no_noise_decay_stage=False):
         # specifications from outside
         self.noise_type = noise_type
         self.frequency = frequency
         self.intensity = intensity
         self.min_noise_time_amount = min_noise_time_amount
         self.no_noise_decay_stage = no_noise_decay_stage
-        self.time_factor = 1.0
 
         # FSM state variables
-        self.noise_start_time = 0
-        self.noise_end_time = 1
-        self.second_counter = 0
+        self.noise_start_time = time.time()
+        self.noise_end_time = time.time() + 1
+        self.second_counter = time.time()
         self.spike_decay_stage = False
         self.spike_rise_stage = False
 
         # noise parameter variables
-        self.noise_time_amount = (min_noise_time_amount + float(random.randint(50, 200) / 100.0)) * self.time_factor
+        self.noise_time_amount = min_noise_time_amount + float(random.randint(50, 200) / 100.0)
         self.noise_sign = 1.0
-        self.tick = 0.0
 
     def randomize_noise_sign(self):
         if self.noise_type == 'Spike':  # spike noise there are no variations on current noise over time
             self.noise_sign = float(random.randint(0, 1) * 2 - 1)
-            self.this_intensity = random.random() * 5 + 2.5
+            self.this_intensity = self.intensity * random.random() * 5 + 2.5
 
     def get_noise(self):
         assert(self.noise_type == 'Spike')
         # first compute for positive noise
         if self.spike_rise_stage:
-            time_offset = self.tick - self.noise_start_time
+            time_offset = time.time() - self.noise_start_time
         elif self.spike_decay_stage:
-            time_offset = (self.noise_end_time - self.noise_start_time) - (self.tick - self.noise_end_time)
+            time_offset = (self.noise_end_time - self.noise_start_time) - (time.time() - self.noise_end_time)
         else:
             raise ValueError()
 
@@ -64,13 +62,13 @@ class Noiser(object):
 
         if not self.spike_rise_stage and not self.spike_decay_stage:
             # state no noise
-            if self.tick - self.second_counter >= 3.0 * self.time_factor:
-                self.second_counter = self.tick
+            if time.time() - self.second_counter >= 3.0:
+                self.second_counter = time.time()
                 if random.randint(0, 60) < self.frequency:
                     self.spike_rise_stage = True
                     self.randomize_noise_sign()
-                    self.noise_time_amount = (self.min_noise_time_amount + random.randint(50, 200) / 100.0) * self.time_factor
-                    self.noise_start_time = self.tick
+                    self.noise_time_amount = self.min_noise_time_amount + random.randint(50, 200) / 100.0
+                    self.noise_start_time = time.time()
                     return True
                 else:
                     return False
@@ -79,29 +77,27 @@ class Noiser(object):
 
         elif self.spike_rise_stage:
             assert(self.spike_decay_stage == False)
-            if self.tick - self.noise_start_time >= self.noise_time_amount:
+            if time.time() - self.noise_start_time >= self.noise_time_amount:
                 self.spike_rise_stage = False
                 if self.no_noise_decay_stage:
                     self.spike_decay_stage = False
-                    self.second_counter = self.tick
+                    self.second_counter = time.time()
                     return False
                 else:
                     self.spike_decay_stage = True
-                self.noise_end_time = self.tick
+                self.noise_end_time = time.time()
             return True
 
         elif self.spike_decay_stage:
             assert(self.spike_rise_stage == False)
-            if self.tick - self.noise_end_time > self.noise_time_amount:
+            if time.time() - self.noise_end_time > self.noise_time_amount:
                 self.spike_decay_stage = False
-                self.second_counter = self.tick
+                self.second_counter = time.time()
                 return False
             else:
                 return True
 
     def compute_noise(self, action, speed_kmh=20):
-        self.tick += 0.2 # unit in second
-
         if self.noise_type == 'None':
             return action
 

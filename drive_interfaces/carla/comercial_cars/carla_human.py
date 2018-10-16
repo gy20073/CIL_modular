@@ -123,8 +123,8 @@ class CarlaHuman(Driver):
         self._vehicle_prev_location.y = 0.0
 
         self._sensor_list = []
-        self._weather_list = ['ClearNoon', 'ClearSunset', 'CloudyNoon', 'CloudySunset', 'HardRainNoon', 'HardRainSunset',
-                              'MidRainSunset', 'MidRainyNoon', 'SoftRainNoon', 'SoftRainSunset', 'WetCloudyNoon',
+        self._weather_list = ['ClearNoon', 'ClearSunset', 'CloudyNoon', 'CloudySunset',
+                               'WetCloudyNoon',
                               'WetCloudySunset', 'WetNoon', 'WetSunset']
         self._current_weather = 4
 
@@ -224,6 +224,8 @@ class CarlaHuman(Driver):
             self._current_weather = random.choice(self._weather_list)
             # select one of the random starting points previously selected
             start_positions = np.loadtxt(self._driver_conf.positions_file, delimiter=',')
+            if len(start_positions.shape) == 1:
+                start_positions = start_positions.reshape(1, len(start_positions))
             random_position = start_positions[np.random.randint(start_positions.shape[0]), :]
 
             # TODO: Assign random position from file
@@ -231,7 +233,7 @@ class CarlaHuman(Driver):
             WINDOW_HEIGHT = 576
             CAMERA_FOV = 103.0
 
-            START_POSITION = carla.Transform(carla.Location(x=random_position[0], y=random_position[1], z=random_position[2]+2.0), carla.Rotation(pitch=random_position[3], roll=random_position[4], yaw=random_position[5]))
+            START_POSITION = carla.Transform(carla.Location(x=random_position[0], y=random_position[1], z=random_position[2]+1.0), carla.Rotation(pitch=random_position[3], roll=random_position[4], yaw=random_position[5]))
 
             CAMERA_CENTER_T = carla.Location(x=0.7, y=-0.0, z=1.60)
             CAMERA_LEFT_T = carla.Location(x=0.7, y=-0.4, z=1.60)

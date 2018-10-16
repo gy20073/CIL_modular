@@ -13,3 +13,4 @@ python2 chauffeur.py \
     --log \
     --debug \
     --driver-config "9cam_agent_carla_acquire_rc_yang_human_demo" --positions_file $positions_file
+

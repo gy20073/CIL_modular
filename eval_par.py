@@ -3,11 +3,11 @@ from time import sleep
 import math
 
 if __name__ == "__main__":
-    gpus_agent = [5]
+    gpus_agent = [1]
     gpus_carla = [0]
-    gpus_perception = [5]
+    gpus_perception = [1]
     num_perception = 1
-    exp_id = "mm45_v4_base_newseg_noiser_TL_lane_structure02_goodsteer_waypoint_zoom_eqweight"
+    exp_id = "mm45_v4_base_newseg_noiser_TL_lane_structure02_goodsteer_waypoint_zoom_stdnorm"
     weather_batch_size = 14
     test_name = "YangExp3cam"
     only_town_01 = True

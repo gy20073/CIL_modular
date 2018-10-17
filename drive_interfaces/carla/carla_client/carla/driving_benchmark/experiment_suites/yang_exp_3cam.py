@@ -153,6 +153,7 @@ class YangExp3cam(ExperimentSuite):
                 if nsample == 0:
                     continue
                 poses = random.sample(poses, nsample)
+                #poses = [[46, 37]]
 
                 conditions = CarlaSettings()
                 conditions.set(

@@ -109,7 +109,7 @@ class CarlaMachine(Agent, Driver):
         self.batch_size = batch_size
 
         self.waypoint_centers = None
-        if os.path.exists(self._config.cluster_center_file):
+        if hasattr(self._config, "cluster_center_file") and os.path.exists(self._config.cluster_center_file):
             self.waypoint_centers = pickle.load(open(self._config.cluster_center_file, "rb"))
 
     def start(self):
@@ -345,12 +345,12 @@ class CarlaMachine(Agent, Driver):
                 else:
                     acc = 0.0
                     brake = 0.0
-                wp = waypoints[3] # 0.8 seconds in the future
+                wp = waypoints[6] # 0.8 seconds in the future
                 theta = math.atan2(max(wp[0], 0.01), wp[1]) - math.pi/2  # range from -pi/2 to pi/2
-                if waypoints[-1][0] < 0.5:
+                if waypoints[-2][0] < 0.5:
                     theta = 0.0
                 print("wp0", wp[0], "wp1", wp[1], "theta", theta)
-                steer = theta * 0.8
+                steer = theta * (-0.8)
             else:
                 if save_image_to_disk:
                     self.save_image(to_be_visualized)

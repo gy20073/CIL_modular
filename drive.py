@@ -89,7 +89,20 @@ def write_text_on_image(image, string, fontsize=10, position=(0,0)):
 
 def drive(experiment_name, drive_config, name=None, memory_use=1.0):
     driver, recorder, num_files_in_folder = get_instance(drive_config, experiment_name, name, memory_use)
-    noiser = Noiser(drive_config.noise)
+
+    extra_dict = {}
+    if hasattr(drive_config, "noise_frequency"):
+        extra_dict["frequency"] = drive_config.noise_frequency
+    if hasattr(drive_config, "noise_intensity"):
+        extra_dict["intensity"] = drive_config.noise_intensity
+    if hasattr(drive_config, "min_noise_time_amount"):
+        extra_dict["min_noise_time_amount"] = drive_config.min_noise_time_amount
+    if hasattr(drive_config, "no_noise_decay_stage"):
+        extra_dict["no_noise_decay_stage"] = drive_config.no_noise_decay_stage
+    if hasattr(drive_config, "use_tick"):
+        extra_dict["use_tick"] = drive_config.use_tick
+
+    noiser = Noiser(drive_config.noise, **extra_dict)
     num_has_collected = num_files_in_folder * recorder._number_images_per_file  # 200 is num images per h5 file
 
     if drive_config.num_images_to_collect <= num_has_collected:

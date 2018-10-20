@@ -217,7 +217,7 @@ class CarlaMachine(Agent, Driver):
         print("output image id is: ", self.debug_i)
 
     def compute_action(self, sensors, speed_kmh, direction=None,
-                       save_image_to_disk=True, return_vis=False):
+                       save_image_to_disk=True, return_vis=False, return_extra=True):
         if direction == None:
             direction = self.compute_direction((0, 0, 0), (0, 0, 0))
 
@@ -354,8 +354,10 @@ class CarlaMachine(Agent, Driver):
             else:
                 if save_image_to_disk:
                     self.save_image(to_be_visualized)
-
-                return waypoints, to_be_visualized
+                if return_extra:
+                    return waypoints, to_be_visualized, nrow, ncol, col_i
+                else:
+                    return waypoints, to_be_visualized
         elif  (self._train_manager._config.control_mode == 'single_branch_yang_cls_reg'):
             shape_id, scale = self._control_function(image_input, speed_kmh, direction,
                                                      self._config, self._sess, self._train_manager)
@@ -381,7 +383,10 @@ class CarlaMachine(Agent, Driver):
             if save_image_to_disk:
                 self.save_image(to_be_visualized)
 
-            return waypoints, to_be_visualized, nrow, ncol, col_i
+            if return_extra:
+                return waypoints, to_be_visualized, nrow, ncol, col_i
+            else:
+                return waypoints, to_be_visualized
 
         else:
             steer, acc, brake = self._control_function(image_input, speed_kmh, direction,

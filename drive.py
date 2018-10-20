@@ -101,6 +101,7 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
         extra_dict["no_noise_decay_stage"] = drive_config.no_noise_decay_stage
     if hasattr(drive_config, "use_tick"):
         extra_dict["use_tick"] = drive_config.use_tick
+    print("extra dict is ", extra_dict)
 
     noiser = Noiser(drive_config.noise, **extra_dict)
     num_has_collected = num_files_in_folder * recorder._number_images_per_file  # 200 is num images per h5 file

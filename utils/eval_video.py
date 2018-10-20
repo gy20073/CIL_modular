@@ -29,15 +29,18 @@ def write_text_on_image(image, string, fontsize=10):
     return np.array(j)
 
 # begin the configs
-exp_id = "mm45_v4_base_newseg_noiser_TL_lane_structure02_goodsteer_waypoint_zoom_cls"
+exp_id = "mm45_v4_base_newseg_noiser_TL_lane_structure02_goodsteer_waypoint_zoom_cls_v4"
+short_id = "cls"
 use_left_right = False
-h5path = "/data/yang/code/aws/scratch/carla_collect/steer103_v3_waypoint"
-gpu = [5]
-use_train = True
-cluster_center_file = "/data1/yang/code/aws/CIL_modular/utils/cluster_centers.npy.v3"
-direction_filter = 4
+h5path = "/data/yang/code/aws/scratch/carla_collect/steer103_v4_waypoint"
+gpu = [7]
+use_train = False
+cluster_center_file = "/data1/yang/code/aws/CIL_modular/utils/cluster_centers.npy.v4"
+direction_filter = None
+plot_approx = True
 # end of the config
 # The color encoding is: blue predicted, green ground truth, red approximated ground truth
+os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu[0])
 
 all_files = glob.glob(h5path + "/*/data_*.h5")
 val_db_path = []
@@ -101,15 +104,16 @@ for h5 in sorted(val_db_path):
         wp = np.reshape(flattend, (-1, 2))
         image = plot_waypoints_on_image(image, wp, 4, shift_ahead=2.46 - 0.7 + 2.0, rgb=(0, 255, 0))
 
-        # also plot the cluster center corresponded
-        ncluster = len(centers)
-        cid = int(f["targets"][imid, 55])
-        if cid < ncluster:
-            wp = copy.deepcopy(centers[cid])
-            wp *= f["targets"][imid, 56]
-            wp = np.reshape(wp, (-1, 2))
+        if plot_approx:
+            # also plot the cluster center corresponded
+            ncluster = len(centers)
+            cid = int(f["targets"][imid, 55])
+            if cid < ncluster:
+                wp = copy.deepcopy(centers[cid])
+                wp *= f["targets"][imid, 56]
+                wp = np.reshape(wp, (-1, 2))
 
-            image = plot_waypoints_on_image(image, wp, 4, shift_ahead=2.46 - 0.7 + 2.0, rgb=(0, 0, 255))
+                image = plot_waypoints_on_image(image, wp, 4, shift_ahead=2.46 - 0.7 + 2.0, rgb=(0, 0, 255))
 
         td = lambda fl: "{:.2f}".format(fl)
         font = int(np.ceil(15.0 / (576 / 2) * image.shape[0])) + 1
@@ -128,7 +132,7 @@ for h5 in sorted(val_db_path):
         col_i * to_be_visualized.shape[1] // ncol:(col_i + 1) * to_be_visualized.shape[1] // ncol, :] = image
 
         # save it to the disk
-        cv2.imwrite(dirname + "/" +
+        cv2.imwrite(dirname + "/" + short_id + "_" +
                     str(n_image_written).zfill(9) +
                     ".png", to_be_visualized[:,:,::-1])
         n_image_written += 1
@@ -141,11 +145,13 @@ for h5 in sorted(val_db_path):
         suffix = "_" + mapping[direction_filter]
     else:
         suffix = ""
-    out_name =  h5 + "_val" + suffix + ".mp4"
-    cmd = ["ffmpeg", "-y", "-i", dirname + "/%09d.png", "-c:v", "libx264", out_name]
+    out_name =  h5 + "_val" + suffix + "_" + short_id + ".mp4"
+    cmd = ["ffmpeg", "-y", "-i", dirname + "/"+short_id+"_%09d.png", "-c:v", "libx264", out_name]
     call(" ".join(cmd), shell=True)
 
-    cmd = ["find", dirname, "-name", "00*png", "-print | xargs rm"]
+    cmd = ["find", dirname, "-name", short_id+"_00*png", "-print | xargs rm"]
 
     call(" ".join(cmd), shell=True)
+
+
 

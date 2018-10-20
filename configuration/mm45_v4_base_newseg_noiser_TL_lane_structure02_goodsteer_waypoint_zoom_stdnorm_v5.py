@@ -56,7 +56,7 @@ class configMain:
 
         # perception module related
         self.use_perception_stack = True
-        self.perception_gpus = [4, 5]
+        self.perception_gpus = [6, 7]
         self.perception_paths = "path_jormungandr_newseg"
         self.perception_batch_sizes = {"det_COCO": 3, "det_TL": 3, "seg": 4, "depth": 4, "det_TS": -1}
         self.perception_num_replicates = {"det_COCO": -1, "det_TL": 2, "seg": 2, "depth": -1, "det_TS": -1}
@@ -101,11 +101,11 @@ class configInput(configMain):
             random_order=True  # do all of the above in random order
         )]
 
-        all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/steer103_v4_waypoint/*/data_*.h5")
+        all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/steer103_v5_waypoint/*/data_*.h5")
         self.val_db_path = []
         for valid in range(1, 15, 3):
             self.val_db_path += glob.glob(
-                "/data/yang/code/aws/scratch/carla_collect/steer103_v4_waypoint/*WeatherId=" + str(valid).zfill(
+                "/data/yang/code/aws/scratch/carla_collect/steer103_v5_waypoint/*WeatherId=" + str(valid).zfill(
                     2) + "/data_*.h5")
         self.train_db_path = list(set(all_files) - set(self.val_db_path))
 

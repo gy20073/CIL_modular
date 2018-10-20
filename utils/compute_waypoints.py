@@ -3,8 +3,8 @@ import numpy as np
 
 sys.path.append('drive_interfaces/carla/carla_client')
 
-input_id = "steer103_v4_dir"
-output_id = "steer103_v4_waypoint"
+input_id = "steer103_v5"
+output_id = "steer103_v5_waypoint"
 debug_start = 0
 debug_end= 140000000
 future_time = 2.0 # second
@@ -101,7 +101,7 @@ for weather_folder in sorted(glob.glob(input_prefix+"/*")):
     output_id_num = -1
     records_written = 200
     hf = None
-    for one_h5 in sorted(glob.glob(weather_folder+"/*h5")):
+    for one_h5 in sorted(glob.glob(weather_folder+"/data_*h5")):
         print(one_h5)
         # process one input example
         hin = h5py.File(one_h5, 'r')
@@ -161,3 +161,4 @@ for weather_folder in sorted(glob.glob(input_prefix+"/*")):
         hf.close()
     if records_written != 200:
         os.remove(target_path)
+

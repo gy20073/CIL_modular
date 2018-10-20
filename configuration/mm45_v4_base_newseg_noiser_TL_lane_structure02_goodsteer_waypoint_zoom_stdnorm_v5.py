@@ -101,11 +101,11 @@ class configInput(configMain):
             random_order=True  # do all of the above in random order
         )]
 
-        all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/steer103_v5_waypoint/*/data_*.h5")
+        all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/steer103_v5_way_v2/*/data_*.h5")
         self.val_db_path = []
         for valid in range(1, 15, 3):
             self.val_db_path += glob.glob(
-                "/data/yang/code/aws/scratch/carla_collect/steer103_v5_waypoint/*WeatherId=" + str(valid).zfill(
+                "/data/yang/code/aws/scratch/carla_collect/steer103_v5_way_v2/*WeatherId=" + str(valid).zfill(
                     2) + "/data_*.h5")
         self.train_db_path = list(set(all_files) - set(self.val_db_path))
 

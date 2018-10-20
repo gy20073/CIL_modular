@@ -167,3 +167,4 @@ for weather_folder in sorted(glob.glob(input_prefix+"/*")):
     if records_written != 200:
         os.remove(target_path)
 
+

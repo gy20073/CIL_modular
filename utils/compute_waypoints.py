@@ -4,7 +4,7 @@ import numpy as np
 sys.path.append('drive_interfaces/carla/carla_client')
 
 input_id = "steer103_v5"
-output_id = "steer103_v5_waypoint"
+output_id = "steer103_v5_way_v2"
 debug_start = 0
 debug_end= 140000000
 future_time = 2.0 # second
@@ -64,6 +64,10 @@ def compute_waypoints(x, y, time, is_noisy, ori_x, ori_y, future_time):
         step_time /= 1000.0  # convert it to second
         future_steps = int(math.ceil(future_time / step_time))
 
+        if N < future_steps + 1:
+            flattened_indicator += [False] * N
+            continue
+
         for i in range(N - future_steps):
             if any(seq[3, i:(i + future_steps)]):
                 # if any of the future data point is noisy, then we ignore this
@@ -91,9 +95,10 @@ def compute_waypoints(x, y, time, is_noisy, ori_x, ori_y, future_time):
     return flattened_indicator, out_waypoints
 
 ind, waypoints = compute_waypoints(pos[:, 0], pos[:, 1], times, noisy, ori[:, 0], ori[:, 1], future_time)
+print(np.sum(ind), "all keeped")
+print(len(waypoints), "keeped waypoints number")
+print(len(ind), pos.shape[0], "should be equal")
 
-
-output_id_num = 0
 global_counter = 0
 waypoint_counter = 0
 
@@ -142,7 +147,7 @@ for weather_folder in sorted(glob.glob(input_prefix+"/*")):
                 data_rewards[records_written, 35:(wp.size+35)] = wp
                 data_rewards[records_written, 99] = wp.size
 
-                sensor[records_written] = hin["CameraMiddle"][i]
+                sensor[records_written] = hin["CameraMiddle"][i ]
                 sensorL[records_written] = hin["CameraLeft"][i]
                 sensorR[records_written] = hin["CameraRight"][i]
 

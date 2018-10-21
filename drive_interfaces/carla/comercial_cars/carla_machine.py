@@ -332,6 +332,13 @@ class CarlaMachine(Agent, Driver):
             subpart = to_be_visualized[:to_be_visualized.shape[0]//nrow, col_i*to_be_visualized.shape[1]//ncol:(col_i+1)*to_be_visualized.shape[1]//ncol, :]
             # this plots the prediction as blue
             subpart = plot_waypoints_on_image(subpart, waypoints, 4, shift_ahead=2.46 - 0.7 + 2.0)
+
+            if hasattr(self._config, "waypoint_interpolate_2point") and self._config.waypoint_interpolate_2point:
+                # fit a spline and interpolate
+                pass
+                # TODO fit a spline and interpolate
+                
+
             to_be_visualized[:to_be_visualized.shape[0] // nrow, col_i*to_be_visualized.shape[1]//ncol:(col_i+1)*to_be_visualized.shape[1]//ncol, :] = subpart
 
             if hasattr(self._config, "waypoint_return_control") and self._config.waypoint_return_control:
@@ -387,7 +394,6 @@ class CarlaMachine(Agent, Driver):
                 return waypoints, to_be_visualized, nrow, ncol, col_i
             else:
                 return waypoints, to_be_visualized
-
         else:
             steer, acc, brake = self._control_function(image_input, speed_kmh, direction,
                                                        self._config, self._sess, self._train_manager)

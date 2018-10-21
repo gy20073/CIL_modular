@@ -21,21 +21,18 @@ class configMain:
                                'wp1x', 'wp1y', 'wp2x', 'wp2y', 'wp3x', 'wp3y', 'wp4x', 'wp4y', 'wp5x', 'wp5y',
                                'wp6x', 'wp6y', 'wp7x', 'wp7y', 'wp8x', 'wp8y', 'wp9x', 'wp9y', 'wp10x', 'wp10y']
 
-        self.sensor_names = ['CameraLeft', 'CameraMiddle', 'CameraRight']
-        self.sensor_augments = ['SegLeft', 'SegMiddle', 'SegRight']
-        self.camera_combine = "channel_stack"  # width_stack
+        self.sensor_names = ['CameraMiddle']
+        self.sensor_augments = ['SegMiddle']
 
-        self.targets_names = ['wp1x', 'wp1y', 'wp2x', 'wp2y', 'wp3x', 'wp3y', 'wp4x', 'wp4y', 'wp5x', 'wp5y',
-                              'wp6x', 'wp6y', 'wp7x', 'wp7y', 'wp8x', 'wp8y', 'wp9x', 'wp9y', 'wp10x', 'wp10y', 'Speed']
-        self.targets_sizes = [1] * 21
+        self.targets_names = ['wp5x', 'wp5y', 'wp9x', 'wp9y', 'Speed']
+        self.targets_sizes = [1] * len(self.targets_names)
 
         self.inputs_names = ['Control', 'Speed']
         self.inputs_sizes = [4, 1]
 
         # if there is branching, this is used to build the network. Names should be same as targets
         # currently the ["Steer"]x4 should not be changed
-        self.branch_config = [['wp1x', 'wp1y', 'wp2x', 'wp2y', 'wp3x', 'wp3y', 'wp4x', 'wp4y', 'wp5x', 'wp5y',
-                              'wp6x', 'wp6y', 'wp7x', 'wp7y', 'wp8x', 'wp8y', 'wp9x', 'wp9y', 'wp10x', 'wp10y']] * 4 + \
+        self.branch_config = [['wp5x', 'wp5y', 'wp9x', 'wp9y']] * 4 + \
                             [["Speed"]]
 
         # a list of keep_prob corresponding to the list of layers:
@@ -57,19 +54,19 @@ class configMain:
 
         # perception module related
         self.use_perception_stack = True
-        self.perception_gpus = [0, 5]
+        self.perception_gpus = [6, 7]
         self.perception_paths = "path_jormungandr_newseg"
         self.perception_batch_sizes = {"det_COCO": 3, "det_TL": 3, "seg": 4, "depth": 4, "det_TS": -1}
-        self.perception_num_replicates = {"det_COCO": -1, "det_TL": 3, "seg": 3, "depth": -1, "det_TS": -1}
+        self.perception_num_replicates = {"det_COCO": -1, "det_TL": 2, "seg": 2, "depth": -1, "det_TS": -1}
         # debug
         #self.perception_num_replicates = {"det_COCO": -1, "det_TL": -1, "seg": -1, "depth": 1, "det_TS": -1}
         if self.use_perception_stack:
             self.feature_input_size = (39, 52, 295)  # hardcoded for now
-            self.image_as_float = [False]*3
-            self.sensors_normalize = [False]*3
+            self.image_as_float = [False]
+            self.sensors_normalize = [False]
             self.perception_initialization_sleep=30
             # debug
-            self.feature_input_size = (39, 52, (54+72)*3)
+            self.feature_input_size = (39, 52, 54+72)
         else:
             self.feature_input_size = self.image_size
 
@@ -100,7 +97,7 @@ class configInput(configMain):
             rl(iaa.Grayscale((0.0, 1))),  # put grayscale
             ],
             random_order=True  # do all of the above in random order
-        )]*3
+        )]
 
         all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/steer103_v5_way_v2/*/data_*.h5")
         self.val_db_path = []
@@ -140,20 +137,7 @@ class configTrain(configMain):
         self.training_schedule = [[21000, factor**1], [75000, factor**2], [100000, factor**3]]
 
         self.branch_loss_weight = [0.95, 0.95, 0.95, 0.95, 0.95]
-        self.variable_weight = {'Speed': 1.0}
-
-        stds = np.array([0.4013355, 0.03673478, 0.8015227, 0.08709376, 1.1995894,
-               0.15118779, 1.5958277, 0.22680537, 1.9899381, 0.31146216,
-               2.3822896, 0.40258747, 2.7729225, 0.49791673, 3.16214,
-               0.5958508, 3.5511851, 0.6951308, 1.0, 1.0]) # add to dummy entries
-        weighting = 1.0 / np.maximum(stds, 0.1) * 0.1
-
-        count = 0
-        for i in range(10):
-            vname = "wp" + str(i+1)
-            self.variable_weight[vname + "x"] = weighting[count]
-            self.variable_weight[vname + "y"] = weighting[count+1]
-            count += 2
+        self.variable_weight = {'Speed': 1.0, 'wp5x': 1.0, 'wp5y':1.0, 'wp9x':1.0, 'wp9y':1.0}
 
         self.network_name = 'yang_39_52_295_v2'
         self.is_training = True

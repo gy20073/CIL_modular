@@ -102,7 +102,7 @@ def camera_middle_zoom(sensor_data, sensor_names):
     middle = middle[middle_shape[0] // 4: middle_shape[0] * 3 // 4,
                     middle_shape[1] // 4: middle_shape[1] * 3 // 4, :]
 
-    middle = cv2.resize(middle, (middle_shape[1], middle_shape[0]))
+    #middle = cv2.resize(middle, (middle_shape[1], middle_shape[0]))
 
     return sensor_data[0:id] + [middle] + sensor_data[(id+1):]
 

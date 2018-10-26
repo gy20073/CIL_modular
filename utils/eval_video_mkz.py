@@ -18,11 +18,11 @@ def get_driver_config():
     return driver_conf
 
 # begin the configs
-exp_id = "mm45_v4_base_newseg_noiser_TL_lane_structure02_goodsteer_waypoint_zoom_stdnorm_v5"
-short_id = "v5"
+exp_id = "mm45_v4_base_newseg_noiser_TL_lane_structure02_goodsteer_waypoint_zoom_stdnorm_v5_abn_nozoom"
+short_id = "abn_nozoom"
 use_left_right = False
-video_path = "/scratch/yang/aws_data/mkz/mkz_large_fov/output_0_768.avi"
-gpu = [0, 5]
+video_path = "/scratch/yang/aws_data/mkz/mkz_large_fov/output_0.avi"
+gpu = [1]
 direction_command = 2.0
 speed_constant_kmh = 15.0
 
@@ -81,18 +81,18 @@ def loop_over_video(path, func, temp_down_factor=1, batch_size=1, output_name="o
 wps = []
 def callback(frames):
     frame = frames[0]
-    sensors = [frame[:,:,::-1]]
+    sensors = [frame]
     waypoints, to_be_visualized = driving_model.compute_action(sensors, speed_constant_kmh,
                                                                                   direction_command,
                                                                                   save_image_to_disk=False,
                                                                                   return_vis=True,
                                                                                   return_extra=False)
     wps.append(waypoints)
-    path = video_path+".pkl"
+    path = video_path+"."+short_id+".pkl"
     with open(path, "wb") as file:
         pickle.dump(wps, file)
 
-    return [to_be_visualized]
+    return [to_be_visualized[:,:,::-1]]
 
 loop_over_video(video_path,
                 callback,

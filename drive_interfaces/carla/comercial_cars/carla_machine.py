@@ -218,6 +218,7 @@ class CarlaMachine(Agent, Driver):
 
     def compute_action(self, sensors, speed_kmh, direction=None,
                        save_image_to_disk=True, return_vis=False, return_extra=True):
+        # input image is bgr
         if direction == None:
             direction = self.compute_direction((0, 0, 0), (0, 0, 0))
 
@@ -235,6 +236,7 @@ class CarlaMachine(Agent, Driver):
         if self.batch_size == 1:
             for sensor in sensors:
                 image_input = preprocess_image(sensor, self._image_cut, self._config.image_size)
+                # after this step, it's converted to RGB
                 if hasattr(self._config, "hack_resize_image"):
                     image_input = cv2.resize(image_input, (self._config.hack_resize_image[1], self._config.hack_resize_image[0]))
                 to_be_visualized = image_input

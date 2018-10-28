@@ -18,12 +18,12 @@ def get_driver_config():
     return driver_conf
 
 # begin the configs
-exp_id = "mm45_v4_base_newseg_noiser_TL_lane_structure02_goodsteer_waypoint_zoom_stdnorm_v5_abn_nozoom"
-short_id = "abn_nozoom"
-use_left_right = False
-video_path = "/scratch/yang/aws_data/mkz/mkz_large_fov/output_0.avi"
-gpu = [1]
-direction_command = 2.0
+exp_id = "mm45_v4_base_newseg_noiser_TL_lane_structure02_goodsteer_waypoint_zoom_stdnorm_v5_3cam"
+short_id = "v5_3cam"
+use_left_right = True
+video_path = "/scratch/yang/aws_data/mkz/mkz_3cam/left_turn_1.mp4"
+gpu = [0]
+direction_command = 3.0
 speed_constant_kmh = 15.0
 
 # end of the config
@@ -38,7 +38,7 @@ from carla_machine import *
 driving_model = CarlaMachine("0", exp_id, get_driver_config(), 0.1,
                              gpu_perception=gpu,
                              perception_paths="path_jormungandr_newseg",
-                             batch_size=3 if use_left_right else 1)
+                             batch_size=1)
 
 def loop_over_video(path, func, temp_down_factor=1, batch_size=1, output_name="output.avi"):
     # from a video, use cv2 to read each frame
@@ -81,7 +81,13 @@ def loop_over_video(path, func, temp_down_factor=1, batch_size=1, output_name="o
 wps = []
 def callback(frames):
     frame = frames[0]
-    sensors = [frame]
+    if use_left_right:
+        # split into 3 cams
+        H, W, C = frame.shape
+        assert(W % 3 == 0)
+        sensors = [frame[:, 0:W//3,:], frame[:, W//3:W*2//3,:], frame[:, W*2//3:, :]]
+    else:
+        sensors = [frame]
     waypoints, to_be_visualized = driving_model.compute_action(sensors, speed_constant_kmh,
                                                                                   direction_command,
                                                                                   save_image_to_disk=False,

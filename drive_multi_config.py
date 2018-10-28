@@ -74,7 +74,7 @@ if __name__ == "__main__":
     if collect_all:
         driver_config = "9cam_agent_carla_acquire_rc_batch_allsensors"
 
-    TownName = "Town01"
+    TownName = "Town02"
     if collect_all:
         TownName = "Town01"
 

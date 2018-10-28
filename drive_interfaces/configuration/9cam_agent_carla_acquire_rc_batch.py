@@ -6,10 +6,10 @@ class configDrive:
         # resource related
         self.host = "127.0.0.1"
         self.port = 2000
-        self.path = "/scratch/yang/aws_data/carla_collect/steer103_v5/"  # If path is set go for it , if not expect a name set
+        self.path = "/scratch/yang/aws_data/carla_collect/steer103_v5_town02/"  # If path is set go for it , if not expect a name set
 
         # data collection related
-        self.city_name = 'Town01'
+        self.city_name = 'Town02'
         self.carla_config = None # This will be filled by the caller
         # collect method
         self.autopilot = True
@@ -24,7 +24,7 @@ class configDrive:
         self.cars = "50"
         self.pedestrians = "100"
         # TODO: change hash_data_collection
-        self.num_images_to_collect = 200*20 * 10 # how many images to collect in total
+        self.num_images_to_collect = 200*20 * 3 # how many images to collect in total
         self.re_entry = True # True to allow continue collecting the data, this will make changes to the folder structure
 
         # post processing

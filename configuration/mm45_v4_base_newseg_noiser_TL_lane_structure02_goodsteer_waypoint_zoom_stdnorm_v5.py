@@ -56,7 +56,7 @@ class configMain:
 
         # perception module related
         self.use_perception_stack = True
-        self.perception_gpus = [6, 7]
+        self.perception_gpus = [5, 6, 7, 5]
         self.perception_paths = "path_jormungandr_newseg"
         self.perception_batch_sizes = {"det_COCO": 3, "det_TL": 3, "seg": 4, "depth": 4, "det_TS": -1}
         self.perception_num_replicates = {"det_COCO": -1, "det_TL": 2, "seg": 2, "depth": -1, "det_TS": -1}
@@ -136,7 +136,7 @@ class configTrain(configMain):
         # TODO: tune it
         factor = 0.3333
         # Number of iterations, multiplying factor
-        self.training_schedule = [[21000, factor**1], [75000, factor**2], [100000, factor**3]]
+        self.training_schedule = [[21000, factor**1], [65000, factor**2], [100000, factor**3]]
 
         self.branch_loss_weight = [0.95, 0.95, 0.95, 0.95, 0.95]
         self.variable_weight = {'Speed': 1.0}

@@ -3,8 +3,8 @@ import numpy as np
 
 sys.path.append('drive_interfaces/carla/carla_client')
 
-input_id = "steer103_v5"
-output_id = "steer103_v5_way_v2"
+input_id = "steer103_v5_town02"
+output_id = "steer103_v5_town02_way"
 debug_start = 0
 debug_end= 140000000
 future_time = 2.0 # second

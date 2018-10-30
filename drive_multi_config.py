@@ -3,6 +3,8 @@ from configparser import ConfigParser
 from drive import drive
 from multiprocessing import Process
 
+CARLA_PATH = "/scratch/yang/aws_data/carla_0.8.4/CarlaUE4.sh"
+
 sys.path.append('drive_interfaces/configuration')
 
 
@@ -50,7 +52,7 @@ def process_collect(list_of_configs, port, gpu,
             if count >= 5:
                 count = 0
                 cmd = ['bash', '-c',
-                       " '/scratch/yang/aws_data/carla_0.8.4/CarlaUE4.sh /Game/Maps/%s  -carla-server -benchmark -fps=5 -carla-world-port=%d' " % (TownName, port)]
+                       " '%s /Game/Maps/%s  -carla-server -benchmark -fps=5 -carla-world-port=%d' " % (CARLA_PATH, TownName, port)]
                 print(" ".join(cmd))
                 print("before spawnling")
                 t = threading.Thread(target=lambda: os.system(" ".join(cmd)))

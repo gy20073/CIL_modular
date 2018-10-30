@@ -16,7 +16,10 @@ if __CARLA_VERSION__ == '0.8.X':
     #from carla.client import make_carla_client
     from carla.client import CarlaClient
 else:
-    sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.0-py2.7-linux-x86_64.egg')
+    if __CARLA_VERSION__ == '0.9.X':
+        sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.0-py2.7-linux-x86_64.egg')
+    else:
+        sys.path.append('/scratch/yang/aws_data/carla_autopilot/PythonAPI/carla-0.9.0-py2.7-linux-x86_64.egg')
     import carla
     from carla import Client as CarlaClient
     from carla import VehicleControl as VehicleControl
@@ -123,9 +126,11 @@ class CarlaHuman(Driver):
         self._vehicle_prev_location.y = 0.0
 
         self._sensor_list = []
-        self._weather_list = ['ClearNoon', 'ClearSunset', 'CloudyNoon', 'CloudySunset',
-                               'WetCloudyNoon',
-                              'WetCloudySunset', 'WetNoon', 'WetSunset']
+        self._weather_list = ['ClearNoon', 'CloudyNoon', 'WetNoon', 'WetCloudyNoon',
+                              'MidRainyNoon', 'HardRainNoon', 'SoftRainNoon', 'ClearSunset',
+                              'CloudySunset', 'WetSunset', 'WetCloudySunset', 'MidRainSunset',
+                              'HardRainSunset', 'SoftRainSunset']
+
         self._current_weather = 4
 
         self._current_command = 2.0
@@ -221,7 +226,11 @@ class CarlaHuman(Driver):
             print('RESET ON POSITION ', self.episode_config[0], ", the target location is: ", self.episode_config[1])
 
         else:
-            self._current_weather = random.choice(self._weather_list)
+            if __CARLA_VERSION__ == '0.9.X':
+                self._current_weather = random.choice(self._weather_list)
+            else:
+                self._current_weather = self._weather_list[int(self._driver_conf.weather)-1]
+
             # select one of the random starting points previously selected
             start_positions = np.loadtxt(self._driver_conf.positions_file, delimiter=',')
             if len(start_positions.shape) == 1:
@@ -256,6 +265,9 @@ class CarlaHuman(Driver):
                 self._vehicle = self._world.spawn_actor(vechile_blueprint, START_POSITION)
             else:
                 self._vehicle.set_transform(START_POSITION)
+
+            if not(__CARLA_VERSION__ == '0.9.X'):
+                self._vehicle.set_autopilot(True)
 
             # set weather
             weather = getattr(carla.WeatherParameters, self._current_weather)

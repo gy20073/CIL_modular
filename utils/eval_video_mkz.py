@@ -19,11 +19,11 @@ def get_driver_config():
 
 # begin the configs
 exp_id = "mm45_v4_base_newseg_noiser_TL_lane_structure02_goodsteer_waypoint_zoom_stdnorm_v5_3cam"
-short_id = "v5_3cam"
+short_id = "right"
 use_left_right = True
-video_path = "/scratch/yang/aws_data/mkz/mkz_3cam/left_turn_1.mp4"
+video_path = "/scratch/yang/aws_data/mkz/mkz_3cam_2/second.mp4"
 gpu = [0]
-direction_command = 3.0
+direction_command = 4.0
 speed_constant_kmh = 15.0
 
 # end of the config

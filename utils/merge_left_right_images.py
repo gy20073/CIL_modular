@@ -5,8 +5,8 @@ import shutil
 sys.path.append('drive_interfaces/carla/carla_client')
 from carla.planner.planner import Planner
 
-input_id = "steer103_v5"
-output_id = "steer103_v5_dir"
+input_id = "steer103_v5_town02"
+output_id = "steer103_v5_town02_dir"
 debug_start = 0
 debug_end= 14000000000
 use_3_cam = False
@@ -132,6 +132,8 @@ for one_h5 in sorted(all_files)[debug_start:debug_end]:
             segL = hf.create_dataset("SegLeft", (200 * factor,), dtype=dt)
             segM = hf.create_dataset("SegMiddle", (200 * factor,), dtype=dt)
             segR = hf.create_dataset("SegRight", (200 * factor,), dtype=dt)
+    else:
+        print("converting ", one_h5)
 
     hin = h5py.File(one_h5, 'r+')
     count_within_file = 0

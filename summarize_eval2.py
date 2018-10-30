@@ -52,6 +52,10 @@ if __name__ == "__main__":
                 all_train.append(results[key])
             print("phase %s, weather %d, success rate %f, num sample %d" % (phase, key, np.mean(results[key]), len(results[key])) )
 
+        if len(all_train)==0:
+            print("no data")
+            continue
+
         all_train = np.concatenate(all_train)
         print("training mean success rate %f, num sample %d" % (np.mean(all_train), len(all_train)))
         all_val = np.concatenate(all_val)

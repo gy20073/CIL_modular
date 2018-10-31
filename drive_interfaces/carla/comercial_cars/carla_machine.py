@@ -112,6 +112,9 @@ class CarlaMachine(Agent, Driver):
         if hasattr(self._config, "cluster_center_file") and os.path.exists(self._config.cluster_center_file):
             self.waypoint_centers = pickle.load(open(self._config.cluster_center_file, "rb"))
 
+        self.error_i = 0.0
+        self.error_p = 0.0
+
     def start(self):
         self.carla = CarlaClient(self._host, int(self._port), timeout=120)
         self.carla.connect()
@@ -349,7 +352,7 @@ class CarlaMachine(Agent, Driver):
                     acc = 0.0
                     brake = 0.5
                 elif speed_kmh - predicted_speed < 0.0:
-                    acc = 1.0
+                    acc = 0.5
                     brake = 0.0
                 else:
                     acc = 0.0
@@ -359,7 +362,17 @@ class CarlaMachine(Agent, Driver):
                 if waypoints[-2][0] < 0.5:
                     theta = 0.0
                 print("wp0", wp[0], "wp1", wp[1], "theta", theta)
-                steer = theta * (-0.8)
+
+                dt = 0.1
+                g_p = 0.8
+                g_i = 0.0
+                g_d = 0.0
+
+                self.error_d = (theta - self.error_p) / dt
+                self.error_i += dt * (self.error_p + theta) / 2.0
+                self.error_p = theta
+
+                steer = -(g_p * self.error_p + g_i * self.error_i + g_d * self.error_d)
             else:
                 if save_image_to_disk:
                     self.save_image(to_be_visualized)

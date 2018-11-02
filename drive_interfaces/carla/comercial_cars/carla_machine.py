@@ -231,8 +231,8 @@ class CarlaMachine(Agent, Driver):
         if hasattr(self._config, "camera_middle_split") and self._config.camera_middle_split:
             sensors = split_camera_middle(sensors, self._config.sensor_names)
 
-        if hasattr(self._config, "camera_middle_zoom") and self._config.camera_middle_zoom:
-            sensors = camera_middle_zoom(sensors, self._config.sensor_names)
+        if hasattr(self._config, "camera_middle_zoom"):
+            sensors = camera_middle_zoom(sensors, self._config.sensor_names, self._config.camera_middle_zoom)
 
         nrow = 1
         ncol = 1

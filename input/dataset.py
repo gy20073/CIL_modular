@@ -225,8 +225,8 @@ class Dataset(object):
                     cv2.imwrite("debug_%d.png" % i, sensors[i][id,:,:,::-1])
                 '''
 
-        if hasattr(self._config, "camera_middle_zoom") and self._config.camera_middle_zoom:
-            sensors = camera_middle_zoom_batch(sensors, self._config.sensor_names)
+        if hasattr(self._config, "camera_middle_zoom"):
+            sensors = camera_middle_zoom_batch(sensors, self._config.sensor_names, self._config.camera_middle_zoom)
             if np.random.rand() < 0.05:
                 pass
                 '''

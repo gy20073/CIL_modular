@@ -79,7 +79,7 @@ class configMain:
 
         #self.mse_self_normalize = True
         #self.waypoint_return_control = True
-        self.camera_middle_zoom = {'CameraLeft': False, 'CameraMiddle': True, 'CameraRight': False}
+        self.camera_middle_zoom = {'CameraLeft': True, 'CameraMiddle': True, 'CameraRight': True}
 
 
 class configInput(configMain):

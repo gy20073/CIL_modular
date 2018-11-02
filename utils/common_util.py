@@ -93,34 +93,55 @@ def split_camera_middle_batch(sensor_data, sensor_names):
     return rest_data
 
 
-def camera_middle_zoom(sensor_data, sensor_names):
-    id = sensor_names.index('CameraMiddle')
-    middle = sensor_data[id]
+def camera_middle_zoom(sensor_data, sensor_names, zoom_dict):
+    out = {}
+    for key in zoom_dict:
+        id = sensor_names.index(key)
+        # rest_data = sensor_data[0:id] + sensor_data[(id+1):]
+        middle = sensor_data[id]
 
-    # now splitting the image into two smaller ones
-    middle_shape = middle.shape
-    middle = middle[middle_shape[0] // 4: middle_shape[0] * 3 // 4,
-                    middle_shape[1] // 4: middle_shape[1] * 3 // 4, :]
+        if zoom_dict[key]:
+            # now splitting the image into two smaller ones
+            middle_shape = middle.shape
+            middle = middle[middle_shape[0] // 4: middle_shape[0] * 3 // 4,
+                     middle_shape[1] // 4: middle_shape[1] * 3 // 4, :]
 
-    #middle = cv2.resize(middle, (middle_shape[1], middle_shape[0]))
+        out[key] = middle
 
-    return sensor_data[0:id] + [middle] + sensor_data[(id+1):]
+    ans = []
+    for key in sensor_names:
+        if key in out:
+            ans.append(out[key])
+        else:
+            raise ValueError("zoom dict not complete")
 
+    return ans
 
-def camera_middle_zoom_batch(sensor_data, sensor_names):
-    id = sensor_names.index('CameraMiddle')
-    #rest_data = sensor_data[0:id] + sensor_data[(id+1):]
-    middle = sensor_data[id]
+def camera_middle_zoom_batch(sensor_data, sensor_names, zoom_dict):
+    out = {}
+    for key in zoom_dict:
+        id = sensor_names.index(key)
+        # rest_data = sensor_data[0:id] + sensor_data[(id+1):]
+        middle = sensor_data[id]
 
-    # now splitting the image into two smaller ones
-    middle_shape = middle.shape # now shape is B H W C
-    middle_shape = middle_shape[1:]
-    middle = middle[:,
-                    middle_shape[0] // 4: middle_shape[0] * 3 // 4,
-                    middle_shape[1] // 4: middle_shape[1] * 3 // 4, :]
-    middle = resize_images(middle, (middle_shape[0], middle_shape[1]))
+        if zoom_dict[key]:
+            # now splitting the image into two smaller ones
+            middle_shape = middle.shape # now shape is B H W C
+            middle_shape = middle_shape[1:]
+            middle = middle[:,
+                            middle_shape[0] // 4: middle_shape[0] * 3 // 4,
+                            middle_shape[1] // 4: middle_shape[1] * 3 // 4, :]
+            middle = resize_images(middle, (middle_shape[0], middle_shape[1]))
+        out[key] = middle
 
-    return sensor_data[0:id] + [middle] + sensor_data[(id+1):]
+    ans = []
+    for key in sensor_names:
+        if key in out:
+            ans.append(out[key])
+        else:
+            raise ValueError("zoom dict not complete")
+
+    return ans
 
 
 import numpy as np

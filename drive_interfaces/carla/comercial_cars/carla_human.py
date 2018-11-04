@@ -224,12 +224,14 @@ class CarlaHuman(Driver):
 
             self.carla.start_episode(self.episode_config[0])
             print('RESET ON POSITION ', self.episode_config[0], ", the target location is: ", self.episode_config[1])
+            # the output is: self.positions, self.episode_config
 
         else:
             if __CARLA_VERSION__ == '0.9.X':
                 self._current_weather = random.choice(self._weather_list)
             else:
                 self._current_weather = self._weather_list[int(self._driver_conf.weather)-1]
+                # TODO: load the config, set number of cars, pedestrains, weather, find start and end position
 
             # select one of the random starting points previously selected
             start_positions = np.loadtxt(self._driver_conf.positions_file, delimiter=',')
@@ -237,7 +239,7 @@ class CarlaHuman(Driver):
                 start_positions = start_positions.reshape(1, len(start_positions))
             random_position = start_positions[np.random.randint(start_positions.shape[0]), :]
 
-            # TODO: Assign random position from file
+            # Done: Assign random position from file
             WINDOW_WIDTH = 768
             WINDOW_HEIGHT = 576
             CAMERA_FOV = 103.0
@@ -322,29 +324,33 @@ class CarlaHuman(Driver):
 
     def get_reset(self):
         if self._autopilot:
-            # increase the stuck detector if conditions satisfy
-            if self._latest_measurements.player_measurements.forward_speed < 0.1:
-                self._stucked_counter += 1
-            else:
-                self._stucked_counter = 0
-
-            # if within auto pilot, reset if long enough or has collisions
-            if time.time() - self._start_time > self._reset_period \
-              or self._latest_measurements.player_measurements.collision_vehicles    > 0.0 \
-              or self._latest_measurements.player_measurements.collision_pedestrians > 0.0 \
-              or self._latest_measurements.player_measurements.collision_other       > 0.0 \
-              or (self._latest_measurements.player_measurements.intersection_otherlane > 0.0 and self._latest_measurements.player_measurements.autopilot_control.steer < -0.99) \
-              or self._stucked_counter > 150:
-                if self._stucked_counter > 150:
-                    reset_because_stuck = True
+            if __CARLA_VERSION__ == '0.8.X':
+                # increase the stuck detector if conditions satisfy
+                if self._latest_measurements.player_measurements.forward_speed < 0.1:
+                    self._stucked_counter += 1
                 else:
-                    reset_because_stuck = False
+                    self._stucked_counter = 0
 
-                self._reset()
+                # if within auto pilot, reset if long enough or has collisions
+                if time.time() - self._start_time > self._reset_period \
+                  or self._latest_measurements.player_measurements.collision_vehicles    > 0.0 \
+                  or self._latest_measurements.player_measurements.collision_pedestrians > 0.0 \
+                  or self._latest_measurements.player_measurements.collision_other       > 0.0 \
+                  or (self._latest_measurements.player_measurements.intersection_otherlane > 0.0 and self._latest_measurements.player_measurements.autopilot_control.steer < -0.99) \
+                  or self._stucked_counter > 150:
+                    if self._stucked_counter > 150:
+                        reset_because_stuck = True
+                    else:
+                        reset_because_stuck = False
 
-                if reset_because_stuck:
-                    print("resetting because getting stucked.....")
-                    return True
+                    self._reset()
+
+                    if reset_because_stuck:
+                        print("resetting because getting stucked.....")
+                        return True
+            else:
+                # TODO: implement the collision detection algorithm, based on the new API
+                return False
         else:
             if (self.joystick.get_button(4)):
                 self._reset()
@@ -353,7 +359,7 @@ class CarlaHuman(Driver):
         return False
 
     def get_waypoints(self):
-        # TODO: waiting for German Ros to expose the waypoints
+        # Never: waiting for German Ros to expose the waypoints
         wp1 = [1.0, 1.0]
         wp2 = [2.0, 2.0]
         return [wp1, wp2]
@@ -464,10 +470,15 @@ class CarlaHuman(Driver):
                 control = self.action_joystick()
 
         else:
-            # This relies on the calling of get_sensor_data, otherwise self._latest_measurements are not filled
-            control = self._latest_measurements.player_measurements.autopilot_control
+            if __CARLA_VERSION__ == '0.8.X':
+                # This relies on the calling of get_sensor_data, otherwise self._latest_measurements are not filled
+                control = self._latest_measurements.player_measurements.autopilot_control
+                print('[Throttle = {}] [Steering = {}] [Brake = {}]'.format(control.throttle, control.steer, control.brake))
+            else:
+                # TODO: new version does not seem to have the control command??
+                # TODO2: this might cause error on the outside
+                control = None
 
-        print('[Throttle = {}] [Steering = {}] [Brake = {}]'.format(control.throttle, control.steer, control.brake))
         return control
 
 
@@ -515,6 +526,7 @@ class CarlaHuman(Driver):
             else:
                 direction = 2.0
         else:
+            # TODO: complete the information by having the location, and other things such as collision info as well
             sensor_data = copy.deepcopy(self._data_buffers)
 
             current_ms_offset = int(math.ceil((datetime.now() - self._episode_t0).total_seconds() * 1000))

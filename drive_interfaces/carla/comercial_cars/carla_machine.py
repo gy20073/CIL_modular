@@ -380,6 +380,24 @@ class CarlaMachine(Agent, Driver):
                     return waypoints, to_be_visualized, nrow, ncol, col_i
                 else:
                     return waypoints, to_be_visualized
+
+        elif (self._train_manager._config.control_mode == 'single_branch_yang_wp_stack'):
+            waypoints, steer, acc, brake, real_predicted = \
+                self._control_function(image_input, speed_kmh, direction,
+                                       self._config, self._sess, self._train_manager)
+            # visualize the image
+            if ncol >= nrow * 3:
+                col_i = ncol // 3
+            else:
+                col_i = 0
+            subpart = to_be_visualized[:to_be_visualized.shape[0] // nrow,
+                      col_i * to_be_visualized.shape[1] // ncol:(col_i + 1) * to_be_visualized.shape[1] // ncol, :]
+            # this plots the prediction as blue
+            subpart = plot_waypoints_on_image(subpart, waypoints, 4, shift_ahead=2.46 - 0.7 + 2.0)
+
+            to_be_visualized[:to_be_visualized.shape[0] // nrow,
+            col_i * to_be_visualized.shape[1] // ncol:(col_i + 1) * to_be_visualized.shape[1] // ncol, :] = subpart
+            # end of visualization
         elif  (self._train_manager._config.control_mode == 'single_branch_yang_cls_reg'):
             shape_id, scale = self._control_function(image_input, speed_kmh, direction,
                                                      self._config, self._sess, self._train_manager)

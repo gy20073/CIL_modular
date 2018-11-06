@@ -125,6 +125,12 @@ class CarlaHuman(Driver):
         self._vehicle_prev_location.x = 0.0
         self._vehicle_prev_location.y = 0.0
 
+        self._camera_left = None
+        self._camera_right = None
+        self._camera_center = None
+
+        self._actor_list = []
+
         self._sensor_list = []
         self._weather_list = ['ClearNoon', 'CloudyNoon', 'WetNoon', 'WetCloudyNoon',
                               'MidRainyNoon', 'HardRainNoon', 'SoftRainNoon', 'ClearSunset',
@@ -177,6 +183,13 @@ class CarlaHuman(Driver):
             if __CARLA_VERSION__ == '0.8.X':
                 self.carla.disconnect()
             else:
+                # destroy old actors
+                print('destroying actors')
+                if len(self._actor_list) > 0:
+                    for actor in self._actor_list:
+                        actor.destroy()
+                print('done.')
+
                 if self._vehicle is not None:
                     self._vehicle.destroy()
                     self._vehicle = None
@@ -198,6 +211,19 @@ class CarlaHuman(Driver):
             # if self._vehicle is not None:
             #     self._vehicle.destroy()
             #     self._vehicle = None
+
+    def try_spawn_random_vehicle_at(self, blueprints, transform):
+        blueprint = random.choice(blueprints)
+        if blueprint.has_attribute('color'):
+            color = random.choice(blueprint.get_attribute('color').recommended_values)
+            blueprint.set_attribute('color', color)
+        vehicle = self._world.try_spawn_actor(blueprint, transform)
+        if vehicle is not None:
+            self._actor_list.append(vehicle)
+            vehicle.set_autopilot()
+            #print('spawned %r at %s' % (vehicle.type_id, transform.location))
+            return True
+        return False
 
     def _reset(self):
 
@@ -224,22 +250,22 @@ class CarlaHuman(Driver):
 
             self.carla.start_episode(self.episode_config[0])
             print('RESET ON POSITION ', self.episode_config[0], ", the target location is: ", self.episode_config[1])
-            # the output is: self.positions, self.episode_config
 
         else:
-            if __CARLA_VERSION__ == '0.9.X':
-                self._current_weather = random.choice(self._weather_list)
-            else:
-                self._current_weather = self._weather_list[int(self._driver_conf.weather)-1]
-                # TODO: load the config, set number of cars, pedestrains, weather, find start and end position
+            # destroy old actors
+            print('destroying actors')
+            for actor in self._actor_list:
+                actor.destroy()
+            print('done.')
 
+            self._current_weather = random.choice(self._weather_list)
             # select one of the random starting points previously selected
             start_positions = np.loadtxt(self._driver_conf.positions_file, delimiter=',')
             if len(start_positions.shape) == 1:
                 start_positions = start_positions.reshape(1, len(start_positions))
             random_position = start_positions[np.random.randint(start_positions.shape[0]), :]
 
-            # Done: Assign random position from file
+            # TODO: Assign random position from file
             WINDOW_WIDTH = 768
             WINDOW_HEIGHT = 576
             CAMERA_FOV = 103.0
@@ -260,6 +286,32 @@ class CarlaHuman(Driver):
 
 
             self._world = self.carla.get_world()
+
+
+            # add traffic
+            blueprints_vehi = self._world.get_blueprint_library().filter('vehicle.*')
+            blueprints_vehi = [x for x in blueprints_vehi if int(x.get_attribute('number_of_wheels')) == 4]
+            blueprints_vehi = [x for x in blueprints_vehi if not x.id.endswith('isetta')]
+
+            # @todo Needs to be converted to list to be shuffled.
+            spawn_points = list(self._world.get_map().get_spawn_points())
+            random.shuffle(spawn_points)
+
+            print('found %d spawn points.' % len(spawn_points))
+
+            count = 50
+
+            for spawn_point in spawn_points:
+                if self.try_spawn_random_vehicle_at(blueprints_vehi, spawn_point):
+                    count -= 1
+                if count <= 0:
+                    break
+            while count > 0:
+                time.sleep(0.5)
+                if self.try_spawn_random_vehicle_at(random.choice(blueprints_vehi, spawn_points)):
+                    count -= 1
+            # end traffic addition!
+
             blueprints = self._world.get_blueprint_library().filter('vehicle')
             vechile_blueprint = [e for i, e in enumerate(blueprints) if e.id == 'vehicle.lincoln.mkz2017'][0]
 
@@ -267,9 +319,6 @@ class CarlaHuman(Driver):
                 self._vehicle = self._world.spawn_actor(vechile_blueprint, START_POSITION)
             else:
                 self._vehicle.set_transform(START_POSITION)
-
-            if not(__CARLA_VERSION__ == '0.9.X'):
-                self._vehicle.set_autopilot(True)
 
             # set weather
             weather = getattr(carla.WeatherParameters, self._current_weather)
@@ -359,7 +408,7 @@ class CarlaHuman(Driver):
         return False
 
     def get_waypoints(self):
-        # Never: waiting for German Ros to expose the waypoints
+        # TODO: waiting for German Ros to expose the waypoints
         wp1 = [1.0, 1.0]
         wp2 = [2.0, 2.0]
         return [wp1, wp2]
@@ -479,6 +528,7 @@ class CarlaHuman(Driver):
                 # TODO2: this might cause error on the outside
                 control = None
 
+        print('[Throttle = {}] [Steering = {}] [Brake = {}]'.format(control.throttle, control.steer, control.brake))
         return control
 
 
@@ -489,12 +539,15 @@ class CarlaHuman(Driver):
         curr_time = datetime.now()
         delta = curr_time - self._prev_time
         delta = delta.seconds + delta.microseconds / 1E6
-        speed = distance / delta
+        speed = distance / (delta + 1e-3)
 
         # update previus
         self._vehicle_prev_location =  vehicle_current_location
         self._prev_time = curr_time
 
+        vel = self._vehicle.get_velocity()
+        vel = 3.6 * m.sqrt(vel.x**2 + vel.y**2 + vel.z**2)
+        print('-------> Speed = {}'.format(vel))
         return speed
 
     def get_sensor_data(self, goal_pos=None, goal_ori=None):
@@ -526,7 +579,6 @@ class CarlaHuman(Driver):
             else:
                 direction = 2.0
         else:
-            # TODO: complete the information by having the location, and other things such as collision info as well
             sensor_data = copy.deepcopy(self._data_buffers)
 
             current_ms_offset = int(math.ceil((datetime.now() - self._episode_t0).total_seconds() * 1000))

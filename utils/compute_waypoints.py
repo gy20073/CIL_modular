@@ -3,12 +3,15 @@ import numpy as np
 
 sys.path.append('drive_interfaces/carla/carla_client')
 
+# TODO change this
 input_id = "steer103_v5_town02"
 output_id = "steer103_v5_town02_way"
 debug_start = 0
 debug_end= 140000000
 future_time = 2.0 # second
+is_carla_090 = False
 
+# TODO: change the path
 all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/"+str(input_id)+"/*/data_*.h5")
 input_prefix = "/data/yang/code/aws/scratch/carla_collect/"+str(input_id)
 
@@ -24,7 +27,13 @@ for one_h5 in sorted(all_files)[debug_start:debug_end]:
     times.append(hin['targets'][:, 20])
     is_noisy = (hin['targets'][:, 0] != hin['targets'][:, 5])
     noisy.append(is_noisy)
-    ori.append(hin['targets'][:, 21:23])
+    if not is_carla_090:
+        ori.append(hin['targets'][:, 21:23])
+    else:
+        yaws = hin['targets'][:, 23]
+        # TODO: this order might be wrong
+        this_ori = np.stack((np.sin(yaws), np.cos(yaws)), 1)
+        ori.append(this_ori)
 
 pos = np.concatenate(pos, axis=0)
 times = np.concatenate(times, axis=0)
@@ -59,38 +68,90 @@ def compute_waypoints(x, y, time, is_noisy, ori_x, ori_y, future_time):
             flattened_indicator += [False] * N
             continue
 
-        # this is asserting we have a constant step size
-        step_time = seq[2, 1] - seq[2, 0]
-        step_time /= 1000.0  # convert it to second
-        future_steps = int(math.ceil(future_time / step_time))
+        if is_carla_090:
+            # here is a more general version of the original waypoints computes program
+            i = -1 # the current starting point within this sequence
+            while True:
+                i += 1
+                # see whether I am close to the finish of the sequence
+                if (seq[2, -1] - seq[2, i])/1000.0 <= future_time:
+                    break
+                # compute how many future steps i need to look into
+                end = i
+                while (seq[2, end] - seq[2, i])/1000.0 <= future_time:
+                    end += 1
+                # now the end is a valid ending point
+                future_steps = end - i
 
-        if N < future_steps + 1:
-            flattened_indicator += [False] * N
-            continue
+                if any(seq[3, i:(i + future_steps)]):
+                    # if any of the future data point is noisy, then we ignore this
+                    flattened_indicator.append(False)
+                    continue
+                else:
+                    # None of the future is noisy
+                    flattened_indicator.append(True)
+                    # begin computation of the waypoints
+                    this_waypoint = []
 
-        for i in range(N - future_steps):
-            if any(seq[3, i:(i + future_steps)]):
-                # if any of the future data point is noisy, then we ignore this
-                flattened_indicator.append(False)
+                    times = []
+                    for j in range(0, future_steps):
+                        delta = seq[:2, i + j] - seq[:2, i]
+                        this_waypoint.append(delta)
+                        times.append((seq[2, i + j] - seq[2, i])/1000.0)
+                    this_waypoint = np.array(this_waypoint)
+                    # linear interpolate
+                    xs = np.interp(np.arange(0.2, future_time+0.01, 0.2),
+                                   times,
+                                   this_waypoint[:, 0])
+                    ys = np.interp(np.arange(0.2, future_time + 0.01, 0.2),
+                                   times,
+                                   this_waypoint[:, 1])
+                    this_waypoint = np.stack((xs, ys), 1)
+
+                    # now it has shape (future_steps-1) * 2
+                    # rotate this waypoint to ego-centric coordinate system
+                    degree = -math.atan2(seq[5, i], seq[4, i])
+                    R = np.array([[math.cos(degree), -math.sin(degree)], [math.sin(degree), math.cos(degree)]])
+                    this_waypoint = np.matmul(R, this_waypoint.T).T
+
+                    out_waypoints.append(this_waypoint)
+
+            # fill in the not used indicator
+            flattened_indicator += [False] * (N-i)
+
+        else:
+            # this is asserting we have a constant step size
+            step_time = seq[2, 1] - seq[2, 0]
+            step_time /= 1000.0  # convert it to second
+            future_steps = int(math.ceil(future_time / step_time))
+
+            if N < future_steps + 1:
+                flattened_indicator += [False] * N
                 continue
-            else:
-                # None of the future is noisy
-                flattened_indicator.append(True)
-                # begin computation of the waypoints
-                this_waypoint = []
-                for j in range(1, future_steps):
-                    delta = seq[:2, i + j] - seq[:2, i]
-                    this_waypoint.append(delta)
-                this_waypoint = np.array(this_waypoint)
-                # now it has shape (future_steps-1) * 2
-                # rotate this waypoint to ego-centric coordinate system
-                degree = -math.atan2(seq[5, i], seq[4, i])
-                R = np.array([[math.cos(degree), -math.sin(degree)], [math.sin(degree), math.cos(degree)]])
-                this_waypoint = np.matmul(R, this_waypoint.T).T
 
-                out_waypoints.append(this_waypoint)
+            for i in range(N - future_steps):
+                if any(seq[3, i:(i + future_steps)]):
+                    # if any of the future data point is noisy, then we ignore this
+                    flattened_indicator.append(False)
+                    continue
+                else:
+                    # None of the future is noisy
+                    flattened_indicator.append(True)
+                    # begin computation of the waypoints
+                    this_waypoint = []
+                    for j in range(1, future_steps):
+                        delta = seq[:2, i + j] - seq[:2, i]
+                        this_waypoint.append(delta)
+                    this_waypoint = np.array(this_waypoint)
+                    # now it has shape (future_steps-1) * 2
+                    # rotate this waypoint to ego-centric coordinate system
+                    degree = -math.atan2(seq[5, i], seq[4, i])
+                    R = np.array([[math.cos(degree), -math.sin(degree)], [math.sin(degree), math.cos(degree)]])
+                    this_waypoint = np.matmul(R, this_waypoint.T).T
 
-        flattened_indicator += [False]*future_steps
+                    out_waypoints.append(this_waypoint)
+
+            flattened_indicator += [False]*future_steps
 
     return flattened_indicator, out_waypoints
 

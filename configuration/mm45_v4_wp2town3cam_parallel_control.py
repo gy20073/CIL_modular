@@ -128,7 +128,7 @@ class configTrain(configMain):
         configMain.__init__(self)
 
         self.loss_function = 'mse_branched'  # Chose between: mse_branched, mse_branched_ladd
-        self.control_mode = 'single_branch_yang_wp'
+        self.control_mode = 'single_branch_yang_wp_stack'
         # TODO: tune it
         self.learning_rate = 1e-4
         # use the default segmentation network

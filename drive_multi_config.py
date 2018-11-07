@@ -1,9 +1,15 @@
 import sys, os, time, threading
+os.environ['CARLA_VERSION'] = '0.9.auto2'
+
 from configparser import ConfigParser
 from drive import drive
 from multiprocessing import Process
 
 CARLA_PATH = "/scratch/yang/aws_data/carla_0.8.4/CarlaUE4.sh"
+TownBase = "/Game/Maps/"
+CARLA_PATH = "/scratch/yang/aws_data/carla_auto2/CarlaUE4.sh"
+TownBase = "/Game/Carla/Maps/"
+
 
 sys.path.append('drive_interfaces/configuration')
 
@@ -52,7 +58,7 @@ def process_collect(list_of_configs, port, gpu,
             if count >= 5:
                 count = 0
                 cmd = ['bash', '-c',
-                       " '%s /Game/Maps/%s  -carla-server -benchmark -fps=5 -carla-world-port=%d' " % (CARLA_PATH, TownName, port)]
+                       " '%s %s%s  -carla-server -benchmark -fps=5 -carla-world-port=%d' " % (CARLA_PATH, TownBase, TownName, port)]
                 print(" ".join(cmd))
                 print("before spawnling")
                 t = threading.Thread(target=lambda: os.system(" ".join(cmd)))
@@ -73,10 +79,11 @@ if __name__ == "__main__":
     collect_all = False
 
     driver_config = "9cam_agent_carla_acquire_rc_batch"
+    driver_config = "9cam_agent_carla_acquire_rc_batch_090"
     if collect_all:
         driver_config = "9cam_agent_carla_acquire_rc_batch_allsensors"
 
-    TownName = "Town02"
+    TownName = "Town03"
     if collect_all:
         TownName = "Town01"
 
@@ -141,7 +148,7 @@ if __name__ == "__main__":
     #available_gpus = [0, 2, 4, 5, 6]
     #num_processes = len(available_gpus) * 2
     available_gpus = [0]
-    num_processes = 8
+    num_processes = 1
 
     list_of_configs = [[] for i in range(num_processes)]
 

@@ -5,6 +5,10 @@ if __CARLA_VERSION__ == '0.9.X':
     sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.0-py2.7-linux-x86_64.egg')
     import carla
     from carla import VehicleControl as VehicleControl
+elif __CARLA_VERSION__.startswith("0.9"):
+    sys.path[0:0]=['/scratch/yang/aws_data/carla_auto2/PythonAPI/carla-0.9.0-py2.7-linux-x86_64.egg']
+    import carla
+    from carla import VehicleControl as VehicleControl
 
 
 class Noiser(object):
@@ -52,7 +56,7 @@ class Noiser(object):
         if self.noise_type == 'Spike':  # spike noise there are no variations on current noise over time
             self.noise_sign = float(random.randint(0, 1) * 2 - 1)
             if self.use_tick:
-                self.this_intensity = random.random() * 5 + 2.5
+                self.this_intensity = random.random() * self.intensity + 2.5
             else:
                 self.this_intensity = self.intensity * random.random() * 5 + 2.5
 
@@ -127,7 +131,7 @@ class Noiser(object):
                 minmax = lambda x: max(x, min(x, 1.0), -1.0)
                 steer_noisy = minmax(action.steer + self.get_noise() * (30 / (1.5 * speed_kmh + 5)))
 
-                if __CARLA_VERSION__ == '0.9.X':
+                if __CARLA_VERSION__ == '0.9.X' or __CARLA_VERSION__.startswith("0.9"):
                     noisy_action = VehicleControl(action.throttle, action.steer, action.brake, action.hand_brake, action.reverse)
                 else:
                     noisy_action = copy.deepcopy(action)

@@ -1,5 +1,5 @@
 import cv2
-import copy
+import copy, threading
 import sys, os
 import pygame, io, math, time
 import random
@@ -19,7 +19,8 @@ else:
     if __CARLA_VERSION__ == '0.9.X':
         sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.0-py2.7-linux-x86_64.egg')
     else:
-        sys.path.append('/scratch/yang/aws_data/carla_autopilot/PythonAPI/carla-0.9.0-py2.7-linux-x86_64.egg')
+        sys.path[0:0]=['/scratch/yang/aws_data/carla_auto2/PythonAPI/carla-0.9.0-py2.7-linux-x86_64.egg']
+        print(sys.path)
     import carla
     from carla import Client as CarlaClient
     from carla import VehicleControl as VehicleControl
@@ -57,7 +58,7 @@ def find_valid_episode_position(positions, planner):
 
     return index_start, index_goal
 
-
+data_buffer_lock = threading.Lock()
 class CallBack():
     def __init__(self, tag, obj):
         self._tag = tag
@@ -74,8 +75,9 @@ class CallBack():
         array = array[:, :, :3]
         array = array[:, :, ::-1]
 
+        data_buffer_lock.acquire()
         self._obj._data_buffers[self._tag] = array
-
+        data_buffer_lock.release()
 
 class CarlaHuman(Driver):
     def __init__(self, driver_conf):
@@ -263,14 +265,13 @@ class CarlaHuman(Driver):
             start_positions = np.loadtxt(self._driver_conf.positions_file, delimiter=',')
             if len(start_positions.shape) == 1:
                 start_positions = start_positions.reshape(1, len(start_positions))
-            random_position = start_positions[np.random.randint(start_positions.shape[0]), :]
+
 
             # TODO: Assign random position from file
             WINDOW_WIDTH = 768
             WINDOW_HEIGHT = 576
             CAMERA_FOV = 103.0
 
-            START_POSITION = carla.Transform(carla.Location(x=random_position[0], y=random_position[1], z=random_position[2]+1.0), carla.Rotation(pitch=random_position[3], roll=random_position[4], yaw=random_position[5]))
 
             CAMERA_CENTER_T = carla.Location(x=0.7, y=-0.0, z=1.60)
             CAMERA_LEFT_T = carla.Location(x=0.7, y=-0.4, z=1.60)
@@ -308,17 +309,35 @@ class CarlaHuman(Driver):
                     break
             while count > 0:
                 time.sleep(0.5)
-                if self.try_spawn_random_vehicle_at(random.choice(blueprints_vehi, spawn_points)):
+                if self.try_spawn_random_vehicle_at(blueprints_vehi, random.choice(spawn_points)):
                     count -= 1
             # end traffic addition!
 
             blueprints = self._world.get_blueprint_library().filter('vehicle')
             vechile_blueprint = [e for i, e in enumerate(blueprints) if e.id == 'vehicle.lincoln.mkz2017'][0]
 
+
             if self._vehicle == None:
-                self._vehicle = self._world.spawn_actor(vechile_blueprint, START_POSITION)
+                while self._vehicle == None:
+                    if self._autopilot:
+                        # from designated points
+                        START_POSITION = random.choice(spawn_points)
+                    else:
+                        random_position = start_positions[np.random.randint(start_positions.shape[0]), :]
+                        START_POSITION = carla.Transform(
+                            carla.Location(x=random_position[0], y=random_position[1], z=random_position[2] + 1.0),
+                            carla.Rotation(pitch=random_position[3], roll=random_position[4], yaw=random_position[5]))
+
+                    self._vehicle = self._world.try_spawn_actor(vechile_blueprint, START_POSITION)
             else:
+                random_position = start_positions[np.random.randint(start_positions.shape[0]), :]
+                START_POSITION = carla.Transform(
+                    carla.Location(x=random_position[0], y=random_position[1], z=random_position[2] + 1.0),
+                    carla.Rotation(pitch=random_position[3], roll=random_position[4], yaw=random_position[5]))
+
                 self._vehicle.set_transform(START_POSITION)
+            if self._autopilot:
+                self._vehicle.set_autopilot()
 
             # set weather
             weather = getattr(carla.WeatherParameters, self._current_weather)
@@ -526,7 +545,14 @@ class CarlaHuman(Driver):
             else:
                 # TODO: new version does not seem to have the control command??
                 # TODO2: this might cause error on the outside
-                control = None
+                # TODO: this is some place holder to enable the agent to run
+                '''
+                control = VehicleControl()
+                control.steer = -100
+                control.brake = -100
+                control.throttle = -100
+                '''
+                control = self._vehicle.control
 
         print('[Throttle = {}] [Steering = {}] [Brake = {}]'.format(control.throttle, control.steer, control.brake))
         return control
@@ -546,8 +572,8 @@ class CarlaHuman(Driver):
         self._prev_time = curr_time
 
         vel = self._vehicle.get_velocity()
-        vel = 3.6 * m.sqrt(vel.x**2 + vel.y**2 + vel.z**2)
-        print('-------> Speed = {}'.format(vel))
+        vel = 3.6 * math.sqrt(vel.x**2 + vel.y**2 + vel.z**2)
+        print('-------> Speed = {}'.format(vel), "differentiated speed ", speed)
         return speed
 
     def get_sensor_data(self, goal_pos=None, goal_ori=None):
@@ -579,7 +605,9 @@ class CarlaHuman(Driver):
             else:
                 direction = 2.0
         else:
+            data_buffer_lock.acquire()
             sensor_data = copy.deepcopy(self._data_buffers)
+            data_buffer_lock.release()
 
             current_ms_offset = int(math.ceil((datetime.now() - self._episode_t0).total_seconds() * 1000))
             second_level = namedtuple('second_level', ['forward_speed', 'transform'])
@@ -601,7 +629,11 @@ class CarlaHuman(Driver):
         if __CARLA_VERSION__ == '0.8.X':
             self.carla.send_control(control)
         else:
-            self._vehicle.apply_control(control)
+            if control.steer < -50:
+                # TODO: this is some hack to let the auto agent to drive
+                pass
+            else:
+                self._vehicle.apply_control(control)
 
             # location = self._vehicle.get_location()
             # location.z = 200.0

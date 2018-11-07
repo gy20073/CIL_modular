@@ -44,7 +44,7 @@ class configDrive:
 
         # noiser related params
         self.noise_frequency = 45
-        self.noise_intensity = 5
+        self.noise_intensity = 5.0
         self.min_noise_time_amount = 0.5
         self.no_noise_decay_stage = True
         self.use_tick = True

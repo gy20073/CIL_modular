@@ -75,10 +75,16 @@ class CallBack():
         array = array[:, :, :3]
         array = array[:, :, ::-1]
 
+        if self._tag == "CameraMiddle":
+            while self._obj.update_once == True:
+                time.sleep(0.01)
+
         data_buffer_lock.acquire()
         self._obj._data_buffers[self._tag] = array
-        self._obj.update_once = True
         data_buffer_lock.release()
+        if self._tag == "CameraMiddle":
+            self._obj.update_once = True
+
 
 collision_lock = threading.Lock()
 class CollisionSensor(object):
@@ -153,9 +159,10 @@ class CarlaHuman(Driver):
         self._prev_time = datetime.now()
         self._episode_t0 = datetime.now()
 
-        self._vehicle_prev_location = namedtuple("vehicle", "x y")
+        self._vehicle_prev_location = namedtuple("vehicle", "x y z")
         self._vehicle_prev_location.x = 0.0
         self._vehicle_prev_location.y = 0.0
+        self._vehicle_prev_location.z = 0.0
 
         self._camera_left = None
         self._camera_right = None
@@ -389,8 +396,9 @@ class CarlaHuman(Driver):
             if self._autopilot:
                 self._vehicle.set_autopilot()
 
-            if self.collision_sensor == None:
-                self.collision_sensor = CollisionSensor(self._vehicle, self)
+            if self.collision_sensor is not None:
+                self.collision_sensor.sensor.destroy()
+            self.collision_sensor = CollisionSensor(self._vehicle, self)
 
             # set weather
             weather = getattr(carla.WeatherParameters, self._current_weather)
@@ -402,6 +410,14 @@ class CarlaHuman(Driver):
             cam_blueprint.set_attribute('image_size_x', str(WINDOW_WIDTH))
             cam_blueprint.set_attribute('image_size_y', str(WINDOW_HEIGHT))
             cam_blueprint.set_attribute('fov', str(CAMERA_FOV))
+
+
+            if self._camera_center is not None:
+                self._camera_center.destroy()
+                self._camera_left.destroy()
+                self._camera_right.destroy()
+                self._camera_center = None
+
 
             if self._camera_center == None:
                 self._camera_center = self._world.spawn_actor(cam_blueprint, CAMERA_CENTER_TRANSFORM, attach_to=self._vehicle)
@@ -477,11 +493,12 @@ class CarlaHuman(Driver):
                     self._stucked_counter += 1
                 else:
                     self._stucked_counter = 0
+
                 if time.time() - self._start_time > self._reset_period \
                 or self._last_collided \
-                or self._stucked_counter > 150:
+                or self._stucked_counter > 250:
                     # TODO intersection other lane is not available, so omit from the condition right now
-                    if self._stucked_counter > 150:
+                    if self._stucked_counter > 250:
                         reset_because_stuck = True
                     else:
                         reset_because_stuck = False
@@ -624,15 +641,13 @@ class CarlaHuman(Driver):
     def estimate_speed(self):
         vehicle_current_location = self._vehicle.get_location()
 
-        distance = math.sqrt(((vehicle_current_location.x - self._vehicle_prev_location.x) ** 2) + ((vehicle_current_location.y - self._vehicle_prev_location.y) ** 2))
-        curr_time = datetime.now()
-        delta = curr_time - self._prev_time
-        delta = delta.seconds + delta.microseconds * 1.0 / 1E6
+        distance = math.sqrt(((vehicle_current_location.x - self._vehicle_prev_location.x) ** 2) + ((vehicle_current_location.y - self._vehicle_prev_location.y) ** 2) + ((vehicle_current_location.z - self._vehicle_prev_location.z) ** 2))
+
+        delta = self.last_timestamp.delta_seconds
         speed = distance / (delta + 1e-3)
 
         # update previus
         self._vehicle_prev_location =  vehicle_current_location
-        self._prev_time = curr_time
 
         vel = self._vehicle.get_velocity()
         # TODO: figure out why we need this factor of 3.6 here
@@ -670,6 +685,9 @@ class CarlaHuman(Driver):
             else:
                 direction = 2.0
         else:
+            self.last_timestamp = self._world.wait_for_tick(10.0)
+            #print(timestamp.delta_seconds, "delta seconds")
+
             while self.update_once == False:
                 time.sleep(0.01)
 
@@ -677,9 +695,10 @@ class CarlaHuman(Driver):
 
             data_buffer_lock.acquire()
             sensor_data = copy.deepcopy(self._data_buffers)
-            # no print
-            self.update_once = False
             data_buffer_lock.release()
+
+            self.update_once = False
+
 
             collision_lock.acquire()
             colllision_event = self._collision_events
@@ -704,7 +723,12 @@ class CarlaHuman(Driver):
                 collision_pedestrians = 0.0
 
 
-            current_ms_offset = int(math.ceil((datetime.now() - self._episode_t0).total_seconds() * 1000))
+            #current_ms_offset = int(math.ceil((datetime.now() - self._episode_t0).total_seconds() * 1000))
+            # TODO: get a gametime stamp, instead of os timestamp
+            #current_ms_offset = int(self.carla.get_timestamp().elapsed_seconds * 1000)
+            #print(current_ms_offset, "ms offset")
+            current_ms_offset = self.last_timestamp.elapsed_seconds * 1000
+
             second_level = namedtuple('second_level', ['forward_speed', 'transform', 'collision_other', 'collision_pedestrians', 'collision_vehicles'])
             transform = namedtuple('transform', ['location', 'orientation'])
             loc = namedtuple('loc', ['x', 'y'])

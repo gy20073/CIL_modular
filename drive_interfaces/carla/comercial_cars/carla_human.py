@@ -1,4 +1,4 @@
-import cv2
+import cv2, weakref
 import copy, threading
 import sys, os
 import pygame, io, math, time
@@ -77,7 +77,34 @@ class CallBack():
 
         data_buffer_lock.acquire()
         self._obj._data_buffers[self._tag] = array
+        self._obj.update_once = True
         data_buffer_lock.release()
+
+collision_lock = threading.Lock()
+class CollisionSensor(object):
+    def __init__(self, parent_actor, obj):
+        self._obj = obj
+        self.sensor = None
+        self._parent = parent_actor
+        world = self._parent.get_world()
+        bp = world.get_blueprint_library().find('sensor.other.collision')
+        self.sensor = world.spawn_actor(bp, carla.Transform(), attach_to=self._parent)
+        # We need to pass the lambda a weak reference to self to avoid circular
+        # reference.
+        weak_self = weakref.ref(self)
+        self.sensor.listen(lambda event: CollisionSensor._on_collision(weak_self, event))
+
+    @staticmethod
+    def _on_collision(weak_self, event):
+        self = weak_self()
+        if not self:
+            return
+        actor_type = ' '.join(event.other_actor.type_id.replace('_', '.').title().split('.')[0:1])
+        #'Collision with %r' % actor_type
+        collision_lock.acquire()
+        self._obj._collision_events.append(actor_type)
+        collision_lock.release()
+
 
 class CarlaHuman(Driver):
     def __init__(self, driver_conf):
@@ -95,6 +122,9 @@ class CarlaHuman(Driver):
         self._spectator = None
         # (last) images store for several cameras
         self._data_buffers = dict()
+        self.update_once = False
+        self._collision_events = []
+        self.collision_sensor = None
 
         if __CARLA_VERSION__ == '0.8.X':
             self.planner = Planner(driver_conf.city_name)
@@ -190,6 +220,7 @@ class CarlaHuman(Driver):
                 if len(self._actor_list) > 0:
                     for actor in self._actor_list:
                         actor.destroy()
+                self._actor_list = []
                 print('done.')
 
                 if self._vehicle is not None:
@@ -204,6 +235,9 @@ class CarlaHuman(Driver):
                 if self._camera_right is not None:
                     self._camera_right.destroy()
                     self._camera_right = None
+                if self.collision_sensor is not None:
+                    self.collision_sensor.destroy()
+                    self.collision_sensor = None
 
 
                     #  pygame.quit()
@@ -258,9 +292,16 @@ class CarlaHuman(Driver):
             print('destroying actors')
             for actor in self._actor_list:
                 actor.destroy()
+            self._actor_list = []
             print('done.')
 
-            self._current_weather = random.choice(self._weather_list)
+            # TODO: spawn pedestrains
+            # TODO: spawn more vehicles
+
+            if self._autopilot:
+                self._current_weather = self._weather_list[int(self._driver_conf.weather)-1]
+            else:
+                self._current_weather = random.choice(self._weather_list)
             # select one of the random starting points previously selected
             start_positions = np.loadtxt(self._driver_conf.positions_file, delimiter=',')
             if len(start_positions.shape) == 1:
@@ -317,7 +358,11 @@ class CarlaHuman(Driver):
             vechile_blueprint = [e for i, e in enumerate(blueprints) if e.id == 'vehicle.lincoln.mkz2017'][0]
 
 
-            if self._vehicle == None:
+            if self._vehicle == None or self._autopilot:
+                if self._autopilot and self._vehicle is not None:
+                    self._vehicle.destroy()
+                    self._vehicle = None
+
                 while self._vehicle == None:
                     if self._autopilot:
                         # from designated points
@@ -330,14 +375,22 @@ class CarlaHuman(Driver):
 
                     self._vehicle = self._world.try_spawn_actor(vechile_blueprint, START_POSITION)
             else:
-                random_position = start_positions[np.random.randint(start_positions.shape[0]), :]
-                START_POSITION = carla.Transform(
-                    carla.Location(x=random_position[0], y=random_position[1], z=random_position[2] + 1.0),
-                    carla.Rotation(pitch=random_position[3], roll=random_position[4], yaw=random_position[5]))
+                if self._autopilot:
+                    # from designated points
+                    START_POSITION = random.choice(spawn_points)
+                else:
+                    random_position = start_positions[np.random.randint(start_positions.shape[0]), :]
+                    START_POSITION = carla.Transform(
+                        carla.Location(x=random_position[0], y=random_position[1], z=random_position[2] + 1.0),
+                        carla.Rotation(pitch=random_position[3], roll=random_position[4], yaw=random_position[5]))
 
                 self._vehicle.set_transform(START_POSITION)
+
             if self._autopilot:
                 self._vehicle.set_autopilot()
+
+            if self.collision_sensor == None:
+                self.collision_sensor = CollisionSensor(self._vehicle, self)
 
             # set weather
             weather = getattr(carla.WeatherParameters, self._current_weather)
@@ -369,6 +422,7 @@ class CarlaHuman(Driver):
 
     def get_recording(self):
         if self._autopilot:
+            # debug: 0 for debugging
             if self._skiped_frames >= 20:
                 return True
             else:
@@ -411,6 +465,7 @@ class CarlaHuman(Driver):
                     else:
                         reset_because_stuck = False
 
+                    # TODO: commenting out this for debugging issue
                     self._reset()
 
                     if reset_because_stuck:
@@ -418,7 +473,24 @@ class CarlaHuman(Driver):
                         return True
             else:
                 # TODO: implement the collision detection algorithm, based on the new API
-                return False
+                if self.last_estimated_speed < 0.1:
+                    self._stucked_counter += 1
+                else:
+                    self._stucked_counter = 0
+                if time.time() - self._start_time > self._reset_period \
+                or self._last_collided \
+                or self._stucked_counter > 150:
+                    # TODO intersection other lane is not available, so omit from the condition right now
+                    if self._stucked_counter > 150:
+                        reset_because_stuck = True
+                    else:
+                        reset_because_stuck = False
+
+                    self._reset()
+
+                    if reset_because_stuck:
+                        print("resetting because getting stucked.....")
+                        return True
         else:
             if (self.joystick.get_button(4)):
                 self._reset()
@@ -543,15 +615,6 @@ class CarlaHuman(Driver):
                 control = self._latest_measurements.player_measurements.autopilot_control
                 print('[Throttle = {}] [Steering = {}] [Brake = {}]'.format(control.throttle, control.steer, control.brake))
             else:
-                # TODO: new version does not seem to have the control command??
-                # TODO2: this might cause error on the outside
-                # TODO: this is some place holder to enable the agent to run
-                '''
-                control = VehicleControl()
-                control.steer = -100
-                control.brake = -100
-                control.throttle = -100
-                '''
                 control = self._vehicle.control
 
         print('[Throttle = {}] [Steering = {}] [Brake = {}]'.format(control.throttle, control.steer, control.brake))
@@ -564,7 +627,7 @@ class CarlaHuman(Driver):
         distance = math.sqrt(((vehicle_current_location.x - self._vehicle_prev_location.x) ** 2) + ((vehicle_current_location.y - self._vehicle_prev_location.y) ** 2))
         curr_time = datetime.now()
         delta = curr_time - self._prev_time
-        delta = delta.seconds + delta.microseconds / 1E6
+        delta = delta.seconds + delta.microseconds * 1.0 / 1E6
         speed = distance / (delta + 1e-3)
 
         # update previus
@@ -572,8 +635,10 @@ class CarlaHuman(Driver):
         self._prev_time = curr_time
 
         vel = self._vehicle.get_velocity()
+        # TODO: figure out why we need this factor of 3.6 here
         vel = 3.6 * math.sqrt(vel.x**2 + vel.y**2 + vel.z**2)
         print('-------> Speed = {}'.format(vel), "differentiated speed ", speed)
+
         return speed
 
     def get_sensor_data(self, goal_pos=None, goal_ori=None):
@@ -605,19 +670,59 @@ class CarlaHuman(Driver):
             else:
                 direction = 2.0
         else:
+            while self.update_once == False:
+                time.sleep(0.01)
+
+            self.last_estimated_speed = self.estimate_speed()
+
             data_buffer_lock.acquire()
             sensor_data = copy.deepcopy(self._data_buffers)
+            # no print
+            self.update_once = False
             data_buffer_lock.release()
 
+            collision_lock.acquire()
+            colllision_event = self._collision_events
+            self._last_collided = len(colllision_event) > 0
+            self._collision_events = []
+            collision_lock.release()
+
+            if len(colllision_event)>0:
+                print(colllision_event)
+            # TODO: make sure those events are actually valid
+            if 'Static' in colllision_event:
+                collision_other = 1.0
+            else:
+                collision_other = 0.0
+            if "Vehicles" in colllision_event:
+                collision_vehicles = 1.0
+            else:
+                collision_vehicles = 0.0
+            if "Pedestrians" in colllision_event:
+                collision_pedestrians = 1.0
+            else:
+                collision_pedestrians = 0.0
+
+
             current_ms_offset = int(math.ceil((datetime.now() - self._episode_t0).total_seconds() * 1000))
-            second_level = namedtuple('second_level', ['forward_speed', 'transform'])
+            second_level = namedtuple('second_level', ['forward_speed', 'transform', 'collision_other', 'collision_pedestrians', 'collision_vehicles'])
             transform = namedtuple('transform', ['location', 'orientation'])
             loc = namedtuple('loc', ['x', 'y'])
             ori = namedtuple('ori', ['x', 'y', 'z'])
             Meas = namedtuple('Meas', ['player_measurements', 'game_timestamp'])
 
             v_transform = self._vehicle.get_transform()
-            measurements = Meas(second_level(self.estimate_speed(), transform(loc(v_transform.location.x, v_transform.location.y), ori(v_transform.rotation.pitch, v_transform.rotation.roll, v_transform.rotation.yaw))), current_ms_offset)
+            measurements = Meas(
+                                second_level(self.last_estimated_speed,
+                                             transform(loc(v_transform.location.x,
+                                                           v_transform.location.y),
+                                                       ori(v_transform.rotation.pitch,
+                                                           v_transform.rotation.roll,
+                                                           v_transform.rotation.yaw)),
+                                             collision_other,
+                                             collision_pedestrians,
+                                             collision_vehicles),
+                                current_ms_offset)
             direction = self._current_command
 
             #print('[Speed = {} Km/h] [Direction = {}]'.format(measurements.player_measurements.forward_speed, direction))
@@ -629,11 +734,7 @@ class CarlaHuman(Driver):
         if __CARLA_VERSION__ == '0.8.X':
             self.carla.send_control(control)
         else:
-            if control.steer < -50:
-                # TODO: this is some hack to let the auto agent to drive
-                pass
-            else:
-                self._vehicle.apply_control(control)
+            self._vehicle.apply_control(control)
 
             # location = self._vehicle.get_location()
             # location.z = 200.0

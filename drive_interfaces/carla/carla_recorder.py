@@ -128,7 +128,7 @@ class Recorder(object):
                 image = scipy.misc.imresize(image, [self._image_size2, self._image_size1])
                 encoded = np.fromstring(cv2.imencode(".jpg", image, [int(cv2.IMWRITE_JPEG_QUALITY), 80])[1], dtype=np.uint8)
 
-                print(encoded.shape)
+                #print(encoded.shape)
 
             elif "seg" in sensor_name.lower():
                 if __CARLA_VERSION__ == '0.8.X':
@@ -217,6 +217,9 @@ class Recorder(object):
             self.data_rewards[pos, 8] = measurements.player_measurements.transform.location.x # cm -> m, but this is not used anywhere
             self.data_rewards[pos, 9] = measurements.player_measurements.transform.location.y # cm -> m, but this is not used anywhere
             self.data_rewards[pos, 10] = measurements.player_measurements.forward_speed # TODO: km/h -> m/s
+            self.data_rewards[pos, 11] = measurements.player_measurements.collision_other
+            self.data_rewards[pos, 12] = measurements.player_measurements.collision_pedestrians
+            self.data_rewards[pos, 13] = measurements.player_measurements.collision_vehicles
             self.data_rewards[pos, 20] = measurements.game_timestamp
             self.data_rewards[pos, 21] = measurements.player_measurements.transform.orientation.x # pitch (degree)
             self.data_rewards[pos, 22] = measurements.player_measurements.transform.orientation.y # roll (degree)
@@ -241,6 +244,11 @@ class Recorder(object):
             os.remove(self._current_hf_path)
 
     def remove_current_and_previous(self):
+        #TODO: debug
+        #return 0
+
+
+
         # remove the current one if it's not finished
         self.close()
 

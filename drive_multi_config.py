@@ -131,6 +131,7 @@ if __name__ == "__main__":
     weather_range = [1]
     # end of test case
 
+    # TODO: check whether those are implemented to all 3 cameras
     # the noiser setting
     configs = [("RotationPitch", "0"),  # This is the default one
                ("RotationPitch", "5"),

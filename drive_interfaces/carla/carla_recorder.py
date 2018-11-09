@@ -245,9 +245,6 @@ class Recorder(object):
 
     def remove_current_and_previous(self):
         #TODO: debug
-        #return 0
-
-
 
         # remove the current one if it's not finished
         self.close()

@@ -506,6 +506,7 @@ class CarlaHuman(Driver):
                 or self._last_collided \
                 or self._stucked_counter > 250 \
                 or np.abs(self._vehicle.get_vehicle_control().steer) > 0.95:
+                #or np.abs(self._vehicle.get_vehicle_control().brake) > 1:
                     # TODO intersection other lane is not available, so omit from the condition right now
                     if self._stucked_counter > 250:
                         reset_because_stuck = True
@@ -644,6 +645,8 @@ class CarlaHuman(Driver):
                 print('[Throttle = {}] [Steering = {}] [Brake = {}]'.format(control.throttle, control.steer, control.brake))
             else:
                 control = self._vehicle.get_vehicle_control()
+                control.brake = min(control.brake, 1.0)
+                control.brake = max(control.brake, -1.0)
 
         print('[Throttle = {}] [Steering = {}] [Brake = {}]'.format(control.throttle, control.steer, control.brake))
         return control

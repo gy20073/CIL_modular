@@ -243,7 +243,7 @@ class CarlaHuman(Driver):
                     self._camera_right.destroy()
                     self._camera_right = None
                 if self.collision_sensor is not None:
-                    self.collision_sensor.destroy()
+                    self.collision_sensor.sensor.destroy()
                     self.collision_sensor = None
 
 
@@ -295,6 +295,13 @@ class CarlaHuman(Driver):
             print('RESET ON POSITION ', self.episode_config[0], ", the target location is: ", self.episode_config[1])
 
         else:
+            # DEBug the wait for tick one
+            #self.__del__()
+            #self.carla.__del__()
+            #self.carla = CarlaClient(self._host, int(self._port))
+            #self.carla.set_timeout(2000)
+            # restart a carla connection
+
             # destroy old actors
             print('destroying actors')
             for actor in self._actor_list:
@@ -350,8 +357,17 @@ class CarlaHuman(Driver):
 
             count = 50
 
+            if self._vehicle is not None:
+                print(self.try_spawn_random_vehicle_at(blueprints_vehi, random.choice(spawn_points)))
+                print(self.try_spawn_random_vehicle_at(blueprints_vehi, random.choice(spawn_points)))
+                print("ignore the destroying process22222 no spawning, spawning2")
+                #return
+
+
             for spawn_point in spawn_points:
                 if self.try_spawn_random_vehicle_at(blueprints_vehi, spawn_point):
+                    self._world.wait_for_tick(10.0)
+                    print("ticking")
                     count -= 1
                 if count <= 0:
                     break
@@ -360,6 +376,8 @@ class CarlaHuman(Driver):
                 if self.try_spawn_random_vehicle_at(blueprints_vehi, random.choice(spawn_points)):
                     count -= 1
             # end traffic addition!
+
+
 
             blueprints = self._world.get_blueprint_library().filter('vehicle')
             vechile_blueprint = [e for i, e in enumerate(blueprints) if e.id == 'vehicle.lincoln.mkz2017'][0]
@@ -632,7 +650,7 @@ class CarlaHuman(Driver):
                 control = self._latest_measurements.player_measurements.autopilot_control
                 print('[Throttle = {}] [Steering = {}] [Brake = {}]'.format(control.throttle, control.steer, control.brake))
             else:
-                control = self._vehicle.control
+                control = self._vehicle.get_vehicle_control()
 
         print('[Throttle = {}] [Steering = {}] [Brake = {}]'.format(control.throttle, control.steer, control.brake))
         return control
@@ -685,7 +703,7 @@ class CarlaHuman(Driver):
             else:
                 direction = 2.0
         else:
-            self.last_timestamp = self._world.wait_for_tick(10.0)
+            self.last_timestamp = self.carla.get_world().wait_for_tick(30.0)
             #print(timestamp.delta_seconds, "delta seconds")
 
             while self.update_once == False:

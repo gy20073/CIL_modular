@@ -56,7 +56,7 @@ class Noiser(object):
         if self.noise_type == 'Spike':  # spike noise there are no variations on current noise over time
             self.noise_sign = float(random.randint(0, 1) * 2 - 1)
             if self.use_tick:
-                self.this_intensity = random.random() * self.intensity + 2.5
+                self.this_intensity = (random.random() + 0.5) * self.intensity
             else:
                 self.this_intensity = self.intensity * random.random() * 5 + 2.5
 

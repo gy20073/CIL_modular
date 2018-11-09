@@ -501,12 +501,15 @@ class CarlaHuman(Driver):
 
                 if time.time() - self._start_time > self._reset_period \
                 or self._last_collided \
-                or self._stucked_counter > 250:
+                or self._stucked_counter > 250 \
+                or np.abs(self._vehicle.get_vehicle_control().steer) > 0.95:
                     # TODO intersection other lane is not available, so omit from the condition right now
                     if self._stucked_counter > 250:
                         reset_because_stuck = True
                     else:
                         reset_because_stuck = False
+                    if np.abs(self._vehicle.get_vehicle_control().steer) > 0.95:
+                        print("reset because of large steer")
 
                     self._reset()
 

@@ -1,3 +1,5 @@
+import threading
+import weakref
 import cv2
 import copy
 import sys, os

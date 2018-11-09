@@ -1,5 +1,7 @@
-import cv2, weakref
-import copy, threading
+import threading
+import weakref
+import cv2
+import copy
 import sys, os
 import pygame, io, math, time
 import random
@@ -7,6 +9,7 @@ from configparser import ConfigParser
 from configparser import SafeConfigParser
 from datetime import datetime
 import numpy as np
+import math as m
 from collections import namedtuple
 
 __CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.8.X')
@@ -647,22 +650,11 @@ class CarlaHuman(Driver):
 
 
     def estimate_speed(self):
-        vehicle_current_location = self._vehicle.get_location()
-
-        distance = math.sqrt(((vehicle_current_location.x - self._vehicle_prev_location.x) ** 2) + ((vehicle_current_location.y - self._vehicle_prev_location.y) ** 2) + ((vehicle_current_location.z - self._vehicle_prev_location.z) ** 2))
-
-        delta = self.last_timestamp.delta_seconds
-        speed = distance / (delta + 1e-3)
-
-        # update previus
-        self._vehicle_prev_location =  vehicle_current_location
-
         vel = self._vehicle.get_velocity()
-        # TODO: figure out why we need this factor of 3.6 here
-        vel = math.sqrt(vel.x**2 + vel.y**2 + vel.z**2)
-        #print('-------> Speed = {}'.format(vel), "differentiated speed ", speed)
+        speed = m.sqrt(vel.x**2 + vel.y**2 + vel.z**2)
 
-        return vel #speed
+        # speed in m/s
+        return speed
 
     def get_sensor_data(self, goal_pos=None, goal_ori=None):
         if __CARLA_VERSION__ == '0.8.X':

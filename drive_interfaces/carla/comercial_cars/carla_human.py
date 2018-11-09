@@ -1,5 +1,5 @@
-import cv2, weakref
-import copy, threading
+import cv2
+import copy
 import sys, os
 import pygame, io, math, time
 import random
@@ -7,6 +7,7 @@ from configparser import ConfigParser
 from configparser import SafeConfigParser
 from datetime import datetime
 import numpy as np
+import math as m
 from collections import namedtuple
 
 __CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.8.X')

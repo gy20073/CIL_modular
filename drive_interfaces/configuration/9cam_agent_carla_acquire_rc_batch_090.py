@@ -14,7 +14,7 @@ class configDrive:
         # collect method
         self.autopilot = True
         self.use_planner = True # only useful in carlaHuman, used to randomly walk in the city
-        self.noise = "None" #"Spike"  # NON CARLA SETTINGS PARAM
+        self.noise = "Spike" #"Spike"  # NON CARLA SETTINGS PARAM
         # TODO: some spike related numbers
 
 

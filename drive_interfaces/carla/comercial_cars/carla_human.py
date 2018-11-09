@@ -656,10 +656,10 @@ class CarlaHuman(Driver):
 
         vel = self._vehicle.get_velocity()
         # TODO: figure out why we need this factor of 3.6 here
-        vel = 3.6 * math.sqrt(vel.x**2 + vel.y**2 + vel.z**2)
-        print('-------> Speed = {}'.format(vel), "differentiated speed ", speed)
+        vel = math.sqrt(vel.x**2 + vel.y**2 + vel.z**2)
+        #print('-------> Speed = {}'.format(vel), "differentiated speed ", speed)
 
-        return speed
+        return vel #speed
 
     def get_sensor_data(self, goal_pos=None, goal_ori=None):
         if __CARLA_VERSION__ == '0.8.X':

@@ -190,13 +190,18 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
                 screen_manager.plot_camera(image_vbp, [1, 0])
 
             driver.act(action_noisy)
+
+        print("before returning true")
         return True
 
     except:
         traceback.print_exc()
         return False
     finally:
-        pygame.quit()
+        print("in finally")
+        if drive_config.show_screen:
+            pygame.quit()
+        print("after quit and before del")
         driver.__del__()
         print("closing recorder")
         recorder.close()

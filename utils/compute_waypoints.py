@@ -4,16 +4,17 @@ import numpy as np
 sys.path.append('drive_interfaces/carla/carla_client')
 
 # TODO change this
-input_id = "steer103_v5_town02"
-output_id = "steer103_v5_town02_way"
+input_id = "turns01"
+output_id = "turns01_way"
 debug_start = 0
 debug_end= 140000000
 future_time = 2.0 # second
-is_carla_090 = False
+is_carla_090 = True
+base = "/data/yang/code/aws/scratch/carla_collect/"
+base = "/data/yang/code/aws/scratch/carla_collect/human/"
 
-# TODO: change the path
-all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/"+str(input_id)+"/*/data_*.h5")
-input_prefix = "/data/yang/code/aws/scratch/carla_collect/"+str(input_id)
+all_files = glob.glob(base+str(input_id)+"/*/data_*.h5")
+input_prefix = base+str(input_id)
 
 # first read all pos and ori
 pos = [] # or location
@@ -31,8 +32,7 @@ for one_h5 in sorted(all_files)[debug_start:debug_end]:
         ori.append(hin['targets'][:, 21:23])
     else:
         yaws = hin['targets'][:, 23]
-        # TODO: this order might be wrong
-        this_ori = np.stack((np.sin(yaws), np.cos(yaws)), 1)
+        this_ori = np.stack((np.cos(np.radians(yaws)), np.sin(np.radians(yaws))), 1)
         ori.append(this_ori)
 
 pos = np.concatenate(pos, axis=0)

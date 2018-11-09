@@ -521,9 +521,7 @@ class CarlaHuman(Driver):
                         print("resetting because getting stucked.....")
                         return True
         else:
-            if (self.joystick.get_button(4)):
-                self._reset()
-                print("we are issuing a reset......")
+            pass
 
         return False
 
@@ -620,7 +618,7 @@ class CarlaHuman(Driver):
                         self._current_command = 5.0
                     if event.__dict__['button'] == 23:
                         self._current_command = 0.0
-                    if event.__dict__['button'] == 5:
+                    if event.__dict__['button'] == 4:
                         self._reset()
                         return VehicleControl()
                 if event.type == pygame.JOYBUTTONUP:

@@ -175,8 +175,8 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
                         image = sensor_data['CameraMiddle']
 
                     mapping = {2.0: "follow", 3.0: "left", 4.0: "right", 5.0: "straight"}
-                    image = write_text_on_image(image, mapping[direction], 30)
-                    image = write_text_on_image(image, '{:03.2f}'.format(speed_kmh), 30, (150, 0))
+                    image = write_text_on_image(image, mapping[direction], 30, (0, image.shape[0]-80))
+                    image = write_text_on_image(image, '{:03.2f}'.format(speed_kmh), 30, (150, image.shape[0]-80))
 
                     image = pygame.surfarray.make_surface(np.transpose(image, (1, 0, 2)))
                     gameDisplay.blit(image, (0, 0))

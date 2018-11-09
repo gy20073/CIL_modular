@@ -193,6 +193,9 @@ class CarlaHuman(Driver):
             self._brake_idx = int(self._parser.get('G29 Racing Wheel', 'brake'))
             self._reverse_idx = int(self._parser.get('G29 Racing Wheel', 'reverse'))
             self._handbrake_idx = int(self._parser.get('G29 Racing Wheel', 'handbrake'))
+        self.last_timestamp = lambda x: x
+        self.last_timestamp.elapsed_seconds = 0.0
+        self.last_timestamp.delta_seconds = 0.2
 
 
     def start(self):
@@ -295,13 +298,6 @@ class CarlaHuman(Driver):
             print('RESET ON POSITION ', self.episode_config[0], ", the target location is: ", self.episode_config[1])
 
         else:
-            # DEBug the wait for tick one
-            #self.__del__()
-            #self.carla.__del__()
-            #self.carla = CarlaClient(self._host, int(self._port))
-            #self.carla.set_timeout(2000)
-            # restart a carla connection
-
             # destroy old actors
             print('destroying actors')
             for actor in self._actor_list:
@@ -357,17 +353,8 @@ class CarlaHuman(Driver):
 
             count = 50
 
-            if self._vehicle is not None:
-                print(self.try_spawn_random_vehicle_at(blueprints_vehi, random.choice(spawn_points)))
-                print(self.try_spawn_random_vehicle_at(blueprints_vehi, random.choice(spawn_points)))
-                print("ignore the destroying process22222 no spawning, spawning2")
-                #return
-
-
             for spawn_point in spawn_points:
                 if self.try_spawn_random_vehicle_at(blueprints_vehi, spawn_point):
-                    self._world.wait_for_tick(10.0)
-                    print("ticking")
                     count -= 1
                 if count <= 0:
                     break
@@ -703,7 +690,8 @@ class CarlaHuman(Driver):
             else:
                 direction = 2.0
         else:
-            self.last_timestamp = self.carla.get_world().wait_for_tick(30.0)
+            self.last_timestamp.elapsed_seconds += 0.2
+            #self.last_timestamp = self.carla.get_world().wait_for_tick(30.0)
             #print(timestamp.delta_seconds, "delta seconds")
 
             while self.update_once == False:

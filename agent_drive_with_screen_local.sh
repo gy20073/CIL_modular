@@ -6,6 +6,8 @@
 # --show_screen
 # --noise
 
+# ./CarlaUE4.sh Town03 -windowed -ResX=90 -ResY=90
+# CARLA_VERSION="0.9.X" bash agent_drive_with_screen_local.sh town03_positions/intersections.csv
 
 positions_file=$1
 python2 chauffeur.py \

@@ -7,6 +7,7 @@ from carla.planner.planner import Planner
 
 input_id = "steer103_v5_town02"
 output_id = "steer103_v5_town02_dir"
+CityName = "Town01"
 debug_start = 0
 debug_end= 14000000000
 use_3_cam = False
@@ -43,7 +44,7 @@ pos[:, 2] = 0.22
 ori = np.concatenate(ori, axis=0)
 
 # instantiate a planner
-CityName = "Town01"
+
 planner = Planner(CityName)
 
 # compute is this position away from an intersection?

@@ -71,7 +71,8 @@ def sample_images_from_h5(path, temp, show_all, is3, pure_video):
                                             "speed    :" + td(f["targets"][imid, 10]) + "\n" +
                                             "ori      :" + td(f["targets"][imid, 21]) + " " + td(f["targets"][imid, 22]) + " " + td(f["targets"][imid, 23]) + "\n" +
                                             "location :" + td(f["targets"][imid, 8]) + " " + td(f["targets"][imid, 9]) + "\n" +
-                                            "time(ms) :" + td(f["targets"][imid, 20]) + "\n",
+                                            "time(ms) :" + td(f["targets"][imid, 20]) + "\n" +
+                                            "is noisy :" + td(f["targets"][imid, 0]!=f["targets"][imid, 5]) + "\n" ,
                                             fontsize=font)
 
                 # plotting the waypoints on the image

@@ -69,11 +69,11 @@ seqs.append(pos[last_i:])
 seqs_yaw.append(yaw0[last_i:])
 
 # TODO: from here
-const_extension_threshold_left = 6.0
-const_extension_threshold_right = 6.0
+const_extension_threshold_left = 15.0
+const_extension_threshold_right = 15.0
 const_yaw_mean_interval_this = 1
 const_yaw_mean_interval_future = 2
-const_direction_look_ahead = 10.0
+const_direction_look_ahead = 18.0
 
 all_commands = []
 for seq, this_yaw in zip(seqs, seqs_yaw):
@@ -90,6 +90,7 @@ for seq, this_yaw in zip(seqs, seqs_yaw):
     right_bar = 0 # including this one
     look_ahead_bar = 0
     is_inter_count = 1 if is_int[0] else 0
+    last_inter = False
     for i in range(seq.shape[0]):
         # check the neighbourhood to see whether this should be computed from left, straight and right
         # extend the left bar
@@ -104,6 +105,7 @@ for seq, this_yaw in zip(seqs, seqs_yaw):
         while look_ahead_bar < seq.shape[0] - 1 and sldist(seq[look_ahead_bar],
                                                            seq[i]) < const_direction_look_ahead:
             look_ahead_bar += 1
+
         if is_inter_count > 0:
             # within this range, there are some intersections, so we need to compute the direction
             # the bar ahead
@@ -150,9 +152,53 @@ for seq, this_yaw in zip(seqs, seqs_yaw):
                     commands[i] = 5.0
                 if verbose:
                     print(v1, v2, a1, a2, a2-a1, delta, commands[i])
+            last_inter = True
         else:
+            if last_inter:
+                # going backward and take the maximum vote
+                bar_front = i - 1
+                count = {3.0: 0, 4.0: 0, 5.0: 0}
+                last_check = bar_front
+                while bar_front >=1 and commands[bar_front]!=2.0:
+                    if sldist(seq[bar_front], seq[last_check]) > 0.5:
+                        count[commands[bar_front]] += 1
+                        last_check = bar_front
+                    bar_front -= 1
+                bar_front += 1
+                sum = count[3.0] + count[4.0] + count[5.0]
+                if count[5.0] * 1.0 / sum > 0.6:
+                    same = 5.0
+                elif count[3.0] > count[4.0]:
+                    same = 3.0
+                else:
+                    same = 4.0
+                commands[bar_front:i] = same
+
+            last_inter = False
             if verbose:
                 print(2.0)
+
+    i = seq.shape[0]
+    if last_inter:
+        # going backward and take the maximum vote
+        bar_front = i - 1
+        count = {3.0: 0, 4.0: 0, 5.0: 0}
+        last_check = bar_front
+        while bar_front >= 1 and commands[bar_front] != 2.0:
+            if sldist(seq[bar_front], seq[last_check]) > 0.5:
+                count[commands[bar_front]] += 1
+                last_check = bar_front
+            bar_front -= 1
+        bar_front += 1
+        sum = count[3.0] + count[4.0] + count[5.0]
+        if count[5.0] * 1.0 / sum > 0.6:
+            same = 5.0
+        elif count[3.0] > count[4.0]:
+            same = 3.0
+        else:
+            same = 4.0
+        commands[bar_front:i] = same
+    last_inter =False
 
 
     all_commands.append(commands)

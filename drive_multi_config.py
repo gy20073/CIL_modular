@@ -9,6 +9,7 @@ CARLA_PATH = "/scratch/yang/aws_data/carla_0.8.4/CarlaUE4.sh"
 TownBase = "/Game/Maps/"
 CARLA_PATH = "/scratch/yang/aws_data/carla_auto2/CarlaUE4.sh"
 TownBase = "/Game/Carla/Maps/"
+use_docker = False
 
 
 sys.path.append('drive_interfaces/configuration')
@@ -35,7 +36,7 @@ def process_collect(list_of_configs, port, gpu,
     print("port is ", port, "!!!!!!!!!!!!!!!!!!")
     port = int(port)
     count = 5  # to flag that initially we need to start the server
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
+    #os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
     for config, weather in list_of_configs:
         # generate this config
         this_name = config_naming(tag, config, weather)
@@ -57,8 +58,11 @@ def process_collect(list_of_configs, port, gpu,
             count += 1
             if count >= 5:
                 count = 0
-                cmd = ['bash', '-c',
-                       " '%s %s%s  -carla-server -benchmark -fps=5 -carla-world-port=%d' " % (CARLA_PATH, TownBase, TownName, port)]
+                if use_docker:
+                    cmd = ["docker run -p %d-%d:%d-%d --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=%d gy20073/carla_auto2:latest /bin/bash CarlaUE4.sh -carla-server -benchmark -fps=5 -carla-world-port=%d" % (port, port+2, port, port+2, gpu, port)]
+                else:
+                    cmd = ['bash', '-c',
+                           " '%s %s%s  -carla-server -benchmark -fps=5 -carla-world-port=%d' " % (CARLA_PATH, TownBase, TownName, port)]
                 print(" ".join(cmd))
                 print("before spawnling")
                 t = threading.Thread(target=lambda: os.system(" ".join(cmd)))

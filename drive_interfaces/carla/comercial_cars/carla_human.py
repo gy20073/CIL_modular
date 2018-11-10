@@ -73,8 +73,6 @@ class CarlaHuman(Driver):
         self.use_planner = driver_conf.use_planner
         # we need the planner to find a valid episode, so we initialize one no matter what
 
-        self._world = None
-        self._vehicle = None
         self._camera_center = None
         self._spectator = None
         # (last) images store for several cameras
@@ -107,15 +105,7 @@ class CarlaHuman(Driver):
         self._prev_time = datetime.now()
         self._episode_t0 = datetime.now()
 
-        self._vehicle_prev_location = namedtuple("vehicle", "x y z")
-        self._vehicle_prev_location.x = 0.0
-        self._vehicle_prev_location.y = 0.0
-        self._vehicle_prev_location.z = 0.0
-
-
         self._scenario_manager = None
-
-        self._sensor_list = []
 
         self._current_command = 2.0
 
@@ -144,7 +134,8 @@ class CarlaHuman(Driver):
             opts_scenario = {}
 
             if self._autopilot:
-                opts_scenario['weather'] = self._weather_list[int(self._driver_conf.weather) - 1]
+                opts_scenario['weather'] = int(self._driver_conf.weather) - 1
+                opts_scenario['autopilot'] = True
             else:
                 opts_scenario['weather'] = None
                 # select one of the random starting points previously selected
@@ -272,15 +263,15 @@ class CarlaHuman(Driver):
 
                 if time.time() - self._start_time > self._reset_period \
                 or self._last_collided \
-                or self._stucked_counter > 250 \
-                or np.abs(self._vehicle.get_vehicle_control().steer) > 0.95:
+                or self._stucked_counter > 250:# \
+                #or np.abs(self._vehicle.get_vehicle_control().steer) > 0.95:
                     # TODO intersection other lane is not available, so omit from the condition right now
                     if self._stucked_counter > 250:
                         reset_because_stuck = True
                     else:
                         reset_because_stuck = False
-                    if np.abs(self._vehicle.get_vehicle_control().steer) > 0.95:
-                        print("reset because of large steer")
+                    #if np.abs(self._vehicle.get_vehicle_control().steer) > 0.95:
+                    #    print("reset because of large steer")
 
                     self._reset()
 
@@ -409,7 +400,7 @@ class CarlaHuman(Driver):
                 control = self._latest_measurements.player_measurements.autopilot_control
                 print('[Throttle = {}] [Steering = {}] [Brake = {}]'.format(control.throttle, control.steer, control.brake))
             else:
-                control = self._vehicle.get_vehicle_control()
+                control = self._scenario_manager.hero_get_control()
 
         print('[Throttle = {}] [Steering = {}] [Brake = {}]'.format(control.throttle, control.steer, control.brake))
         return control
@@ -447,6 +438,11 @@ class CarlaHuman(Driver):
             measurements = dict_data['measurements']
             sensor_data = dict_data['sensor_data']
             direction = self._current_command
+            self.last_estimated_speed = measurements.player_measurements.forward_speed
+            self._last_collided = measurements.player_measurements.collision_other + \
+                                  measurements.player_measurements.collision_pedestrians + \
+                                  measurements.player_measurements.collision_vehicles
+            self._last_collided = self._last_collided > 0
 
 
         return measurements, sensor_data, direction

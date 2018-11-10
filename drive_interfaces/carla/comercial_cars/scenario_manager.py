@@ -172,10 +172,16 @@ class ScenarioManager():
         if self._camera_right is not None:
             self._camera_right.destroy()
             self._camera_right = None
+        if self._collision_sensor is not None:
+            self._collision_sensor.sensor.destroy()
+            self._collision_sensor = None
 
 
     def hero_apply_control(self, control):
         self._hero_vehicle.apply_control(control)
+
+    def hero_get_control(self):
+        return self._hero_vehicle.get_vehicle_control()
 
     def get_sync_sensor_data(self):
         self.last_timestamp.elapsed_seconds += 0.2
@@ -191,7 +197,6 @@ class ScenarioManager():
 
         collision_lock.acquire()
         collision_event = self._collision_events
-        self._last_collided = len(collision_event) > 0
         self._collision_events = []
         collision_lock.release()
 
@@ -268,7 +273,7 @@ class ScenarioManager():
 
     def _init_weathers(self):
         if self._random_weather:
-            self._current_weather = random.randint(0, len(self._weather_list)-1)
+            self._current_weather = random.randint(0, len(self._weather_list))
 
         print('---- CUrrent weather = {}'.format(self._current_weather))
         weather_string =  self._weather_list[self._current_weather]
@@ -358,7 +363,7 @@ class ScenarioManager():
 
         print('found %d spawn points.' % len(self._spawn_points))
 
-        count = 10
+        count = 50
         for spawn_point in self._spawn_points:
             if self._try_spawn_random_vehicle_at(blueprints_vehi, spawn_point):
                 count -= 1

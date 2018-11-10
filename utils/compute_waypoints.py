@@ -4,14 +4,14 @@ import numpy as np
 sys.path.append('drive_interfaces/carla/carla_client')
 
 # TODO change this
-input_id = "turns01"
-output_id = "turns01_way"
+input_id = "steer103_v5_town02"
+output_id = "steer103_v5_way_v2_town02"
 debug_start = 0
 debug_end= 140000000
 future_time = 2.0 # second
-is_carla_090 = True
+is_carla_090 = False
 base = "/data/yang/code/aws/scratch/carla_collect/"
-base = "/data/yang/code/aws/scratch/carla_collect/human/"
+#base = "/data/yang/code/aws/scratch/carla_collect/human/"
 
 all_files = glob.glob(base+str(input_id)+"/*/data_*.h5")
 input_prefix = base+str(input_id)

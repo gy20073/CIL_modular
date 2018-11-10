@@ -6,8 +6,8 @@ sys.path.append('drive_interfaces/carla/carla_client')
 from carla.planner.planner import Planner
 
 input_id = "steer103_v5_town02"
-output_id = "steer103_v5_town02_dir"
-CityName = "Town01"
+output_id = "steer103_v5_town02/"
+CityName = "Town02"
 debug_start = 0
 debug_end= 14000000000
 use_3_cam = False

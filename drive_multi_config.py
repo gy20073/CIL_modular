@@ -1,5 +1,5 @@
 import sys, os, time, threading
-os.environ['CARLA_VERSION'] = '0.9.auto2'
+#os.environ['CARLA_VERSION'] = '0.9.auto2'
 
 from configparser import ConfigParser
 from drive import drive
@@ -7,10 +7,10 @@ from multiprocessing import Process
 
 CARLA_PATH = "/scratch/yang/aws_data/carla_0.8.4/CarlaUE4.sh"
 TownBase = "/Game/Maps/"
-CARLA_PATH = "/scratch/yang/aws_data/carla_auto2/CarlaUE4.sh"
-TownBase = "/Game/Carla/Maps/"
-use_docker = True
-start_port=2100
+#CARLA_PATH = "/scratch/yang/aws_data/carla_auto2/CarlaUE4.sh"
+#TownBase = "/Game/Carla/Maps/"
+use_docker = False
+start_port=2200
 
 
 sys.path.append('drive_interfaces/configuration')
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     if collect_all:
         driver_config = "9cam_agent_carla_acquire_rc_batch_allsensors"
 
-    TownName = "Town03"
+    TownName = "Town02"
     if collect_all:
         TownName = "Town01"
 
@@ -153,7 +153,7 @@ if __name__ == "__main__":
 
     #available_gpus = [0, 2, 4, 5, 6]
     #num_processes = len(available_gpus) * 2
-    available_gpus = [2, 3]
+    available_gpus = [0]
     num_processes = 6
 
     list_of_configs = [[] for i in range(num_processes)]
@@ -176,7 +176,7 @@ if __name__ == "__main__":
                                                   TownName))
         p.start()
         print("after starts!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        time.sleep(60)
+        time.sleep(30)
         ps.append(p)
         print("finsished starting process ", i)
 

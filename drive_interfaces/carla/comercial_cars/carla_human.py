@@ -483,8 +483,8 @@ class CarlaHuman(Driver):
                   or self._latest_measurements.player_measurements.collision_pedestrians > 0.0 \
                   or self._latest_measurements.player_measurements.collision_other       > 0.0 \
                   or (self._latest_measurements.player_measurements.intersection_otherlane > 0.0 and self._latest_measurements.player_measurements.autopilot_control.steer < -0.99) \
-                  or self._stucked_counter > 150:
-                    if self._stucked_counter > 150:
+                  or self._stucked_counter > 250:
+                    if self._stucked_counter > 250:
                         reset_because_stuck = True
                     else:
                         reset_because_stuck = False

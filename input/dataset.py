@@ -201,12 +201,13 @@ class Dataset(object):
             if hasattr(self._config, "prob_augment_lane") and self._augmenter[i]!=None:
                 for ib in range(sensors[i].shape[0]):
                     if aug_ind[ib]:
-                        decoded = cv2.imdecode(segmentations[i][ib], 1)
-                        sensors[i][ib, :, :, :] = self.augment_lane(sensors[i][ib, :,:,:], decoded)
+                        if len(segmentations[i][ib]) > 0:
+                            decoded = cv2.imdecode(segmentations[i][ib], 1)
+                            sensors[i][ib, :, :, :] = self.augment_lane(sensors[i][ib, :,:,:], decoded)
 
-                        if np.random.rand() < 0.005:
-                            #cv2.imwrite("debug.png", sensors[i][ib, :,:,::-1])
-                            pass
+                            if np.random.rand() < 0.005:
+                                cv2.imwrite("debug.png", sensors[i][ib, :,:,::-1])
+                                pass
 
             if self._config.image_as_float[i]:
                 sensors[i] = sensors[i].astype(np.float32)

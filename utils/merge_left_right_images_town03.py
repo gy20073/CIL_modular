@@ -5,8 +5,8 @@ sys.path.append('drive_interfaces/carla/carla_client')
 
 input_id = "steer103_v5_town03"
 debug_start = 0
-debug_end= 60
-verbose = True
+debug_end= 6000000000
+verbose = False
 intersection_path = "/data1/yang/code/aws/CIL_modular/town03_intersections/positions_file_town03.txt"
 
 all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/"+str(input_id)+"/*/data_*.h5")
@@ -166,7 +166,9 @@ for seq, this_yaw in zip(seqs, seqs_yaw):
                     bar_front -= 1
                 bar_front += 1
                 sum = count[3.0] + count[4.0] + count[5.0]
-                if count[5.0] * 1.0 / sum > 0.6:
+                if sum == 0.0:
+                    same = commands[i-1]
+                elif count[5.0] * 1.0 / sum > 0.6:
                     same = 5.0
                 elif count[3.0] > count[4.0]:
                     same = 3.0
@@ -191,7 +193,9 @@ for seq, this_yaw in zip(seqs, seqs_yaw):
             bar_front -= 1
         bar_front += 1
         sum = count[3.0] + count[4.0] + count[5.0]
-        if count[5.0] * 1.0 / sum > 0.6:
+        if sum == 0.0:
+            same = commands[i - 1]
+        elif count[5.0] * 1.0 / sum > 0.6:
             same = 5.0
         elif count[3.0] > count[4.0]:
             same = 3.0

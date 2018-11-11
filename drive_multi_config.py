@@ -9,7 +9,8 @@ CARLA_PATH = "/scratch/yang/aws_data/carla_0.8.4/CarlaUE4.sh"
 TownBase = "/Game/Maps/"
 CARLA_PATH = "/scratch/yang/aws_data/carla_auto2/CarlaUE4.sh"
 TownBase = "/Game/Carla/Maps/"
-use_docker = False
+use_docker = True
+start_port=2100
 
 
 sys.path.append('drive_interfaces/configuration')
@@ -152,8 +153,8 @@ if __name__ == "__main__":
 
     #available_gpus = [0, 2, 4, 5, 6]
     #num_processes = len(available_gpus) * 2
-    available_gpus = [4]
-    num_processes = 1
+    available_gpus = [2, 3]
+    num_processes = 6
 
     list_of_configs = [[] for i in range(num_processes)]
 
@@ -166,7 +167,7 @@ if __name__ == "__main__":
     ps=[]
     for i in range(num_processes):
         p = Process(target=process_collect, args=(list_of_configs[i],
-                                                  2000+i*3,
+                                                  start_port+i*3,
                                                   available_gpus[i % len(available_gpus)],
                                                   tag,
                                                   generated_config_cache_path,
@@ -175,7 +176,7 @@ if __name__ == "__main__":
                                                   TownName))
         p.start()
         print("after starts!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        time.sleep(5)
+        time.sleep(60)
         ps.append(p)
         print("finsished starting process ", i)
 

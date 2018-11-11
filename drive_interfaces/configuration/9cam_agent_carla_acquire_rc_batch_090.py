@@ -6,7 +6,7 @@ class configDrive:
         # resource related
         self.host = "127.0.0.1"
         self.port = 2000
-        self.path = "/scratch/yang/aws_data/carla_collect/steer103_v5_town03/"  # If path is set go for it , if not expect a name set
+        self.path = "/scratch/yang/aws_data/carla_collect/nonoise_town03/"  # If path is set go for it , if not expect a name set
 
         # data collection related
         self.city_name = 'Town03'
@@ -14,7 +14,7 @@ class configDrive:
         # collect method
         self.autopilot = True
         self.use_planner = True # only useful in carlaHuman, used to randomly walk in the city
-        self.noise = "Spike" #"Spike"  # NON CARLA SETTINGS PARAM
+        self.noise = "None" #"Spike"  # NON CARLA SETTINGS PARAM
         # TODO: some spike related numbers
 
 

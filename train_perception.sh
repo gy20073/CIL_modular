@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-export CUDA_VISIBLE_DEVICES=4
+export CUDA_VISIBLE_DEVICES=5
 ulimit -Sn 600000
 python chauffeur.py train \
-    -e mm45_v4_wp2town3cam_3town \
+    -e mm45_v4_wp2town3cam_2p2town \
     -m 0.05

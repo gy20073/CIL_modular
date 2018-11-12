@@ -1,17 +1,26 @@
 import sys, os, time, threading
-#os.environ['CARLA_VERSION'] = '0.9.auto2'
+
+TownName = "Town02"
+start_port=2200
+available_gpus = [0]
+num_processes = 8
+use_docker = False
+# 9cam_agent_carla_acquire_rc_batch_090, change its contents
+
+if TownName == "Town03":
+    CARLA_PATH = "/scratch/yang/aws_data/carla_auto2/CarlaUE4.sh"
+    os.environ['CARLA_VERSION'] = '0.9.auto2'
+    docker_path = "gy20073/carla_auto2:latest"
+    town_within_path = "/Game/Carla/Maps/Town03"
+else:
+    CARLA_PATH = "/scratch/yang/aws_data/carla_0.8.4/CarlaUE4.sh"
+    docker_path = "gy20073/carla_084:latest"
+    town_within_path = "/Game/Maps/" + TownName
+
 
 from configparser import ConfigParser
 from drive import drive
 from multiprocessing import Process
-
-CARLA_PATH = "/scratch/yang/aws_data/carla_0.8.4/CarlaUE4.sh"
-TownBase = "/Game/Maps/"
-#CARLA_PATH = "/scratch/yang/aws_data/carla_auto2/CarlaUE4.sh"
-#TownBase = "/Game/Carla/Maps/"
-use_docker = False
-start_port=2200
-
 
 sys.path.append('drive_interfaces/configuration')
 
@@ -60,10 +69,10 @@ def process_collect(list_of_configs, port, gpu,
             if count >= 5:
                 count = 0
                 if use_docker:
-                    cmd = ["docker run -p %d-%d:%d-%d --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=%d gy20073/carla_auto2:latest /bin/bash CarlaUE4.sh -carla-server -benchmark -fps=5 -carla-world-port=%d" % (port, port+2, port, port+2, gpu, port)]
+                    cmd = ["docker run -p %d-%d:%d-%d --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=%d %s /bin/bash CarlaUE4.sh %s -carla-server -benchmark -fps=5 -carla-world-port=%d" % (port, port+2, port, port+2, gpu, docker_path, town_within_path, port)]
                 else:
-                    cmd = ['bash', '-c',
-                           " '%s %s%s  -carla-server -benchmark -fps=5 -carla-world-port=%d' " % (CARLA_PATH, TownBase, TownName, port)]
+                    cmd = ['bash', '-c', " '%s %s  -carla-server -benchmark -fps=5 -carla-world-port=%d' " % (CARLA_PATH, town_within_path, port)]
+
                 print(" ".join(cmd))
                 print("before spawnling")
                 t = threading.Thread(target=lambda: os.system(" ".join(cmd)))
@@ -88,7 +97,6 @@ if __name__ == "__main__":
     if collect_all:
         driver_config = "9cam_agent_carla_acquire_rc_batch_allsensors"
 
-    TownName = "Town02"
     if collect_all:
         TownName = "Town01"
 
@@ -153,8 +161,6 @@ if __name__ == "__main__":
 
     #available_gpus = [0, 2, 4, 5, 6]
     #num_processes = len(available_gpus) * 2
-    available_gpus = [0]
-    num_processes = 6
 
     list_of_configs = [[] for i in range(num_processes)]
 

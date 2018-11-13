@@ -292,7 +292,7 @@ class CarlaMachine(Agent, Driver):
 
             t2 = time.time()
             # here we should add the visualization
-            for i in [1]: #range(self.batch_size):
+            for i in [0,1,2]: #range(self.batch_size):
                 to_be_visualized = self.perception_interface.visualize(image_input,i)
                 nrow, ncol = self.perception_interface.get_viz_nrow_ncol()
                 out_vis.append(to_be_visualized)

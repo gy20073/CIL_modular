@@ -57,6 +57,9 @@ def split_original(controls, steers, labels_per_division, steering_bins_perc):
         else:
             initial_partition[index].append(i)
 
+    for i in range(len(initial_partition)):
+        print(len(initial_partition[i]), i, " length of the dataset, with index i ")
+
     # then we continue to partition the steers
     output = []
     for i in range(len(initial_partition)):

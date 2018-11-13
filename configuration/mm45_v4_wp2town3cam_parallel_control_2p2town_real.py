@@ -25,16 +25,16 @@ class configMain:
         self.sensor_augments = ['SegLeft', 'SegMiddle', 'SegRight']
         self.camera_combine = "channel_stack"  # width_stack
 
-        self.targets_names = ['wp1x', 'wp1y', 'wp2x', 'wp2y', 'wp3x', 'wp3y', 'wp4x', 'wp4y', 'wp5x', 'wp5y',
-                              'wp6x', 'wp6y', 'wp7x', 'wp7y', 'wp8x', 'wp8y', 'wp9x', 'wp9y', 'wp10x', 'wp10y', 'Speed']
-        self.targets_sizes = [1] * 21
+        self.targets_names = ['Steer', 'Gas', 'Brake', 'Speed', 'wp1x', 'wp1y', 'wp2x', 'wp2y', 'wp3x', 'wp3y', 'wp4x', 'wp4y', 'wp5x', 'wp5y',
+                              'wp6x', 'wp6y', 'wp7x', 'wp7y', 'wp8x', 'wp8y', 'wp9x', 'wp9y', 'wp10x', 'wp10y']
+        self.targets_sizes = [1] * len(self.targets_names)
 
         self.inputs_names = ['Control', 'Speed']
         self.inputs_sizes = [4, 1]
 
         # if there is branching, this is used to build the network. Names should be same as targets
         # currently the ["Steer"]x4 should not be changed
-        self.branch_config = [['wp1x', 'wp1y', 'wp2x', 'wp2y', 'wp3x', 'wp3y', 'wp4x', 'wp4y', 'wp5x', 'wp5y',
+        self.branch_config = [["Steer", "Gas", "Brake", 'wp1x', 'wp1y', 'wp2x', 'wp2y', 'wp3x', 'wp3y', 'wp4x', 'wp4y', 'wp5x', 'wp5y',
                               'wp6x', 'wp6y', 'wp7x', 'wp7y', 'wp8x', 'wp8y', 'wp9x', 'wp9y', 'wp10x', 'wp10y']] * 4 + \
                             [["Speed"]]
 
@@ -57,10 +57,10 @@ class configMain:
 
         # perception module related
         self.use_perception_stack = True
-        self.perception_gpus = [6, 7]
+        self.perception_gpus = [5]
         self.perception_paths = "path_jormungandr_newseg"
         self.perception_batch_sizes = {"det_COCO": 3, "det_TL": 3, "seg": 4, "depth": 4, "det_TS": -1}
-        self.perception_num_replicates = {"det_COCO": -1, "det_TL": 2, "seg": 2, "depth": -1, "det_TS": -1}
+        self.perception_num_replicates = {"det_COCO": -1, "det_TL": -1, "seg": 3, "depth": -1, "det_TS": -1}
         # debug
         #self.perception_num_replicates = {"det_COCO": -1, "det_TL": -1, "seg": -1, "depth": 1, "det_TS": -1}
         if self.use_perception_stack:
@@ -69,7 +69,7 @@ class configMain:
             self.sensors_normalize = [False]*3
             self.perception_initialization_sleep=30
             # debug
-            self.feature_input_size = (39, 52, (54+72)*3)
+            self.feature_input_size = (39, 52, 54*3)
         else:
             self.feature_input_size = self.image_size
 
@@ -81,7 +81,7 @@ class configMain:
         #self.waypoint_return_control = True
         self.camera_middle_zoom = {'CameraLeft': False, 'CameraMiddle': True, 'CameraRight': False}
 
-#mm45_v4_wp2town3cam_2p2town.py
+
 class configInput(configMain):
     def __init__(self):
         configMain.__init__(self)
@@ -102,10 +102,9 @@ class configInput(configMain):
             random_order=True  # do all of the above in random order
         )]*3
 
-
         all_files = []
         self.val_db_path = []
-        ids = ["steer103_v5_way_v2", 'steer103_v5_way_v2_town02', "nonoise_town03_way"]#, "nonoise_town02_way"]
+        ids = ["steer103_v5_way_v2", 'steer103_v5_way_v2_town02', "nonoise_town03_way", "nonoise_town02_way"]
 
         for id in ids:
             all_files += glob.glob("/data/yang/code/aws/scratch/carla_collect/"+id+"/*/data_*.h5")
@@ -116,7 +115,6 @@ class configInput(configMain):
                         2) + "/data_*.h5")
 
         self.train_db_path = list(set(all_files) - set(self.val_db_path))
-
 
         self.speed_factor = 40.0  # In KM/H
 
@@ -135,7 +133,7 @@ class configTrain(configMain):
         configMain.__init__(self)
 
         self.loss_function = 'mse_branched'  # Chose between: mse_branched, mse_branched_ladd
-        self.control_mode = 'single_branch_yang_wp'
+        self.control_mode = 'single_branch_yang_wp_stack'
         # TODO: tune it
         self.learning_rate = 1e-4
         # use the default segmentation network
@@ -147,13 +145,14 @@ class configTrain(configMain):
         self.training_schedule = [[21000, factor**1], [50000, factor**2], [100000, factor**3]]
 
         self.branch_loss_weight = [0.95, 0.95, 0.95, 0.95, 0.95]
-        self.variable_weight = {'Speed': 1.0}
+        self.variable_weight = {'Speed': 1.0, 'Steer': 1.0, 'Gas': 1.0, 'Brake': 1.0}
 
         stds = np.array([0.4013355, 0.03673478, 0.8015227, 0.08709376, 1.1995894,
                0.15118779, 1.5958277, 0.22680537, 1.9899381, 0.31146216,
                2.3822896, 0.40258747, 2.7729225, 0.49791673, 3.16214,
                0.5958508, 3.5511851, 0.6951308, 1.0, 1.0]) # add to dummy entries
-        weighting = 1.0 / np.maximum(stds, 0.1) * 0.1
+        small_factor = 0.03
+        weighting = 1.0 / np.maximum(stds, 0.1) * 0.1 * small_factor
 
         count = 0
         for i in range(10):

@@ -354,7 +354,8 @@ class CarlaHuman(Driver):
 
             print('found %d spawn points.' % len(spawn_points))
 
-            count = 50
+            # TODO: debug change 50 to 0
+            count = 0
 
             for spawn_point in spawn_points:
                 if self.try_spawn_random_vehicle_at(blueprints_vehi, spawn_point):

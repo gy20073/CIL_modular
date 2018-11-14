@@ -6,10 +6,10 @@ class configDrive:
         # resource related
         self.host = "127.0.0.1"
         self.port = 2000
-        self.path = "/scratch/yang/aws_data/carla_collect/nonoise_town02/"  # If path is set go for it , if not expect a name set
+        self.path = "/scratch/yang/aws_data/carla_collect/nonoise_town04/"  # If path is set go for it , if not expect a name set
 
         # data collection related
-        self.city_name = 'Town02'
+        self.city_name = 'Town04'
         self.carla_config = None # This will be filled by the caller
         # collect method
         self.autopilot = True
@@ -43,9 +43,15 @@ class configDrive:
 
         # noiser related params
         self.noise_frequency = 45
-        self.noise_intensity = 1.0
-        self.min_noise_time_amount = 0.5
+        self.noise_intensity = 2.5 # 0.5 - 1.5 scaled by this factor
+        self.min_noise_time_amount = 1.0
         self.no_noise_decay_stage = True
         self.use_tick = True
+        self.time_amount_multiplier = 0.0 # original 0.5 second to 2 second, this converts to 0.15 second to 0.6 second
+        self.noise_std = 0.0
+        self.no_time_offset = True
+
+        # the actual noise is: 0.03 * 0.5 * self.intensity
+        # self.noise_time_amount = self.min_noise_time_amount
 
         self.positions_file = "town03_positions/merged.csv"

@@ -1,17 +1,17 @@
 import sys, os, time, threading
 
-TownName = "Town02"
+TownName = "Town04"
 start_port=2200
 available_gpus = [0]
 num_processes = 8
 use_docker = False
 # 9cam_agent_carla_acquire_rc_batch_090, change its contents
 
-if TownName == "Town03":
+if TownName == "Town03" or TownName == "Town04":
     CARLA_PATH = "/scratch/yang/aws_data/carla_auto2/CarlaUE4.sh"
     os.environ['CARLA_VERSION'] = '0.9.auto2'
     docker_path = "gy20073/carla_auto2:latest"
-    town_within_path = "/Game/Carla/Maps/Town03"
+    town_within_path = "/Game/Carla/Maps/" + TownName
 else:
     CARLA_PATH = "/scratch/yang/aws_data/carla_0.8.4/CarlaUE4.sh"
     docker_path = "gy20073/carla_084:latest"

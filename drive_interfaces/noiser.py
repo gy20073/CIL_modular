@@ -20,7 +20,10 @@ class Noiser(object):
 
     def __init__(self, noise_type, frequency=45, intensity=0.004, min_noise_time_amount=0.025,
                  no_noise_decay_stage=False,
-                 use_tick=False):
+                 use_tick=False,
+                 time_amount_multiplier=1.0,
+                 noise_std = 1.0,
+                 no_time_offset=False):
         # specifications from outside
         self.noise_type = noise_type
         self.frequency = frequency
@@ -28,6 +31,9 @@ class Noiser(object):
         self.min_noise_time_amount = min_noise_time_amount
         self.no_noise_decay_stage = no_noise_decay_stage
         self.use_tick = use_tick
+        self.time_amount_multiplier = time_amount_multiplier
+        self.noise_std = noise_std
+        self.no_time_offset = no_time_offset
 
         # FSM state variables
         if use_tick:
@@ -43,7 +49,7 @@ class Noiser(object):
         self.spike_rise_stage = False
 
         # noise parameter variables
-        self.noise_time_amount = min_noise_time_amount + float(random.randint(50, 200) / 100.0)
+        self.noise_time_amount = min_noise_time_amount + float(random.randint(50, 200) / 100.0) * self.time_amount_multiplier
         self.noise_sign = 1.0
 
     def return_time(self):
@@ -56,7 +62,7 @@ class Noiser(object):
         if self.noise_type == 'Spike':  # spike noise there are no variations on current noise over time
             self.noise_sign = float(random.randint(0, 1) * 2 - 1)
             if self.use_tick:
-                self.this_intensity = (random.random() + 0.5) * self.intensity
+                self.this_intensity = (random.random()*self.noise_std + 0.5) * self.intensity
             else:
                 self.this_intensity = self.intensity * random.random() * 5 + 2.5
 
@@ -70,7 +76,11 @@ class Noiser(object):
         else:
             raise ValueError()
 
-        noise = 0.001 + time_offset * 0.03 * self.this_intensity
+        if self.no_time_offset:
+            factor = 1.0
+        else:
+            factor = time_offset
+        noise = 0.001 + factor * 0.03 * self.this_intensity
         noise = min(noise, 0.55) * self.noise_sign
 
         return noise
@@ -89,7 +99,7 @@ class Noiser(object):
                 if random.randint(0, 60) < self.frequency:
                     self.spike_rise_stage = True
                     self.randomize_noise_sign()
-                    self.noise_time_amount = self.min_noise_time_amount + random.randint(50, 200) / 100.0
+                    self.noise_time_amount = self.min_noise_time_amount + random.randint(50, 200) / 100.0 * self.time_amount_multiplier
                     self.noise_start_time = self.return_time()
                     return True
                 else:

@@ -101,6 +101,13 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
         extra_dict["no_noise_decay_stage"] = drive_config.no_noise_decay_stage
     if hasattr(drive_config, "use_tick"):
         extra_dict["use_tick"] = drive_config.use_tick
+    if hasattr(drive_config, "time_amount_multiplier"):
+        extra_dict["time_amount_multiplier"] = drive_config.time_amount_multiplier
+    if hasattr(drive_config, "noise_std"):
+        extra_dict["noise_std"] = drive_config.noise_std
+    if hasattr(drive_config, "no_time_offset"):
+        extra_dict["no_time_offset"] = drive_config.no_time_offset
+
     print("extra dict is ", extra_dict)
 
     noiser = Noiser(drive_config.noise, **extra_dict)

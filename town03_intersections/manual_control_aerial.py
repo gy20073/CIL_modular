@@ -66,7 +66,7 @@ try:
 except ImportError:
     raise RuntimeError('cannot import numpy, make sure numpy package is installed')
 
-DELTA_POS = 1.0
+DELTA_POS = 0.3
 WINDOW_WIDTH = 1800
 WINDOW_HEIGHT = 1080
 CAMERA_FOV = 120.0
@@ -75,6 +75,9 @@ CAMERA_POSITION = carla.Transform(location=carla.Location(x=0.5, z=30), rotation
 CAMERA_CAR_CENTER =  carla.Location(x=0.5, z=1.60)
 CAMERA_CAR_ROTATION = carla.Rotation(roll=0.0, pitch=0.0, yaw=0.0)
 CAMERA_CAR_POSITION = carla.Transform(location=CAMERA_CAR_CENTER, rotation=CAMERA_CAR_ROTATION)
+
+TownName = "Town04"
+output_path = "positions_file_" + TownName + ".txt"
 
 updated = False
 class CallBack():
@@ -182,7 +185,7 @@ class CarlaGame(object):
             self._vehicle.apply_control(control)
 
         if self._spawn_new_car:
-            with open("/home/yang/Downloads/carla/positions_file_town03.txt", "r") as f:
+            with open(output_path, "r") as f:
                 lines = f.readlines()
                 for line in lines:
                     sp = line.strip().split(",")
@@ -202,7 +205,7 @@ class CarlaGame(object):
             start_transform.rotation.yaw = self._vehicle_yaw
             self._vehicle = self._world.try_spawn_actor(vechile_blueprint,start_transform)
 
-            with open("/home/yang/Downloads/carla/positions_file_town03.txt", "r") as f:
+            with open(output_path, "r") as f:
                 lines = f.readlines()
                 for line in lines:
                     sp = line.strip().split(",")
@@ -342,7 +345,7 @@ def main():
         help='enable autopilot')
     argparser.add_argument(
         '--positions_file',
-        default='positions_file_town03.txt',
+        default=output_path,
         help='Filename to store positions')
     args = argparser.parse_args()
 

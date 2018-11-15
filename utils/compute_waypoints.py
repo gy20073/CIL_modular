@@ -4,12 +4,12 @@ import numpy as np
 sys.path.append('drive_interfaces/carla/carla_client')
 
 # TODO change this
-input_id = "nonoise_town02"
-output_id = "nonoise_town02_way"
+input_id = "nonoise_town04"
+output_id = "nonoise_town04_way"
 debug_start = 0
 debug_end= 140000000
 future_time = 2.0 # second
-is_carla_090 = False
+is_carla_090 = True
 base = "/data/yang/code/aws/scratch/carla_collect/"
 #base = "/data/yang/code/aws/scratch/carla_collect/human/"
 

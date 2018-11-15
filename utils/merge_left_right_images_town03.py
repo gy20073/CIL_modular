@@ -3,11 +3,32 @@ import numpy as np
 
 sys.path.append('drive_interfaces/carla/carla_client')
 
-input_id = "nonoise_town03"
+input_id = "nonoise_town04"
 debug_start = 0
-debug_end= 6000000000
+debug_end= 600000000
 verbose = False
-intersection_path = "/data1/yang/code/aws/CIL_modular/town03_intersections/positions_file_town03.txt"
+intersection_path = "/data1/yang/code/aws/CIL_modular/town03_intersections/positions_file_Town04.txt"
+intersection_path_negative = "/data1/yang/code/aws/CIL_modular/town03_intersections/positions_file_Town04_negative.txt"
+
+
+# TODO: from here
+if "town03" in input_id:
+    const_extension_threshold_left = 15.0
+    const_extension_threshold_right = 15.0
+    const_yaw_mean_interval_this = 1
+    const_yaw_mean_interval_future = 2
+    const_direction_look_ahead = 18.0
+    angle_thresh = 20.0
+elif "town04" in input_id:
+    const_extension_threshold_left = 10.0
+    const_extension_threshold_right = 10.0
+    const_yaw_mean_interval_this = 1
+    const_yaw_mean_interval_future = 2
+    const_direction_look_ahead = 18.0
+    angle_thresh = 40
+else:
+    raise NotImplemented()
+
 
 all_files = glob.glob("/data/yang/code/aws/scratch/carla_collect/"+str(input_id)+"/*/data_*.h5")
 
@@ -35,18 +56,23 @@ for one_h5 in sorted(all_files)[debug_start:debug_end]:
 pos = np.concatenate(pos, axis=0)
 yaw0 = np.concatenate(yaws)
 
-intersections = []
-with open(intersection_path, "r") as f:
-    lines = f.readlines()
-    for line in lines:
-        sp = line.strip().split(",")
-        x, y = [float(t.strip()) for t in sp]
-        intersections.append([x, y])
-# the shape is n*2
-intersections = np.array(intersections)
+def read_intersections(intersection_path):
+    intersections = []
+    with open(intersection_path, "r") as f:
+        lines = f.readlines()
+        for line in lines:
+            sp = line.strip().split(",")
+            x, y = [float(t.strip()) for t in sp]
+            intersections.append([x, y])
+    # the shape is n*2
+    intersections = np.array(intersections)
+    return intersections
+
+intersections = read_intersections(intersection_path)
+intersections_negative = read_intersections(intersection_path_negative)
 
 inter_threshold = 3.0
-def is_inter(position):
+def is_inter(position, intersections=intersections, inter_threshold=inter_threshold):
     position = np.reshape(position, (1, 2))
     position = np.tile(position, (intersections.shape[0], 1))
 
@@ -54,6 +80,10 @@ def is_inter(position):
     distances = np.sqrt(np.sum(delta, 1))
     min_dis = np.min(distances)
     return min_dis < inter_threshold
+
+def is_inter_negative(position):
+    is_negative = is_inter(position, intersections_negative, 1.0)
+    return is_negative
 
 seqs = []
 seqs_yaw = []
@@ -67,13 +97,6 @@ for i in range(pos.shape[0]-1):
         last_i = i+1
 seqs.append(pos[last_i:])
 seqs_yaw.append(yaw0[last_i:])
-
-# TODO: from here
-const_extension_threshold_left = 15.0
-const_extension_threshold_right = 15.0
-const_yaw_mean_interval_this = 1
-const_yaw_mean_interval_future = 2
-const_direction_look_ahead = 18.0
 
 all_commands = []
 for seq, this_yaw in zip(seqs, seqs_yaw):
@@ -126,9 +149,9 @@ for seq, this_yaw in zip(seqs, seqs_yaw):
                 if delta > 180:
                     delta -= 360
                 # left - right +
-                if delta < -20:
+                if delta < -angle_thresh:
                     commands[i] = 3.0
-                elif delta > 20.0:
+                elif delta > angle_thresh:
                     commands[i]=4.0
                 else:
                     commands[i] = 5.0
@@ -156,25 +179,41 @@ for seq, this_yaw in zip(seqs, seqs_yaw):
         else:
             if last_inter:
                 # going backward and take the maximum vote
-                bar_front = i - 1
-                count = {3.0: 0, 4.0: 0, 5.0: 0}
-                last_check = bar_front
-                while bar_front >=1 and commands[bar_front]!=2.0:
-                    if sldist(seq[bar_front], seq[last_check]) > 0.5:
-                        count[commands[bar_front]] += 1
-                        last_check = bar_front
-                    bar_front -= 1
-                bar_front += 1
-                sum = count[3.0] + count[4.0] + count[5.0]
-                if sum == 0.0:
-                    same = commands[i-1]
-                elif count[5.0] * 1.0 / sum > 0.6:
-                    same = 5.0
-                elif count[3.0] > count[4.0]:
-                    same = 3.0
-                else:
-                    same = 4.0
-                commands[bar_front:i] = same
+                can_exit = False
+                last_i = i
+                while not can_exit:
+                    bar_front = last_i - 1
+                    count = {3.0: 0, 4.0: 0, 5.0: 0}
+                    last_check = bar_front
+                    while bar_front >=1 and commands[bar_front]!=2.0 and not is_inter_negative(seq[bar_front]):
+                        if sldist(seq[bar_front], seq[last_check]) > 0.5:
+                            count[commands[bar_front]] += 1
+                            last_check = bar_front
+                        bar_front -= 1
+                    bar_front += 1
+                    sum = count[3.0] + count[4.0] + count[5.0]
+                    if sum == 0.0:
+                        same = commands[last_i-1]
+                    elif count[5.0] * 1.0 / sum > 0.6:
+                        same = 5.0
+                    elif count[3.0] > count[4.0]:
+                        same = 3.0
+                    else:
+                        same = 4.0
+                    commands[bar_front:last_i] = same
+
+                    '''
+                    if is_inter_negative(seq[bar_front]):
+                        can_exit = False
+                        last_i = bar_front
+                        while last_i >=1 and is_inter_negative(seq[last_i]):
+                            commands[last_i] = 2.0
+                            last_i -= 1
+                    else:
+                        can_exit = True
+                    '''
+                    can_exit = True
+
 
             last_inter = False
             if verbose:
@@ -183,26 +222,42 @@ for seq, this_yaw in zip(seqs, seqs_yaw):
     i = seq.shape[0]
     if last_inter:
         # going backward and take the maximum vote
-        bar_front = i - 1
-        count = {3.0: 0, 4.0: 0, 5.0: 0}
-        last_check = bar_front
-        while bar_front >= 1 and commands[bar_front] != 2.0:
-            if sldist(seq[bar_front], seq[last_check]) > 0.5:
-                count[commands[bar_front]] += 1
-                last_check = bar_front
-            bar_front -= 1
-        bar_front += 1
-        sum = count[3.0] + count[4.0] + count[5.0]
-        if sum == 0.0:
-            same = commands[i - 1]
-        elif count[5.0] * 1.0 / sum > 0.6:
-            same = 5.0
-        elif count[3.0] > count[4.0]:
-            same = 3.0
-        else:
-            same = 4.0
-        commands[bar_front:i] = same
-    last_inter =False
+        can_exit = False
+        last_i = i
+        while not can_exit:
+            bar_front = last_i - 1
+            count = {3.0: 0, 4.0: 0, 5.0: 0}
+            last_check = bar_front
+            while bar_front >= 1 and commands[bar_front] != 2.0 and not is_inter_negative(seq[bar_front]):
+                if sldist(seq[bar_front], seq[last_check]) > 0.5:
+                    count[commands[bar_front]] += 1
+                    last_check = bar_front
+                bar_front -= 1
+            bar_front += 1
+            sum = count[3.0] + count[4.0] + count[5.0]
+            if sum == 0.0:
+                same = commands[last_i - 1]
+            elif count[5.0] * 1.0 / sum > 0.6:
+                same = 5.0
+            elif count[3.0] > count[4.0]:
+                same = 3.0
+            else:
+                same = 4.0
+            commands[bar_front:last_i] = same
+
+            '''
+            if is_inter_negative(seq[bar_front]):
+                can_exit = False
+                last_i = bar_front
+                while last_i >=1 and is_inter_negative(seq[last_i]):
+                    commands[last_i] = 2.0
+                    last_i -= 1
+            else:
+                can_exit = True
+            '''
+            can_exit = True
+
+    last_inter = False
 
 
     all_commands.append(commands)

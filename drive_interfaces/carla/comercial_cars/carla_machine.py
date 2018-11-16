@@ -343,11 +343,10 @@ class CarlaMachine(Agent, Driver):
                 pass
                 # TODO fit a spline and interpolate
 
-            subpart = self.annotate_image(subpart, direction, "\n" + extra_extra)
-
-            to_be_visualized[:to_be_visualized.shape[0] // nrow, col_i*to_be_visualized.shape[1]//ncol:(col_i+1)*to_be_visualized.shape[1]//ncol, :] = subpart
-
             if hasattr(self._config, "waypoint_return_control") and self._config.waypoint_return_control:
+                to_be_visualized[:to_be_visualized.shape[0] // nrow,
+                col_i * to_be_visualized.shape[1] // ncol:(col_i + 1) * to_be_visualized.shape[1] // ncol, :] = subpart
+
                 # TODO: call the real MPC controller in the future, right now using a simple PID controller
                 if speed_kmh - predicted_speed > 5.0:
                     acc = 0.0
@@ -375,6 +374,10 @@ class CarlaMachine(Agent, Driver):
 
                 steer = -(g_p * self.error_p + g_i * self.error_i + g_d * self.error_d)
             else:
+                subpart = self.annotate_image(subpart, direction, "\n" + extra_extra)
+                to_be_visualized[:to_be_visualized.shape[0] // nrow,
+                col_i * to_be_visualized.shape[1] // ncol:(col_i + 1) * to_be_visualized.shape[1] // ncol, :] = subpart
+
                 if save_image_to_disk:
                     self.save_image(to_be_visualized)
                 if return_extra:
@@ -396,8 +399,6 @@ class CarlaMachine(Agent, Driver):
             # this plots the prediction as blue
             subpart = plot_waypoints_on_image(subpart, waypoints, 4, shift_ahead=2.46 - 0.7 + 2.0, is_zoom=self._config.camera_middle_zoom['CameraMiddle'])
 
-            subpart = self.annotate_image(subpart, direction, "\n" + extra_extra)
-
             to_be_visualized[:to_be_visualized.shape[0] // nrow,
             col_i * to_be_visualized.shape[1] // ncol:(col_i + 1) * to_be_visualized.shape[1] // ncol, :] = subpart
             # end of visualization
@@ -418,7 +419,7 @@ class CarlaMachine(Agent, Driver):
                 subpart = to_be_visualized[:to_be_visualized.shape[0] // nrow,
                           col_i * to_be_visualized.shape[1] // ncol:(col_i + 1) * to_be_visualized.shape[1] // ncol, :]
                 subpart = plot_waypoints_on_image(subpart, waypoints, 4, shift_ahead=2.46 - 0.7 + 2.0, is_zoom=self._config.camera_middle_zoom['CameraMiddle'])
-                subpart = self.annotate_image(subpart, direction, "\n" + extra_extra)
+                #subpart = self.annotate_image(subpart, direction, "\n" + extra_extra)
                 to_be_visualized[:to_be_visualized.shape[0] // nrow,
                 col_i * to_be_visualized.shape[1] // ncol:(col_i + 1) * to_be_visualized.shape[1] // ncol, :] = subpart
             else:
@@ -460,9 +461,9 @@ class CarlaMachine(Agent, Driver):
         control.reverse = 0
 
         # print all info on the image
-        extra = "\nSteer {:.2f} \nThrottle {:.2f} \nBrake {:.2f}".format(float(steer), float(acc), float(brake))
+        extra = "\nSteer {:.2f} \nThrottle {:.2f} \nBrake {:.2f}\n".format(float(steer), float(acc), float(brake))
         t5 = time.time()
-        to_be_visualized = self.annotate_image(to_be_visualized, direction, extra)
+        to_be_visualized = self.annotate_image(to_be_visualized, direction, extra+extra_extra)
         #print("annotate image takes ", time.time() - t5)
 
         if save_image_to_disk:

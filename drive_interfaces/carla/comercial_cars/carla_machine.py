@@ -220,7 +220,7 @@ class CarlaMachine(Agent, Driver):
         print("output image id is: ", self.debug_i)
 
     def compute_action(self, sensors, speed_kmh, direction=None,
-                       save_image_to_disk=True, return_vis=False, return_extra=True):
+                       save_image_to_disk=True, return_vis=False, return_extra=True, extra_extra=""):
         # input image is bgr
         if direction == None:
             direction = self.compute_direction((0, 0, 0), (0, 0, 0))
@@ -342,7 +342,8 @@ class CarlaMachine(Agent, Driver):
                 # fit a spline and interpolate
                 pass
                 # TODO fit a spline and interpolate
-                
+
+            subpart = self.annotate_image(subpart, direction, "\n" + extra_extra)
 
             to_be_visualized[:to_be_visualized.shape[0] // nrow, col_i*to_be_visualized.shape[1]//ncol:(col_i+1)*to_be_visualized.shape[1]//ncol, :] = subpart
 
@@ -395,6 +396,8 @@ class CarlaMachine(Agent, Driver):
             # this plots the prediction as blue
             subpart = plot_waypoints_on_image(subpart, waypoints, 4, shift_ahead=2.46 - 0.7 + 2.0, is_zoom=self._config.camera_middle_zoom['CameraMiddle'])
 
+            subpart = self.annotate_image(subpart, direction, "\n" + extra_extra)
+
             to_be_visualized[:to_be_visualized.shape[0] // nrow,
             col_i * to_be_visualized.shape[1] // ncol:(col_i + 1) * to_be_visualized.shape[1] // ncol, :] = subpart
             # end of visualization
@@ -415,6 +418,7 @@ class CarlaMachine(Agent, Driver):
                 subpart = to_be_visualized[:to_be_visualized.shape[0] // nrow,
                           col_i * to_be_visualized.shape[1] // ncol:(col_i + 1) * to_be_visualized.shape[1] // ncol, :]
                 subpart = plot_waypoints_on_image(subpart, waypoints, 4, shift_ahead=2.46 - 0.7 + 2.0, is_zoom=self._config.camera_middle_zoom['CameraMiddle'])
+                subpart = self.annotate_image(subpart, direction, "\n" + extra_extra)
                 to_be_visualized[:to_be_visualized.shape[0] // nrow,
                 col_i * to_be_visualized.shape[1] // ncol:(col_i + 1) * to_be_visualized.shape[1] // ncol, :] = subpart
             else:

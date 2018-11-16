@@ -18,13 +18,13 @@ def get_driver_config():
     return driver_conf
 
 # begin the configs
-exp_id = "mm45_v4_base_newseg_noiser_TL_lane_structure02_goodsteer_waypoint_zoom_stdnorm_v5_3cam"
-short_id = "right"
+exp_id = "mm45_v4_wp2town3cam_2p3town"
+short_id = "2p3town"
 use_left_right = True
 video_path = "/scratch/yang/aws_data/mkz/mkz_3cam_2/second.mp4"
 gpu = [0]
 direction_command = 4.0
-speed_constant_kmh = 15.0
+speed_constant_kmh = 10.0
 
 # end of the config
 # The color encoding is: blue predicted, green ground truth, red approximated ground truth

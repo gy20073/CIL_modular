@@ -38,6 +38,7 @@ use_train = False
 cluster_center_file = "/data1/yang/code/aws/CIL_modular/utils/cluster_centers.npy.v4"
 direction_filter = None
 plot_approx = False
+middle_zoom = True
 # end of the config
 # The color encoding is: blue predicted, green ground truth, red approximated ground truth
 os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu[0])
@@ -102,7 +103,7 @@ for h5 in sorted(val_db_path):
         size = int(f["targets"][imid, 99])
         flattend = f["targets"][imid, 35:(35 + size)]
         wp = np.reshape(flattend, (-1, 2))
-        image = plot_waypoints_on_image(image, wp, 4, shift_ahead=2.46 - 0.7 + 2.0, rgb=(0, 255, 0))
+        image = plot_waypoints_on_image(image, wp, 4, shift_ahead=2.46 - 0.7 + 2.0, rgb=(0, 255, 0), is_zoom=middle_zoom)
 
         if plot_approx:
             # also plot the cluster center corresponded
@@ -113,7 +114,7 @@ for h5 in sorted(val_db_path):
                 wp *= f["targets"][imid, 56]
                 wp = np.reshape(wp, (-1, 2))
 
-                image = plot_waypoints_on_image(image, wp, 4, shift_ahead=2.46 - 0.7 + 2.0, rgb=(0, 0, 255))
+                image = plot_waypoints_on_image(image, wp, 4, shift_ahead=2.46 - 0.7 + 2.0, rgb=(0, 0, 255), is_zoom=middle_zoom)
 
         td = lambda fl: "{:.2f}".format(fl)
         font = int(np.ceil(15.0 / (576 / 2) * image.shape[0])) + 1

@@ -146,7 +146,19 @@ def camera_middle_zoom_batch(sensor_data, sensor_names, zoom_dict):
 
 import numpy as np
 import math
-def plot_waypoints_on_image(image, wps, dot_size, shift_ahead=2.46 - 0.7 + 2.0, rgb=(255, 0, 0)):
+def plot_waypoints_on_image(image, wps, dot_size,
+                            shift_ahead=2.46 - 0.7 + 2.0,
+                            rgb=(255, 0, 0),
+                            half_width_fov=math.radians(103.0)/2,
+                            half_height_fov=math.radians(77.0)/2,
+                            is_zoom=False):
+    if is_zoom:
+        half_width_fov = math.radians(58.0)/2
+        half_height_fov = math.radians(41.0) / 2
+        # todo change this value
+        shift_ahead = 2.47 - 0.7 + 2.0 # 3.7
+        shift_ahead = 4.6
+
     # assume image is bgr input
     imsize = image.shape
     wps = np.concatenate(([[0,0]], wps), axis=0)
@@ -156,7 +168,7 @@ def plot_waypoints_on_image(image, wps, dot_size, shift_ahead=2.46 - 0.7 + 2.0, 
         depth = wp[0] + shift_ahead
         horizontal = wp[1]
         vertical = -1.6
-        h, v = point_to_2d(depth, horizontal, vertical)
+        h, v = point_to_2d(depth, horizontal, vertical, half_width_fov, half_height_fov)
 
         xoff = int((-v + 0.5) * imsize[0])
         yoff = int((h + 0.5) * imsize[1])

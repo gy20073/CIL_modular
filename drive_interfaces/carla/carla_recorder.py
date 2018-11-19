@@ -2,7 +2,7 @@ import os, h5py, scipy, cv2, math, sys, time
 import numpy as np
 from threading import Thread
 from Queue import Queue
-import pdb
+import pdb, scipy.misc
 
 __CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.8.X')
 if __CARLA_VERSION__ == '0.8.X':
@@ -121,7 +121,6 @@ class Recorder(object):
                 else:
                     image = sensor_data[sensor_name]
                     image = image[:,:,::-1]
-
 
 
                 image = image[self._image_cut[0]:self._image_cut[1], :, :3]

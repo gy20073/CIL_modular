@@ -6,7 +6,7 @@ from common_util import plot_waypoints_on_image
 
 num_images_per_h5 = 200
 temp_folder = "./temp/"
-cluster_center = "/data1/yang/code/aws/CIL_modular/utils/cluster_centers.npy.v4"
+cluster_center = "/data/yang/code/aws/CIL_modular/utils/cluster_centers.npy.v4"
 
 
 def write_text_on_image(image, string, fontsize=10):
@@ -81,7 +81,7 @@ def sample_images_from_h5(path, temp, show_all, is3, pure_video):
                     size = int(f["targets"][imid, 99])
                     flattend = f["targets"][imid, 35:(35+size)]
                     wp = np.reshape(flattend, (-1, 2))
-                    image = plot_waypoints_on_image(image, wp, 4, shift_ahead=2.46 - 0.7 + 2.0)
+                    image = plot_waypoints_on_image(image, wp, 4, shift_ahead=4.6)
 
                     # also plot the cluster center corresponded
                     ncluster = len(centers)
@@ -91,7 +91,7 @@ def sample_images_from_h5(path, temp, show_all, is3, pure_video):
                         wp *= f["targets"][imid, 56]
                         wp = np.reshape(wp, (-1, 2))
 
-                        image = plot_waypoints_on_image(image, wp, 4, shift_ahead=2.46 - 0.7 + 2.0, rgb=(0, 255, 0))
+                        image = plot_waypoints_on_image(image, wp, 4, shift_ahead=4.6, rgb=(0, 255, 0))
 
             if not is3:
                 #image = image[:,:,::-1]

@@ -374,9 +374,7 @@ class CarlaMachine(Agent, Driver):
 
                 steer = -(g_p * self.error_p + g_i * self.error_i + g_d * self.error_d)
             else:
-                subpart = self.annotate_image(subpart, direction, "\n" + extra_extra)
-                to_be_visualized[:to_be_visualized.shape[0] // nrow,
-                col_i * to_be_visualized.shape[1] // ncol:(col_i + 1) * to_be_visualized.shape[1] // ncol, :] = subpart
+                to_be_visualized = self.annotate_image(to_be_visualized, direction, "\n" + extra_extra)
 
                 if save_image_to_disk:
                     self.save_image(to_be_visualized)

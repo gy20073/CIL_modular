@@ -1,9 +1,9 @@
 import sys, os, time, threading
 
-TownName = "Town04"
-start_port=2200
+TownName = "Town01"
+start_port=2100
 available_gpus = [0]
-num_processes = 8
+num_processes = 4
 use_docker = False
 # 9cam_agent_carla_acquire_rc_batch_090, change its contents
 
@@ -182,7 +182,7 @@ if __name__ == "__main__":
                                                   TownName))
         p.start()
         print("after starts!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        time.sleep(30)
+        time.sleep(3)
         ps.append(p)
         print("finsished starting process ", i)
 

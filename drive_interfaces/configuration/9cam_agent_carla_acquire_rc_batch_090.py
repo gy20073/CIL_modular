@@ -6,15 +6,15 @@ class configDrive:
         # resource related
         self.host = "127.0.0.1"
         self.port = 2000
-        self.path = "/scratch/yang/aws_data/carla_collect/nonoise_town04/"  # If path is set go for it , if not expect a name set
+        self.path = "/scratch/yang/aws_data/carla_collect/second_town01/"  # If path is set go for it , if not expect a name set
 
         # data collection related
-        self.city_name = 'Town04'
+        self.city_name = 'Town01'
         self.carla_config = None # This will be filled by the caller
         # collect method
         self.autopilot = True
         self.use_planner = True # only useful in carlaHuman, used to randomly walk in the city
-        self.noise = "None" #"Spike"  # NON CARLA SETTINGS PARAM
+        self.noise = "Spike" #"Spike"  # NON CARLA SETTINGS PARAM
         # TODO: some spike related numbers
 
         self.reset_period = 960 # reset when the system time goes beyond this number
@@ -41,6 +41,7 @@ class configDrive:
         # others
         self.interface = "Carla" # always fixed
 
+        '''
         # noiser related params
         self.noise_frequency = 45
         self.noise_intensity = 2.5 # 0.5 - 1.5 scaled by this factor
@@ -53,5 +54,12 @@ class configDrive:
 
         # the actual noise is: 0.03 * 0.5 * self.intensity
         # self.noise_time_amount = self.min_noise_time_amount
+        '''
+        # noiser related params
+        self.noise_frequency = 45
+        self.noise_intensity = 5
+        self.min_noise_time_amount = 0.5
+        self.no_noise_decay_stage = True
+        self.use_tick = True
 
         self.positions_file = "town03_positions/merged.csv"

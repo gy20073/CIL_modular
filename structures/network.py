@@ -158,6 +158,8 @@ class Network(object):
         weights = weight_xavi_init(shape, 'W_f_' + str(self._count_fc))
         bias = bias_variable([output_size], name='B_f_' + str(self._count_fc))
 
+        self.last_variables = [weights, bias]
+
         return tf.nn.xw_plus_b(x, weights, bias, name='fc_' + str(self._count_fc))
 
     def gated_block(self, x, h, output_size):

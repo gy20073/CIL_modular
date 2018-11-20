@@ -63,7 +63,7 @@ class TrainManager(object):
     def build_network(self):
         """ Depends on the actual input """
         with tf.name_scope("Network"):
-            self._output_network, self._vis_images, self._features, self._weights = self._create_structure(tf,
+            self._output_network, self._vis_images, self._features, self._weights, self._branch_vars = self._create_structure(tf,
                                                                                                            self._input_images,
                                                                                                            self._input_data,
                                                                                                            self._config.image_size,
@@ -111,7 +111,12 @@ class TrainManager(object):
             else:
                 raise ValueError()
 
-            if hasattr(self._config, 'finetune_segmentation') or \
+            if hasattr(self._config, "only_train_branch"):
+                #train_vars = slim.get_variables(scope="Branch_" + str(self._config.only_train_branch))
+                train_vars = self._branch_vars[self._config.only_train_branch]
+                print("Optimizer: only train those variables: ", train_vars)
+                self._train_step = opt(self._variable_learning, **opt_kwargs).minimize(self._loss, var_list=train_vars)
+            elif hasattr(self._config, 'finetune_segmentation') or \
                     not (hasattr(self._config, 'segmentation_model_name')) or \
                     self._config.segmentation_model is None:
                 self._train_step = opt(self._variable_learning, **opt_kwargs).minimize(self._loss)

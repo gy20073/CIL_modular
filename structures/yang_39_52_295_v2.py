@@ -67,18 +67,27 @@ def create_structure(tf, input_image, input_data, input_size, dropout, config):
     j = tf.concat([x, speed], 1)
     j = network_manager.fc_block(j, 512)
 
+    branch_vars = []
     """Start BRANCHING"""
     for i in range(0, len(config.branch_config)):
         with tf.name_scope("Branch_" + str(i)):
+            vars = []
             if config.branch_config[i][0] == "Speed":
                 # we only use the image as input to speed prediction
                 branch_output = network_manager.fc_block(x, 256)
+                vars += network_manager.last_variables
                 branch_output = network_manager.fc_block(branch_output, 256)
+                vars += network_manager.last_variables
             else:
                 branch_output = network_manager.fc_block(j, 256)
+                vars += network_manager.last_variables
                 branch_output = network_manager.fc_block(branch_output, 256)
+                vars += network_manager.last_variables
 
             branches.append(network_manager.fc(branch_output, len(config.branch_config[i])))
+
+            vars += network_manager.last_variables
+            branch_vars.append(vars)
 
         print(branch_output)
 
@@ -94,4 +103,4 @@ def create_structure(tf, input_image, input_data, input_size, dropout, config):
     # vis_images = tf.div(vis_images  -tf.reduce_min(vis_images),tf.reduce_max(vis_images) -tf.reduce_min(vis_images))
 
     # branches: each of them is a vector of the output(all vars you care) conditioned on that input control signal
-    return branches, vis_images, features, weights
+    return branches, vis_images, features, weights, branch_vars

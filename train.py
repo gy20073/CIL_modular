@@ -86,7 +86,11 @@ def train(experiment_name, memory_fraction):
 
     saver = tf.train.Saver(variables_to_restore, max_to_keep=0)
     cpkt = restore_session(sess, saver, config_main.models_path)
-    initialIteration = get_last_iteration(cpkt)
+    if not cpkt and hasattr(config_main, "reload_other_models"):
+        cpkt = restore_session(sess, saver, config_main.reload_other_models)
+        initialIteration = 0
+    else:
+        initialIteration = get_last_iteration(cpkt)
 
     all_saver = tf.train.Saver(tf.global_variables(), max_to_keep=0)
 

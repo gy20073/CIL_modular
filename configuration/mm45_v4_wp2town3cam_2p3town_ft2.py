@@ -82,7 +82,7 @@ class configMain:
         self.camera_middle_zoom = {'CameraLeft': False, 'CameraMiddle': True, 'CameraRight': False}
 
         # finetuning particular related thing
-        self.models_path = "/scratch/yang/aws_data/CIL_modular_data/models/mm45_v4_wp2town3cam_2p3town/model.ckpt-162000"
+        self.reload_other_models = "models/mm45_v4_wp2town3cam_2p3town"
         self.only_train_branch = 3 # 0: follow, 1: straight, 2: left, 3: right
 
 

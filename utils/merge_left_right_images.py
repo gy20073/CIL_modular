@@ -5,8 +5,8 @@ import shutil
 sys.path.append('drive_interfaces/carla/carla_client')
 from carla.planner.planner import Planner
 
-input_id = "nonoise_town02"
-output_id = "nonoise_town02"
+input_id = "second_town02"
+output_id = "second_town02"
 CityName = "Town02"
 debug_start = 0
 debug_end= 14000000000

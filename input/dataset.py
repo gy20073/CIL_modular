@@ -206,7 +206,7 @@ class Dataset(object):
                             sensors[i][ib, :, :, :] = self.augment_lane(sensors[i][ib, :,:,:], decoded)
 
                             if np.random.rand() < 0.005:
-                                cv2.imwrite("debug.png", sensors[i][ib, :,:,::-1])
+                                #cv2.imwrite("debug.png", sensors[i][ib, :,:,::-1])
                                 pass
 
             if self._config.image_as_float[i]:

@@ -22,7 +22,7 @@ def rotate(im, angle_radian, output_size):
 
 
 class mapping_helper:
-    def __init__(self, output_physical_size_meter=30.0, output_height_pix=200):
+    def __init__(self, output_physical_size_meter=30.0, output_height_pix=50):
         self.output_height_pix = output_height_pix
         # map path, meters per pixel
         infos = {"rfs": (get_current_folder()+"/data_lanes/human_marked5.png", 0.272736441511),

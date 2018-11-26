@@ -11,6 +11,7 @@ from codification import encode, check_distance
 from scipy.ndimage.filters import gaussian_filter
 import copy
 sys.path.append('utils')
+import mapping_helper
 
 from common_util import split_camera_middle_batch, camera_middle_zoom_batch
 
@@ -65,6 +66,8 @@ class Dataset(object):
         self.output_queue = mQueue(5)
 
         self.perception_interface = perception_interface
+
+        self.mapping_helper = mapping_helper.mapping_helper(output_height_pix=self._config.map_height) # using the default values, 30 meters of width view, 50*75*1 output size
 
 
     def get_batch_tensor(self):
@@ -269,17 +272,47 @@ class Dataset(object):
                     targets[itarget][ibatch] = min(1.0, max(0, targets[itarget][ibatch]))
 
             for iinput in range(len(self._config.inputs_names)):
-                k = self._config.variable_names.index(self._config.inputs_names[iinput])
                 this_name = self._config.inputs_names[iinput]
 
-                if this_name == "Control":
-                    inputs[iinput][ibatch] = encode(target_selected[k, ibatch])
-                elif this_name == "Speed":
-                    inputs[iinput][ibatch] = target_selected[k, ibatch] / self._config.speed_factor * 3.6
-                elif this_name == "Distance":
-                    inputs[iinput][ibatch] = check_distance(target_selected[k, ibatch])
+                if this_name == "mapping":
+                    # make the map
+                    pos_x = self._config.variable_names.index("Pos_X")
+                    pos_y = self._config.variable_names.index("Pos_Y")
+                    ori_x = self._config.variable_names.index("Ori_X")
+                    ori_y = self._config.variable_names.index("Ori_Y")
+                    ori_z = self._config.variable_names.index("Ori_Z")
+                    town_id = self._config.variable_names.index("town_id")
+
+                    pos = [target_selected[pos_x, ibatch], target_selected[pos_y, ibatch]]
+                    ori = [target_selected[ori_x, ibatch], target_selected[ori_y, ibatch], target_selected[ori_z, ibatch]]
+                    town_id = int(target_selected[town_id, ibatch])
+                    town_id =str(town_id).zfill(2)
+                    if self._augmenter[0]!=None:
+                        # we are in the training mode, thus we need to add some noise to the position
+                        std = self._config.map_pos_noise_std
+                        pos = [pos[0] + np.random.normal(scale=std), pos[1] + np.random.normal(scale=std)]
+
+                    map = self.mapping_helper.get_map(town_id, pos, ori)
+                    # add a flattened operator, to make it compatible with the original format, remember to reshape it back
+                    inputs[iinput][ibatch] = map.flatten()
+
+                    if np.random.rand() < 0.005:
+                        # for debugging
+                        im = self.mapping_helper.map_to_debug_image(map)[:,:,::-1]
+                        center = sensors[1][ibatch, :,:,::-1]
+                        cv2.imwrite("debug_map.png", im)
+                        cv2.imwrite("debug_center_cam.png", center)
+
                 else:
-                    raise ValueError()
+                    k = self._config.variable_names.index(self._config.inputs_names[iinput])
+                    if this_name == "Control":
+                        inputs[iinput][ibatch] = encode(target_selected[k, ibatch])
+                    elif this_name == "Speed":
+                        inputs[iinput][ibatch] = target_selected[k, ibatch] / self._config.speed_factor * 3.6
+                    elif this_name == "Distance":
+                        inputs[iinput][ibatch] = check_distance(target_selected[k, ibatch])
+                    else:
+                        raise ValueError()
 
         # change the output sensors variable
         sensors = np.concatenate(sensors, axis=0)

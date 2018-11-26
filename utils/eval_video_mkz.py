@@ -22,9 +22,8 @@ exp_id = "mm45_v4_wp2town3cam_2p3town"
 short_id = "2p3town"
 use_left_right = True
 video_path = "/scratch/yang/aws_data/mkz/mkz_3cam_2/second.mp4"
+pickle_path = "todo"
 gpu = [0]
-direction_command = 4.0
-speed_constant_kmh = 10.0
 
 # end of the config
 # The color encoding is: blue predicted, green ground truth, red approximated ground truth
@@ -40,11 +39,13 @@ driving_model = CarlaMachine("0", exp_id, get_driver_config(), 0.1,
                              perception_paths="path_jormungandr_newseg",
                              batch_size=1)
 
-def loop_over_video(path, func, temp_down_factor=1, batch_size=1, output_name="output.avi"):
+def loop_over_video(path, func, temp_down_factor=1, batch_size=1, output_name="output.avi", pickle_name=None):
     # from a video, use cv2 to read each frame
 
     # reading from a video
     cap = cv2.VideoCapture(path)
+    with open(pickle_name, "rb") as fin:
+        extra_info = pickle.load(fin)
 
     i = 0
     batch_frames = []
@@ -62,7 +63,7 @@ def loop_over_video(path, func, temp_down_factor=1, batch_size=1, output_name="o
         if len(batch_frames) == batch_size:
             # frame is the one
             print("calling loop function...")
-            frame_seq = func(batch_frames)
+            frame_seq = func(batch_frames, extra_info[i])
             print("calling loop function finished")
             if not video_init:
                 fourcc = cv2.VideoWriter_fourcc(*'DIVX')
@@ -78,8 +79,16 @@ def loop_over_video(path, func, temp_down_factor=1, batch_size=1, output_name="o
     cap.release()
     video.release()
 
+def key_to_value(key):
+    mapping = {"s": 5.0, "a": 3.0, "d": 4.0, "w": 2.0}
+    if key in mapping:
+        return mapping[key]
+    else:
+        print("an unexpected key happened", key)
+        return 2.0
+
 wps = []
-def callback(frames):
+def callback(frames, extra_info):
     frame = frames[0]
     if use_left_right:
         # split into 3 cams
@@ -88,11 +97,20 @@ def callback(frames):
         sensors = [frame[:, 0:W//3,:], frame[:, W//3:W*2//3,:], frame[:, W*2//3:, :]]
     else:
         sensors = [frame]
-    waypoints, to_be_visualized = driving_model.compute_action(sensors, speed_constant_kmh,
-                                                                                  direction_command,
-                                                                                  save_image_to_disk=False,
-                                                                                  return_vis=True,
-                                                                                  return_extra=False)
+    if len(extra_info) == 2:
+        speed_ms, condition = extra_info
+        pos = None
+        ori = None
+    else:
+        # we require that the pos and ori should be directly input to the compute action function
+        speed_ms, condition, pos, ori = extra_info
+
+    waypoints, to_be_visualized = driving_model.compute_action(sensors, speed_ms*3.6,
+                                                               key_to_value(condition),
+                                                               save_image_to_disk=False,
+                                                               return_vis=True,
+                                                               return_extra=False,
+                                                               mapping_support={"town_id": "rfs", "pos": pos, "ori": ori})
     wps.append(waypoints)
     path = video_path+"."+short_id+".pkl"
     with open(path, "wb") as file:

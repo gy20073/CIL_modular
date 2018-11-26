@@ -28,6 +28,8 @@ from drawing_tools import *
 from common_util import restore_session, preprocess_image, split_camera_middle, camera_middle_zoom, plot_waypoints_on_image
 from all_perceptions import Perceptions
 
+import mapping_helper
+
 slim = tf.contrib.slim
 
 def load_system(config):
@@ -114,6 +116,9 @@ class CarlaMachine(Agent, Driver):
 
         self.error_i = 0.0
         self.error_p = 0.0
+
+        self.mapping_helper = mapping_helper.mapping_helper(
+            output_height_pix=self._config.map_height)
 
     def start(self):
         self.carla = CarlaClient(self._host, int(self._port), timeout=120)
@@ -219,8 +224,57 @@ class CarlaMachine(Agent, Driver):
         self.debug_i += 1
         print("output image id is: ", self.debug_i)
 
+    def reshape_visualization(self, out_vis, map, nrow, ncol):
+        # out_vis is an array of visualization for all sensors, typically 3 sensors
+        # nrow, ncol descirbe the dimension of each element in out_vis
+
+        if nrow == 1 and ncol == 2 and len(out_vis)==3:
+            # the most common config for the seg only, and 3 cameras
+            # output target is first row images, second row
+            transposed = []
+            for viz in out_vis:
+                single_H = viz.shape[0]
+                single_W = viz.shape[1]//2
+                trans=np.concatenate((viz[:, :viz.shape[1]//2, :],
+                                      viz[:, viz.shape[1]//2:, :]), axis=0)
+                transposed.append(trans)
+            out = np.concatenate(transposed, axis=1)
+            out = np.pad(out, ((0, single_H), (0,0), (0,0)))
+            if map is not None:
+                map = cv2.resize(map, (single_W, single_H))
+                out[single_H*2:, single_W:single_W*2, :] = map
+            out_nrow = 3
+            out_ncol = 3
+            out_irow = 0
+            out_icol = 1
+        else:
+            # a fall back version
+            single_H = out_vis[0].shape[0] // nrow
+            single_W = out_vis[0].shape[1] // ncol
+            out = np.concatenate(out_vis, axis=1)
+            out = np.pad(out, ((0,0), (0, single_W), (0,0)))
+            if map is not None:
+                map = cv2.resize(map, (single_W, single_H))
+                out[:single_H, -single_W:, :] = map
+
+            out_nrow = nrow
+            out_ncol = ncol * len(out_vis) + 1
+            out_irow = 0
+            out_icol = (len(out_vis) // 2) * ncol
+        return out, out_nrow, out_ncol, out_irow, out_icol
+
+    def subplot_get(self, viz, nrow, ncol, irow, icol):
+        return viz[viz.shape[0] // nrow * irow: viz.shape[0] // nrow * (irow + 1),
+                   viz.shape[1] // ncol * icol: viz.shape[1] // ncol * (icol + 1), :]
+
+    def subplot_set(self, viz, nrow, ncol, irow, icol, value):
+        viz[viz.shape[0] // nrow * irow: viz.shape[0] // nrow * (irow + 1),
+            viz.shape[1] // ncol * icol: viz.shape[1] // ncol * (icol + 1), :] = value
+
+
     def compute_action(self, sensors, speed_kmh, direction=None,
-                       save_image_to_disk=True, return_vis=False, return_extra=True, extra_extra=""):
+                       save_image_to_disk=True, return_vis=False, return_extra=True, extra_extra="",
+                       mapping_support={"town_id": None, "pos": None, "ori": None}):
         # input image is bgr
         if direction == None:
             direction = self.compute_direction((0, 0, 0), (0, 0, 0))
@@ -233,6 +287,13 @@ class CarlaMachine(Agent, Driver):
 
         if hasattr(self._config, "camera_middle_zoom"):
             sensors = camera_middle_zoom(sensors, self._config.sensor_names, self._config.camera_middle_zoom)
+
+        if "mapping" in self._config.inputs_names:
+            map = self.mapping_helper.get_map(mapping_support["town_id"], mapping_support["pos"], mapping_support["ori"])
+            map_viz = self.mapping_helper.map_to_debug_image(map)
+        else:
+            map = None
+            map_viz = None
 
         nrow = 1
         ncol = 1
@@ -267,9 +328,7 @@ class CarlaMachine(Agent, Driver):
             image_input = np.transpose(image_input, (1, 2, 3, 4, 0))
             image_input = np.reshape(image_input, (image_input.shape[0], image_input.shape[1], image_input.shape[2], -1))
 
-            to_be_visualized = np.concatenate(out_vis, axis=1)
-            if self._config.use_perception_stack:
-                ncol *= len(out_vis)
+            to_be_visualized, nrow, ncol, main_irow, main_icol = self.reshape_visualization(out_vis, map_viz, nrow, ncol)
         else:
             assert (self._config.image_as_float[0] == False)
             assert (self._config.sensors_normalize[0] == False)
@@ -298,7 +357,6 @@ class CarlaMachine(Agent, Driver):
                 out_vis.append(to_be_visualized)
             #print(" visualize takes, ", time.time() - t2)
 
-
             t3 = time.time()
             # done the visualization
             image_input = self.perception_interface._merge_logits_all_perception(image_input)
@@ -309,17 +367,17 @@ class CarlaMachine(Agent, Driver):
             image_input = np.transpose(image_input, (1, 2, 3, 4, 0))
             image_input = np.reshape(image_input, (image_input.shape[0], image_input.shape[1], image_input.shape[2], -1))
 
-            to_be_visualized = np.concatenate(out_vis, axis=1)
-            ncol *= len(out_vis)
+            to_be_visualized, nrow, ncol, main_irow, main_icol = self.reshape_visualization(out_vis, map_viz, nrow, ncol)
             #print("compute logits and resizing takes", time.time() - t3)
 
         t4 = time.time()
+
         if (self._train_manager._config.control_mode == 'single_branch_wp'):
             # Yang: use the waypoints to predict the steer, in theory PID controller, but in reality just P controller
             # TODO: ask, only the regression target is different, others are the same
             steer, acc, brake, wp1angle, wp2angle = \
                 self._control_function(image_input, speed_kmh, direction,
-                                       self._config, self._sess, self._train_manager)
+                                       self._config, self._sess, self._train_manager, map=map)
 
             steer_pred = steer
 
@@ -328,25 +386,13 @@ class CarlaMachine(Agent, Driver):
             print(('Predicted Steering: ', steer_pred, ' Waypoint Steering: ', steer))
         elif (self._train_manager._config.control_mode == 'single_branch_yang_wp'):
             waypoints, predicted_speed = self._control_function(image_input, speed_kmh, direction,
-                                                       self._config, self._sess, self._train_manager)
-            # visualize the image
-            if ncol >= nrow*3:
-                col_i = ncol // 3
-            else:
-                col_i = 0
-            subpart = to_be_visualized[:to_be_visualized.shape[0]//nrow, col_i*to_be_visualized.shape[1]//ncol:(col_i+1)*to_be_visualized.shape[1]//ncol, :]
+                                                       self._config, self._sess, self._train_manager, map=map)
+            subpart = self.subplot_get(to_be_visualized, nrow, ncol, main_irow, main_icol)
             # this plots the prediction as blue
             subpart = plot_waypoints_on_image(subpart, waypoints, 4, shift_ahead=2.46 - 0.7 + 2.0, is_zoom=self._config.camera_middle_zoom['CameraMiddle'])
-
-            if hasattr(self._config, "waypoint_interpolate_2point") and self._config.waypoint_interpolate_2point:
-                # fit a spline and interpolate
-                pass
-                # TODO fit a spline and interpolate
+            self.subplot_set(to_be_visualized, nrow, ncol, main_irow, main_icol, subpart)
 
             if hasattr(self._config, "waypoint_return_control") and self._config.waypoint_return_control:
-                to_be_visualized[:to_be_visualized.shape[0] // nrow,
-                col_i * to_be_visualized.shape[1] // ncol:(col_i + 1) * to_be_visualized.shape[1] // ncol, :] = subpart
-
                 # TODO: call the real MPC controller in the future, right now using a simple PID controller
                 if speed_kmh - predicted_speed > 5.0:
                     acc = 0.0
@@ -379,27 +425,21 @@ class CarlaMachine(Agent, Driver):
                 if save_image_to_disk:
                     self.save_image(to_be_visualized)
                 if return_extra:
-                    return waypoints, to_be_visualized, nrow, ncol, col_i
+                    return waypoints, to_be_visualized, nrow, ncol, main_icol
                 else:
                     return waypoints, to_be_visualized
 
         elif (self._train_manager._config.control_mode == 'single_branch_yang_wp_stack'):
             waypoints, steer, acc, brake, real_predicted = \
                 self._control_function(image_input, speed_kmh, direction,
-                                       self._config, self._sess, self._train_manager)
-            # visualize the image
-            if ncol >= nrow * 3:
-                col_i = ncol // 3
-            else:
-                col_i = 0
-            subpart = to_be_visualized[:to_be_visualized.shape[0] // nrow,
-                      col_i * to_be_visualized.shape[1] // ncol:(col_i + 1) * to_be_visualized.shape[1] // ncol, :]
-            # this plots the prediction as blue
-            subpart = plot_waypoints_on_image(subpart, waypoints, 4, shift_ahead=2.46 - 0.7 + 2.0, is_zoom=self._config.camera_middle_zoom['CameraMiddle'])
+                                       self._config, self._sess, self._train_manager, map=map)
 
-            to_be_visualized[:to_be_visualized.shape[0] // nrow,
-            col_i * to_be_visualized.shape[1] // ncol:(col_i + 1) * to_be_visualized.shape[1] // ncol, :] = subpart
-            # end of visualization
+            subpart = self.subplot_get(to_be_visualized, nrow, ncol, main_irow, main_icol)
+            # this plots the prediction as blue
+            subpart = plot_waypoints_on_image(subpart, waypoints, 4, shift_ahead=2.46 - 0.7 + 2.0,
+                                              is_zoom=self._config.camera_middle_zoom['CameraMiddle'])
+            self.subplot_set(to_be_visualized, nrow, ncol, main_irow, main_icol, subpart)
+
         elif  (self._train_manager._config.control_mode == 'single_branch_yang_cls_reg'):
             shape_id, scale = self._control_function(image_input, speed_kmh, direction,
                                                      self._config, self._sess, self._train_manager)

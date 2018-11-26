@@ -4,7 +4,7 @@ from codification import *
 def single_branch_wp(image_input, speed, control_input, config, sess, train_manager):
     return single_branch(image_input, speed, control_input, config, sess, train_manager, use_wp=True)
 
-def single_branch(image_input, speed, control_input, config, sess, train_manager, use_wp=False):
+def single_branch(image_input, speed, control_input, config, sess, train_manager, use_wp=False, map=None):
     branches = train_manager._output_network
 
     control_to_branch = {2:0, 0:0, 3:2, 4:3, 5:1}
@@ -16,6 +16,8 @@ def single_branch(image_input, speed, control_input, config, sess, train_manager
     feedDict = {train_manager._input_images: image_input,
                 train_manager._input_data[config.inputs_names.index("Speed")]: speed,
                 train_manager._dout: [1] * len(config.dropout)}
+    if map is not None:
+        feedDict.update({train_manager._input_data[config.inputs_names.index("mapping")]: map})
 
     output_all, predicted_speed = sess.run([all_net, branches[4]], feed_dict=feedDict)
 
@@ -46,7 +48,8 @@ def single_branch(image_input, speed, control_input, config, sess, train_manager
         return predicted_steers, predicted_acc, predicted_brake
 
 
-def single_branch_yang_wp(image_input, speed, control_input, config, sess, train_manager):
+def single_branch_yang_wp(image_input, speed, control_input, config, sess, train_manager, map=None):
+    # map is the numpy array outputed by the mapping helper
     branches = train_manager._output_network
 
     control_to_branch = {2:0, 0:0, 3:2, 4:3, 5:1}
@@ -58,6 +61,8 @@ def single_branch_yang_wp(image_input, speed, control_input, config, sess, train
     feedDict = {train_manager._input_images: image_input,
                 train_manager._input_data[config.inputs_names.index("Speed")]: speed,
                 train_manager._dout: [1] * len(config.dropout)}
+    if map is not None:
+        feedDict.update({train_manager._input_data[config.inputs_names.index("mapping")]: map})
 
     output_all, predicted_speed = sess.run([all_net, branches[4]], feed_dict=feedDict)
 
@@ -73,7 +78,7 @@ def single_branch_yang_wp(image_input, speed, control_input, config, sess, train
 
     return waypoints, real_predicted
 
-def single_branch_yang_wp_stack(image_input, speed, control_input, config, sess, train_manager):
+def single_branch_yang_wp_stack(image_input, speed, control_input, config, sess, train_manager, map=None):
     branches = train_manager._output_network
 
     control_to_branch = {2:0, 0:0, 3:2, 4:3, 5:1}
@@ -85,6 +90,8 @@ def single_branch_yang_wp_stack(image_input, speed, control_input, config, sess,
     feedDict = {train_manager._input_images: image_input,
                 train_manager._input_data[config.inputs_names.index("Speed")]: speed,
                 train_manager._dout: [1] * len(config.dropout)}
+    if map is not None:
+        feedDict.update({train_manager._input_data[config.inputs_names.index("mapping")]: map})
 
     output_all, predicted_speed = sess.run([all_net, branches[4]], feed_dict=feedDict)
 

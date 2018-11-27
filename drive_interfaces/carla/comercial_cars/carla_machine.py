@@ -239,7 +239,7 @@ class CarlaMachine(Agent, Driver):
                                       viz[:, viz.shape[1]//2:, :]), axis=0)
                 transposed.append(trans)
             out = np.concatenate(transposed, axis=1)
-            out = np.pad(out, ((0, single_H), (0,0), (0,0)))
+            out = np.pad(out, ((0, single_H), (0,0), (0,0)), 'constant')
             if map is not None:
                 map = cv2.resize(map, (single_W, single_H))
                 out[single_H*2:, single_W:single_W*2, :] = map
@@ -252,7 +252,7 @@ class CarlaMachine(Agent, Driver):
             single_H = out_vis[0].shape[0] // nrow
             single_W = out_vis[0].shape[1] // ncol
             out = np.concatenate(out_vis, axis=1)
-            out = np.pad(out, ((0,0), (0, single_W), (0,0)))
+            out = np.pad(out, ((0,0), (0, single_W), (0,0)), 'constant')
             if map is not None:
                 map = cv2.resize(map, (single_W, single_H))
                 out[:single_H, -single_W:, :] = map
@@ -291,6 +291,7 @@ class CarlaMachine(Agent, Driver):
         if "mapping" in self._config.inputs_names:
             map = self.mapping_helper.get_map(mapping_support["town_id"], mapping_support["pos"], mapping_support["ori"])
             map_viz = self.mapping_helper.map_to_debug_image(map)
+            map = np.reshape(map, (1, -1))  # batch size is one
         else:
             map = None
             map_viz = None

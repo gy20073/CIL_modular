@@ -37,8 +37,8 @@ class mapping_helper:
             # apply the padding
             padding = 3*self.output_pixel_size[key]
             self.maps[key] = np.pad(self.maps[key], ((padding, padding), (padding, padding), (0, 0)), 'constant')
-        self.carla_map = {"01": CarlaMap("Town01"),
-                          "02": CarlaMap("Town02")}
+        self.carla_map = {"01": CarlaMap("Town01", 0.1643, 50.0),
+                          "02": CarlaMap("Town02", 0.1643, 50.0)}
         self.loc_to_pix = {"rfs": lambda loc: self.loc_to_pix_rfs(loc),
                            "01":  lambda loc: self.loc_to_pix_01_02(loc, "01"),
                            "02":  lambda loc: self.loc_to_pix_01_02(loc, "02")}

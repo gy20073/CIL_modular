@@ -81,7 +81,7 @@ class configMain:
         self.add_random_region_noise = 0.2
 
         #self.mse_self_normalize = True
-        #self.waypoint_return_control = True
+        self.waypoint_return_control = True
         self.camera_middle_zoom = {'CameraLeft': False, 'CameraMiddle': True, 'CameraRight': False}
 
 #mm45_v4_wp2town3cam_2p2town.py

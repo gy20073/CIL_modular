@@ -298,10 +298,13 @@ class Dataset(object):
 
                     if np.random.rand() < 0.005:
                         # for debugging
+                        pass
+                        '''
                         im = self.mapping_helper.map_to_debug_image(map)[:,:,::-1]
                         center = sensors[1][ibatch, :,:,::-1]
                         cv2.imwrite("debug_map.png", im)
                         cv2.imwrite("debug_center_cam.png", center)
+                        '''
 
                 else:
                     k = self._config.variable_names.index(self._config.inputs_names[iinput])

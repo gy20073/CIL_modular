@@ -181,6 +181,19 @@ class DrivingBenchmark(object):
                 end_point.location.x, end_point.location.y, end_point.location.z], [
                 end_point.orientation.x, end_point.orientation.y, end_point.orientation.z])
 
+    def measurements_to_pos_yaw(self, measurements):
+        pos = [measurements.player_measurements.transform.location.x,
+               measurements.player_measurements.transform.location.y ]
+
+        ori = [measurements.player_measurements.transform.orientation.x,
+               measurements.player_measurements.transform.orientation.y,
+               measurements.player_measurements.transform.orientation.z ]
+
+        city_name = {"Town01": "01",
+                     "Town02": "02"}[self._city_name]
+        return {"town_id": city_name, "pos": pos, "ori": ori}
+
+
     def _run_navigation_episode(
             self,
             agent,
@@ -224,7 +237,7 @@ class DrivingBenchmark(object):
             # The directions to reach the goal are calculated.
             directions = self._get_directions(measurements.player_measurements.transform, target)
             # The agent processes the data.
-            control = agent.run_step(measurements, sensor_data, directions, target)
+            control = agent.run_step(measurements, sensor_data, directions, target, self.measurements_to_pos_yaw(measurements))
             # Send the control commands to the vehicle
             client.send_control(control)
 

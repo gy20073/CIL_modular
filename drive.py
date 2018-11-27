@@ -158,6 +158,7 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
                 for name in _config.sensor_names:
                     sensors.append(image_converter.to_bgra_array(sensor_data[name]))
 
+            # this only goes to carla_human, not carla_machine
             actions = driver.compute_action(sensors, speed_kmh)  # measurements.speed
             action_noisy = noiser.compute_noise(actions, speed_kmh)
 

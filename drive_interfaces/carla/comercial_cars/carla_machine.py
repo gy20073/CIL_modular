@@ -182,7 +182,7 @@ class CarlaMachine(Agent, Driver):
         return False
 
     # TODO: change to the agent interface, this depend on the sensor names
-    def run_step(self, measurements, sensor_data, direction, target):
+    def run_step(self, measurements, sensor_data, direction, target, mapping_support=None):
         sensors = []
         for name in self._config.sensor_names:
             sensors.append(image_converter.to_bgra_array(sensor_data[name]))
@@ -190,7 +190,7 @@ class CarlaMachine(Agent, Driver):
         speed_kmh = measurements.player_measurements.forward_speed * 3.6
 
         # TODO: change the interface of compute action for all
-        control = self.compute_action(sensors, speed_kmh, direction)
+        control = self.compute_action(sensors, speed_kmh, direction, mapping_support=mapping_support)
 
         return control
 

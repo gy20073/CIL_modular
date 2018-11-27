@@ -220,6 +220,19 @@ class DrivingBenchmark(object):
             os.makedirs(folder)
         cv2.imwrite(out_name, self.trajectory_img)
 
+
+    def measurements_to_pos_yaw(self, measurements):
+        pos = [measurements.player_measurements.transform.location.x,
+               measurements.player_measurements.transform.location.y ]
+
+        ori = [measurements.player_measurements.transform.orientation.x,
+               measurements.player_measurements.transform.orientation.y,
+               measurements.player_measurements.transform.orientation.z ]
+
+        city_name = {"Town01": "01",
+                     "Town02": "02"}[self._city_name]
+        return {"town_id": city_name, "pos": pos, "ori": ori}
+
     def _run_navigation_episode(
             self,
             agent,
@@ -273,7 +286,7 @@ class DrivingBenchmark(object):
             # The directions to reach the goal are calculated.
             directions = self._get_directions(measurements.player_measurements.transform, target)
             # Agent process the data.
-            control = agent.run_step(measurements, sensor_data, directions, target)
+            control = agent.run_step(measurements, sensor_data, directions, target, self.measurements_to_pos_yaw(measurements))
             # Send the control commands to the vehicle
             client.send_control(control)
 

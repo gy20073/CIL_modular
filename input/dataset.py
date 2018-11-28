@@ -67,7 +67,8 @@ class Dataset(object):
 
         self.perception_interface = perception_interface
 
-        self.mapping_helper = mapping_helper.mapping_helper(output_height_pix=self._config.map_height) # using the default values, 30 meters of width view, 50*75*1 output size
+        if "mapping" in self._config.inputs_names:
+            self.mapping_helper = mapping_helper.mapping_helper(output_height_pix=self._config.map_height) # using the default values, 30 meters of width view, 50*75*1 output size
 
 
     def get_batch_tensor(self):
@@ -319,6 +320,22 @@ class Dataset(object):
 
         # change the output sensors variable
         sensors = np.concatenate(sensors, axis=0)
+        if self._augmenter[0] != None and hasattr(self._config, "sensor_dropout") and self._config.sensor_dropout > 0:
+            # do the sensor dropout
+            # sensors[i] B H W C, after concat is 3B H W C
+            print("augmenting the sensors dropout")
+            num_images = sensors.shape[0]
+            for i in range(num_images):
+                if np.random.rand() < self._config.sensor_dropout:
+                    sensors[i, :, :, :] = np.mean(sensors[i, :, :, :])
+
+            if "mapping" in self._config.inputs_names:
+                print("augmenting the mapping dropout")
+                id = self._config.inputs_names.index("mapping")
+                for i in range(inputs[id].shape[0]):
+                    if np.random.rand() < self._config.sensor_dropout:
+                        inputs[id][i, :] = np.mean(inputs[id][i])
+
 
         return sensors, targets, inputs
 

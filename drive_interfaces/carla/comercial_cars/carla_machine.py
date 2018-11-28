@@ -117,8 +117,9 @@ class CarlaMachine(Agent, Driver):
         self.error_i = 0.0
         self.error_p = 0.0
 
-        self.mapping_helper = mapping_helper.mapping_helper(
-            output_height_pix=self._config.map_height)
+        if hasattr(self._config, "map_height"):
+            self.mapping_helper = mapping_helper.mapping_helper(
+                output_height_pix=self._config.map_height)
 
     def start(self):
         self.carla = CarlaClient(self._host, int(self._port), timeout=120)

@@ -101,7 +101,7 @@ venv.bak/
 
 # mypy
 .mypy_cache/
-data*
+./data*
 *.csv
 *drive_interfaces/carla/auto_gen_configs/*
 *pkl

@@ -17,15 +17,15 @@ def get_driver_config():
     driver_conf.carla_config = None  # This is not used by CarlaMachine but it's required
     return driver_conf
 
-# begin the configs
-exp_id = "mm45_v4_wp2town3cam_2p3town"
-short_id = "2p3town"
+# TODO begin the configs
+exp_id = "mm45_v4_wp2town3cam_2p3town_map_sensor_dropout"
+short_id = "waypoint_map_sensordrop"
 use_left_right = True
-video_path = "/scratch/yang/aws_data/mkz/mkz_3cam_2/second.mp4"
-pickle_path = "todo"
-gpu = [0]
+video_path = "/scratch/yang/aws_data/mkz/recordings/11.28-2/video_enable.avi"
+pickle_path = "/scratch/yang/aws_data/mkz/recordings/11.28-2/video_enable.pkl"
+gpu = [5]
+# TODO end of the config
 
-# end of the config
 # The color encoding is: blue predicted, green ground truth, red approximated ground truth
 os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu[0])
 
@@ -37,7 +37,7 @@ from carla_machine import *
 driving_model = CarlaMachine("0", exp_id, get_driver_config(), 0.1,
                              gpu_perception=gpu,
                              perception_paths="path_jormungandr_newseg",
-                             batch_size=1)
+                             batch_size=3 if use_left_right else 1)
 
 def loop_over_video(path, func, temp_down_factor=1, batch_size=1, output_name="output.avi", pickle_name=None):
     # from a video, use cv2 to read each frame
@@ -111,7 +111,8 @@ def callback(frames, extra_info):
                                                                return_vis=True,
                                                                return_extra=False,
                                                                mapping_support={"town_id": "rfs", "pos": pos, "ori": ori})
-    wps.append(waypoints)
+    # TODO: temporally disable the waypoint saving mechanism
+    #wps.append(waypoints)
     path = video_path+"."+short_id+".pkl"
     with open(path, "wb") as file:
         pickle.dump(wps, file)
@@ -122,4 +123,5 @@ loop_over_video(video_path,
                 callback,
                 temp_down_factor=1,
                 batch_size=1,
-                output_name=video_path+"."+short_id+".mp4")
+                output_name=video_path+"."+short_id+".mp4",
+                pickle_name=pickle_path)

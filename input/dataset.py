@@ -292,6 +292,10 @@ class Dataset(object):
                         # we are in the training mode, thus we need to add some noise to the position
                         std = self._config.map_pos_noise_std
                         pos = [pos[0] + np.random.normal(scale=std), pos[1] + np.random.normal(scale=std)]
+                        # noise to the yaw
+                        yaw = np.arctan2(-ori[1], ori[0]) + np.random.normal(scale=np.deg2rad(self._config.map_yaw_noise_std))
+                        ori[0] = np.cos(yaw)
+                        ori[1] = - np.sin(yaw)
 
                     map = self.mapping_helper.get_map(town_id, pos, ori)
                     # add a flattened operator, to make it compatible with the original format, remember to reshape it back
@@ -333,7 +337,7 @@ class Dataset(object):
                 print("augmenting the mapping dropout")
                 id = self._config.inputs_names.index("mapping")
                 for i in range(inputs[id].shape[0]):
-                    if np.random.rand() < self._config.sensor_dropout:
+                    if np.random.rand() < self._config.mapping_dropout:
                         inputs[id][i, :] = np.mean(inputs[id][i])
 
 

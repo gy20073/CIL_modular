@@ -1,4 +1,5 @@
 import tensorflow as tf
+import copy
 
 def mse_branched(network_outputs, ground_truths, control_input, config):
     # typical input: network_outputs: output from network,
@@ -33,18 +34,7 @@ def mse_branched(network_outputs, ground_truths, control_input, config):
             else:
                 branch_selection = tf.ones(tf.shape(target_gt))
 
-            if hasattr(config, "huber_loss_delta") and config.huber_loss_delta > 0:
-                print("using huber loss")
-                square_dist = tf.losses.huber_loss(target_gt,
-                                                   network_outputs_split[i_within_branch],
-                                                   delta=config.huber_loss_delta,
-                                                   reduction=None) * branch_selection
-            else:
-                square_dist = tf.pow(tf.subtract(target_gt, network_outputs_split[i_within_branch]), 2) * branch_selection
-            if hasattr(config, "mse_self_normalize") and config.mse_self_normalize:
-                print("normalizing with target data")
-                square_dist /= (tf.pow(target_gt, 2) + 0.01)
-
+            square_dist = tf.pow(tf.subtract(target_gt, network_outputs_split[i_within_branch]), 2) * branch_selection
             dist = tf.abs(tf.subtract(target_gt, network_outputs_split[i_within_branch])) * branch_selection
             error_branch.append(dist)
 
@@ -64,9 +54,40 @@ def mse_branched(network_outputs, ground_truths, control_input, config):
             l2_loss = wd * tf.add_n(decay_set)
             loss_function = loss_function + l2_loss
 
+    #print(loss_function, error_vec, energy_vec)
     return loss_function, error_vec, energy_vec, None, branch_selection
 
+def mse_coarse_to_fine(network_outputs, ground_truths, control_input, config):
+    branches_refined = network_outputs[:-1]
+    branches_map = network_outputs[-1][0]
+    branches_map_sigma = network_outputs[-1][1]
 
+    # using this config.branch_config
+    config_map = copy.deepcopy(config)
+    config_map.branch_config = config.branch_config_map
+    loss_refined, error_refined, energy_refined, _, branch_sel_refined = mse_branched(branches_refined, ground_truths, control_input, config)
+    # TODO: visualize the errors for the map prediction
+    loss_map, error_map, energy_map, _, branch_sel_map = mse_branched(branches_map, ground_truths, control_input, config_map)
+
+    loss_sigma = 0.0
+    # TODO check the shape
+    for one_branch in branches_map_sigma:
+        squared = tf.pow(one_branch, 2)
+        sum_over_attributes = tf.reduce_sum(squared, 1, keep_dims=True)
+        loss_sigma = loss_sigma + sum_over_attributes
+
+
+    tf.summary.scalar('loss_refined_manual', tf.reduce_mean(loss_refined))
+    tf.summary.scalar('loss_map_manual', tf.reduce_mean(loss_map))
+    tf.summary.scalar('loss_sigma_manual', tf.reduce_mean(loss_sigma))
+
+    loss = config.coarse2fine_refined * loss_refined + \
+           config.coarse2fine_map * loss_map + \
+           config.coarse2fine_sigma * loss_sigma
+
+    print("loss sigma", loss_sigma, "loss refined", loss_refined, "loss map", loss_map)
+    #print(loss, error_refined, energy_refined)
+    return loss, error_refined, energy_refined, None, None
 
 def mse_branched_cls_reg(network_outputs, ground_truths, control_input, config):
     # typical input: network_outputs: output from network,

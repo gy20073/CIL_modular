@@ -24,6 +24,7 @@ use_left_right = True
 video_path = "/scratch/yang/aws_data/mkz/recordings/11.28-2/video_enable.avi"
 pickle_path = "/scratch/yang/aws_data/mkz/recordings/11.28-2/video_enable.pkl"
 gpu = [5]
+offset = 80 # actually around 82 to 84
 # TODO end of the config
 
 # The color encoding is: blue predicted, green ground truth, red approximated ground truth
@@ -63,7 +64,7 @@ def loop_over_video(path, func, temp_down_factor=1, batch_size=1, output_name="o
         if len(batch_frames) == batch_size:
             # frame is the one
             print("calling loop function...")
-            frame_seq = func(batch_frames, extra_info[i])
+            frame_seq = func(batch_frames, extra_info[i+offset])
             print("calling loop function finished")
             if not video_init:
                 fourcc = cv2.VideoWriter_fourcc(*'DIVX')

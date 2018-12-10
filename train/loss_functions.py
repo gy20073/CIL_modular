@@ -89,6 +89,43 @@ def mse_coarse_to_fine(network_outputs, ground_truths, control_input, config):
     #print(loss, error_refined, energy_refined)
     return loss, error_refined, energy_refined, None, None
 
+def gmm(network_outputs, ground_truths, control_input, config):
+    # multiple losses for GMM with param phi_i, mu_i, sigma_i
+    branches_configuration = config.branch_config  # Get the branched configuration
+
+    loss_function = 0.0
+    error_vec = []
+    for ibranch in range(len(branches_configuration)):
+        for ivar in range(len(branches_configuration[ibranch])):
+            target_name = branches_configuration[ibranch][ivar]  # name of the target
+            target_gt = ground_truths[config.targets_names.index(target_name)] # this is a batchsize * targetlen tensor
+            branch_selection = tf.reshape(control_input[:, ibranch], tf.shape(ground_truths[0])) # has the same shape as above
+
+            mixture = network_outputs[ibranch][ivar]
+            # compute all losses
+            # - log like
+            loss_log_prob = -mixture.log_prob(tf.squeeze(target_gt))
+            # TODO: from here, sanity check
+            # sparsity on phi_i
+            mixing_coeff = mixture.cat.p # this should be a batch * num_component tensor
+            loss_phi_sparsity = tf.norm(mixing_coeff, ord=0.5, axis=1)
+
+            # expected scale on log sigma_i
+            sigmas = [x.sigma for x in mixture.components]
+            loss_sigma_normalize = 0.0
+            for sigma in sigmas:
+                loss_sigma_normalize = loss_sigma_normalize + tf.pow(tf.log(sigma) - config.gmm_sigma_expectation, 2)
+
+            # accumulate the loss
+            loss_function = loss_function + (loss_log_prob * config.gmm_w_log_prob +
+                                            loss_phi_sparsity * config.gmm_w_phi_sparsity +
+                                            loss_sigma_normalize * config.gmm_w_sigma_normalize) * tf.squeeze(branch_selection)
+
+
+    # print(loss_function, error_vec, energy_vec)
+    return loss_function, error_vec, error_vec, None, None
+
+
 def mse_branched_cls_reg(network_outputs, ground_truths, control_input, config):
     # typical input: network_outputs: output from network,
     #                ground_truths: _targets_data

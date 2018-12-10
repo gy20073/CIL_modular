@@ -291,7 +291,8 @@ class Dataset(object):
                     if self._augmenter[0]!=None:
                         # we are in the training mode, thus we need to add some noise to the position
                         std = self._config.map_pos_noise_std
-                        pos = [pos[0] + np.random.normal(scale=std), pos[1] + np.random.normal(scale=std)]
+                        fun_trunc_normal = lambda std: max(min(np.random.normal(scale=std), 2*std), -2*std)
+                        pos = [pos[0] + fun_trunc_normal(std), pos[1] + fun_trunc_normal(std)]
                         # noise to the yaw
                         yaw = np.arctan2(-ori[1], ori[0]) + np.random.normal(scale=np.deg2rad(self._config.map_yaw_noise_std))
                         ori[0] = np.cos(yaw)

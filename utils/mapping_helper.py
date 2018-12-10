@@ -87,8 +87,17 @@ class mapping_helper:
         pix = func(pos)
         padding = self.output_pixel_size[town_id] * 3
         pix = [pix[0]+padding, pix[1]+padding]
-        cropped = map[pix[0]-padding: pix[0]+padding,
-                      pix[1]-padding: pix[1]+padding, :]
+
+        crop_size = self.output_pixel_size[town_id] * 2
+        if pix[0] - crop_size < 0 or pix[0] + crop_size > map.shape[0]:
+            print("get map location 0, out of range", pix[0], map.shape)
+            pix[0] = min(max(pix[0], crop_size), map.shape[0]-crop_size)
+        if pix[1] - crop_size < 0 or pix[1] + crop_size > map.shape[1]:
+            print("get map location 1, out of range", pix[1], map.shape)
+            pix[1] = min(max(pix[1], crop_size), map.shape[1]-crop_size)
+
+        cropped = map[pix[0]-crop_size: pix[0]+crop_size,
+                      pix[1]-crop_size: pix[1]+crop_size, :]
         cropped = copy.deepcopy(cropped)
         yaw_radian = self.ori_to_yaw(ori, town_id)
         cropped = rotate(cropped, yaw_radian, self.output_pixel_size[town_id])

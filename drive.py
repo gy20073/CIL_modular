@@ -162,6 +162,8 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
             actions = driver.compute_action(sensors, speed_kmh)  # measurements.speed
             action_noisy = noiser.compute_noise(actions, speed_kmh)
 
+            print('>>>>>> DIFF steering = {}'.format(action_noisy.steer - actions.steer))
+
             if recording:
                 num_has_collected += 1
                 recorder.record(measurements, sensor_data, actions, action_noisy, direction, driver.get_waypoints())

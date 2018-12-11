@@ -2,11 +2,11 @@ import copy, random, time, os, sys
 
 __CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.8.X')
 if __CARLA_VERSION__ == '0.9.X':
-    sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.0-py2.7-linux-x86_64.egg')
+    sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')
     import carla
     from carla import VehicleControl as VehicleControl
 elif __CARLA_VERSION__.startswith("0.9"):
-    sys.path[0:0]=['/scratch/yang/aws_data/carla_auto2/PythonAPI/carla-0.9.0-py2.7-linux-x86_64.egg']
+    sys.path[0:0]=['/scratch/yang/aws_data/carla_auto2/PythonAPI/carla-0.9.1-py2.7-linux-x86_64.egg']
     import carla
     from carla import VehicleControl as VehicleControl
 

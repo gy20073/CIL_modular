@@ -17,7 +17,7 @@ class configDrive:
         self.interface = "Carla"
 
         self.image_cut = [0, None]  # This is made from top to botton # TODO: finalize this
-        self.autopilot = False # This should not be related in the carla machine, but might matter in CarlaHuman?
+        self.autopilot = True # This should not be related in the carla machine, but might matter in CarlaHuman?
         self.reset_period = 960
         # Figure out a solution for setting specific properties of each interface
         # TODO: if not using planner, has to press keyboards, otherwise has to have the end goal with a planner
@@ -26,7 +26,7 @@ class configDrive:
         self.num_images_to_collect = 2000 * 20  # how many images to collect in total
         self.re_entry = True  # True to allow continue collecting the data, this will make changes to the folder structure
 
-        self.city_name = 'Town01'
+        self.city_name = 'RFS_MAP'
 
         # Test parameters to be shared between models
 
@@ -44,3 +44,10 @@ class configDrive:
         self.number_screens = 1 # added later
 
         self.carla_api_version =  os.getenv('CARLA_VERSION', '0.8.X')
+
+        self.noise_frequency = 45
+        self.noise_intensity = 5
+        self.min_noise_time_amount = 0.5
+        self.no_noise_decay_stage = True
+        self.use_tick = True
+

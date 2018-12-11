@@ -20,13 +20,14 @@ if __CARLA_VERSION__ == '0.8.X':
     from carla.client import CarlaClient
 else:
     if __CARLA_VERSION__ == '0.9.X':
-        sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.0-py2.7-linux-x86_64.egg')
+        sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')
     else:
-        sys.path[0:0]=['/scratch/yang/aws_data/carla_auto2/PythonAPI/carla-0.9.0-py2.7-linux-x86_64.egg']
+        sys.path[0:0]=['/scratch/yang/aws_data/carla_auto2/PythonAPI/carla-0.9.1-py2.7-linux-x86_64.egg']
         print(sys.path)
     import carla
     from carla import Client as CarlaClient
     from carla import VehicleControl as VehicleControl
+    from Navigation.roaming_agent import *
 
 from driver import Driver
 
@@ -127,6 +128,7 @@ class CarlaHuman(Driver):
 
         self._world = None
         self._vehicle = None
+        self._agent_autopilot = None
         self._camera_center = None
         self._spectator = None
         # (last) images store for several cameras
@@ -403,7 +405,8 @@ class CarlaHuman(Driver):
                 self._vehicle.set_transform(START_POSITION)
 
             if self._autopilot:
-                self._vehicle.set_autopilot()
+                # Nope: self._vehicle.set_autopilot()
+                self._agent_autopilot = RoamingAgent(self._vehicle)
 
             if self.collision_sensor is not None:
                 self.collision_sensor.sensor.destroy()
@@ -646,9 +649,8 @@ class CarlaHuman(Driver):
                 control = self._latest_measurements.player_measurements.autopilot_control
                 print('[Throttle = {}] [Steering = {}] [Brake = {}]'.format(control.throttle, control.steer, control.brake))
             else:
-                control = self._vehicle.get_vehicle_control()
-                control.brake = min(control.brake, 1.0)
-                control.brake = max(control.brake, -1.0)
+                if self._world.wait_for_tick(10.0):
+                    control = self._agent_autopilot.run_step()
 
         print('[Throttle = {}] [Steering = {}] [Brake = {}]'.format(control.throttle, control.steer, control.brake))
         return control
@@ -765,13 +767,3 @@ class CarlaHuman(Driver):
             self.carla.send_control(control)
         else:
             self._vehicle.apply_control(control)
-
-            # location = self._vehicle.get_location()
-            # location.z = 200.0
-            # rotation = self._vehicle.get_transform().rotation
-            # rotation.pitch = -90.0
-            # rotation.yaw = 0
-            # rotation.roll = -0.07
-
-            #print('>>>>> x={}, y={}, z={}, pitch={}, yaw={}, roll={}'.format(location.x, location.y, location.z, rotation.pitch, rotation.yaw, rotation.roll))
-            #self._spectator.set_transform(carla.Transform(location=location, rotation=rotation))

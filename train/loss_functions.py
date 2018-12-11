@@ -95,33 +95,54 @@ def gmm(network_outputs, ground_truths, control_input, config):
 
     loss_function = 0.0
     error_vec = []
+
+    total_log_prob = 0.0
+    total_phi_sparsity = 0.0
+    total_sigma_normalize = 0.0
+
     for ibranch in range(len(branches_configuration)):
         for ivar in range(len(branches_configuration[ibranch])):
             target_name = branches_configuration[ibranch][ivar]  # name of the target
             target_gt = ground_truths[config.targets_names.index(target_name)] # this is a batchsize * targetlen tensor
-            branch_selection = tf.reshape(control_input[:, ibranch], tf.shape(ground_truths[0])) # has the same shape as above
+
+            if ibranch < config.inputs_sizes[config.inputs_names.index('Control')]:
+                branch_selection = tf.reshape(control_input[:, ibranch], tf.shape(ground_truths[0]))
+            else:
+                branch_selection = tf.ones(tf.shape(target_gt))
 
             mixture = network_outputs[ibranch][ivar]
             # compute all losses
             # - log like
+            print("shape of target_gt is ", target_gt)
             loss_log_prob = -mixture.log_prob(tf.squeeze(target_gt))
             # TODO: from here, sanity check
             # sparsity on phi_i
-            mixing_coeff = mixture.cat.p # this should be a batch * num_component tensor
+            mixing_coeff = mixture.cat.probs # this should be a batch * num_component tensor
+            print("shape of the mixing coeff is ", mixing_coeff)
             loss_phi_sparsity = tf.norm(mixing_coeff, ord=0.5, axis=1)
 
             # expected scale on log sigma_i
-            sigmas = [x.sigma for x in mixture.components]
+            sigmas = [x.scale for x in mixture.components]
+            print("shape of the sigmas", sigmas)
             loss_sigma_normalize = 0.0
             for sigma in sigmas:
                 loss_sigma_normalize = loss_sigma_normalize + tf.pow(tf.log(sigma) - config.gmm_sigma_expectation, 2)
 
+            print("shape of the losses", loss_log_prob, loss_sigma_normalize, loss_phi_sparsity, branch_selection)
             # accumulate the loss
-            loss_function = loss_function + (loss_log_prob * config.gmm_w_log_prob +
-                                            loss_phi_sparsity * config.gmm_w_phi_sparsity +
-                                            loss_sigma_normalize * config.gmm_w_sigma_normalize) * tf.squeeze(branch_selection)
+            loss_function += (loss_log_prob * config.gmm_w_log_prob +
+                              loss_phi_sparsity * config.gmm_w_phi_sparsity +
+                              loss_sigma_normalize * config.gmm_w_sigma_normalize) * tf.squeeze(branch_selection)
 
+            total_log_prob += loss_log_prob * tf.squeeze(branch_selection)
+            total_phi_sparsity += loss_phi_sparsity * tf.squeeze(branch_selection)
+            total_sigma_normalize += loss_sigma_normalize * tf.squeeze(branch_selection)
 
+    tf.summary.scalar('loss_log_prob', tf.reduce_mean(total_log_prob))
+    tf.summary.scalar('loss_phi_sparsity', tf.reduce_mean(total_phi_sparsity))
+    tf.summary.scalar('loss_sigma_normalize', tf.reduce_mean(total_sigma_normalize))
+
+    # summarize the 3 type of losses
     # print(loss_function, error_vec, energy_vec)
     return loss_function, error_vec, error_vec, None, None
 

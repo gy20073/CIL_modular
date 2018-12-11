@@ -75,8 +75,8 @@ def make_branches(branch_config, input_feature, input_feature_with_speed, tf, ne
                     for icomponent in range(num_gmm_components):
                         mu_sigma = network_manager.fc(branch_output, 2) # the mu and sigma
                         # create a gaussian with these params
-                        dist = tf.contrib.distributions.Normal(mu=mu_sigma[:, 0],
-                                                               sigma=tf.abs(mu_sigma[:, 1])+1e-3,
+                        dist = tf.contrib.distributions.Normal(loc=mu_sigma[:, 0],
+                                                               scale=tf.abs(mu_sigma[:, 1])+1e-3,
                                                                validate_args=True,
                                                                allow_nan_stats=False,
                                                                name="normal_dist_branch_" + str(i) +

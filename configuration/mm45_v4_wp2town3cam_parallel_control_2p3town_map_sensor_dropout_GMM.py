@@ -1,4 +1,4 @@
-import glob, os
+import glob, os, math
 from imgaug import augmenters as iaa
 import numpy as np
 
@@ -29,28 +29,22 @@ class configMain:
         # we should not change the target names to reflect the underlying detailed structure of the GMM, instead, we should
         # keep the semantics here, and implement the details of GMM in the network definition file
         self.GMM_ncomponents = 3
-        self.targets_names = ['Steer'] # for now, only explore the steer, that what I care most.
+        self.targets_names = ['Steer', 'Speed'] # for now, only explore the steer, that what I care most.
         self.targets_sizes = [1] * len(self.targets_names)
 
-        self.inputs_names = ['Control', 'Speed', "mapping"]
-        self.map_height = 50
-        self.map_pos_noise_std = 5.0  # measured in meter
-        self.map_yaw_noise_std = 10.0 # in degree
-        self.inputs_sizes = [4, 1] + [self.map_height * self.map_height * 3 // 2]
+        self.inputs_names = ['Control', 'Speed']
+        self.inputs_sizes = [4, 1]
 
         # if there is branching, this is used to build the network. Names should be same as targets
         # currently the ["Steer"]x4 should not be changed
-        self.branch_config = [["Steer", "Gas", "Brake", 'wp1x', 'wp1y', 'wp2x', 'wp2y', 'wp3x', 'wp3y', 'wp4x', 'wp4y', 'wp5x', 'wp5y',
-                              'wp6x', 'wp6y', 'wp7x', 'wp7y', 'wp8x', 'wp8y', 'wp9x', 'wp9y', 'wp10x', 'wp10y']] * 4 + \
+        self.branch_config = [["Steer"]] * 4 + \
                             [["Speed"]]
-        self.branch_config_map = [["Steer"]] * 4
 
         # a list of keep_prob corresponding to the list of layers:
         # 7 conv layers, 2 img FC layer, 2 speed FC layers, 1 joint FC layer, 5 branches X 2 FC layers each
         #                     3072*512 512**2              640*512  512*256 256**2
         #self.dropout = ([.95] * 7 + [0.95] * 2) * 2 + [.95] * 2 + [0.95] * 1 + [0.95, .95] * len(self.branch_config)
-        self.dropout = ([.95] * 7 + [0.95] * 2) + [0.95, .95] * len(self.branch_config) * 2 + \
-                       ([.95] * 7 + [0.95] * 2) + ([.95] * 2 + [0.95] * 1) + ([0.95, 0.95, 0.95, .95] * 4 + [0.95, 0.95])
+        self.dropout = [.95] * 100
 
         self.models_path = os.path.join('models', os.path.basename(__file__).split('.')[0])
         self.train_path_write = os.path.join(self.models_path, 'train')
@@ -66,7 +60,7 @@ class configMain:
 
         # perception module related
         self.use_perception_stack = True
-        self.perception_gpus = [0, 5]
+        self.perception_gpus = [6, 7]
         self.perception_paths = "path_jormungandr_newseg"
         self.perception_batch_sizes = {"det_COCO": 3, "det_TL": 3, "seg": 4, "depth": 4, "det_TS": -1}
         self.perception_num_replicates = {"det_COCO": -1, "det_TL": -1, "seg": 3, "depth": -1, "det_TS": -1}
@@ -90,7 +84,12 @@ class configMain:
         #self.waypoint_return_control = True
         self.camera_middle_zoom = {'CameraLeft': False, 'CameraMiddle': True, 'CameraRight': False}
         self.sensor_dropout = 0.5
-        self.mapping_dropout = 0.1
+
+        self.gmm_sigma_expectation = math.log(0.1)
+        self.gmm_w_log_prob = 1.0
+        self.gmm_w_phi_sparsity = 1.0
+        self.gmm_w_sigma_normalize = 1.0
+
 
 
 class configInput(configMain):
@@ -143,7 +142,7 @@ class configTrain(configMain):
     def __init__(self):
         configMain.__init__(self)
 
-        self.loss_function = 'mse_coarse_to_fine'  # Chose between: mse_branched, mse_branched_ladd
+        self.loss_function = 'gmm'  # Chose between: mse_branched, mse_branched_ladd
         self.control_mode = 'single_branch_yang_wp_stack'
         # TODO: tune it
         self.learning_rate = 1e-4
@@ -172,11 +171,7 @@ class configTrain(configMain):
             self.variable_weight[vname + "y"] = weighting[count+1]
             count += 2
 
-        self.coarse2fine_refined = 1.0
-        self.coarse2fine_map = 1.0
-        self.coarse2fine_sigma = 1.0
-
-        self.network_name = 'yang_39_52_295_v2_map_coarse_to_fine'
+        self.network_name = 'yang_39_52_295_v2_map_GMM'
         self.is_training = True
 
 

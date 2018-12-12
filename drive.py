@@ -12,7 +12,7 @@ if __CARLA_VERSION__ == '0.8.X':
 
 else:
     sys.path.append('drive_interfaces/carla/carla_client_090')
-    sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.0-py2.7-linux-x86_64.egg')
+    sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')
 
 sys.path.append('drive_interfaces/carla/comercial_cars')
 sys.path.append('drive_interfaces/carla/carla_client/testing')

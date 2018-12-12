@@ -29,6 +29,10 @@ sys.path.append(
     'PythonAPI/carla-0.9.0-py%d.%d-linux-x86_64.egg' % (sys.version_info.major,
                                                         sys.version_info.minor))
 
+sys.path.append(
+    'PythonAPI/carla-0.9.1-py%d.%d-linux-x86_64.egg' % (sys.version_info.major,
+                                                        sys.version_info.minor))
+
 import carla
 import cv2
 
@@ -66,7 +70,9 @@ try:
 except ImportError:
     raise RuntimeError('cannot import numpy, make sure numpy package is installed')
 
-DELTA_POS = 0.3
+
+# the configuration begin
+DELTA_POS = 0.5
 WINDOW_WIDTH = 1800
 WINDOW_HEIGHT = 1080
 CAMERA_FOV = 120.0
@@ -76,8 +82,10 @@ CAMERA_CAR_CENTER =  carla.Location(x=0.5, z=1.60)
 CAMERA_CAR_ROTATION = carla.Rotation(roll=0.0, pitch=0.0, yaw=0.0)
 CAMERA_CAR_POSITION = carla.Transform(location=CAMERA_CAR_CENTER, rotation=CAMERA_CAR_ROTATION)
 
-TownName = "Town04"
+TownName = "RFS_MAP"
 output_path = "positions_file_" + TownName + ".txt"
+
+# the configuration ends
 
 updated = False
 class CallBack():

@@ -51,6 +51,7 @@ class LocalPlanner(object):
             longitudinal_control_dict -- dictionary of arguments to setup the longitudinal PID controller
                                         {'K_P':, 'K_D':, 'K_I':, 'dt'}
         """
+        self.count_down = 0
         self._vehicle = vehicle
         self._map = self._vehicle.get_world().get_map()
 
@@ -141,11 +142,39 @@ class LocalPlanner(object):
                 # only one option available ==> lanefollowing
                 next_waypoint = next_waypoints[0]
                 road_option = ROAD_OPTIONS.LANEFOLLOW
+                if self.count_down > 0:
+                    # override it with the road option value
+                    road_option = self.count_down_value
+                    self.count_down -= 1
+                non_follow_event_happened = False
             else:
+                self.count_down = 0
                 # random choice between the possible options
                 road_options_list = retrieve_options(next_waypoints, last_waypoint)
                 road_option = random.choice(road_options_list)
                 next_waypoint = next_waypoints[road_options_list.index(road_option)]
+                if road_option in [ROAD_OPTIONS.STRAIGHT, ROAD_OPTIONS.LEFT, ROAD_OPTIONS.RIGHT]:
+                    non_follow_event_happened = True
+                else:
+                    non_follow_event_happened = False
+
+            if non_follow_event_happened:
+                # change past
+                NUM_PAST_WP = 5
+                for i in range(min(NUM_PAST_WP, len(self._waypoints_queue))):
+                    index = -(i+1)
+                    wp, option = self._waypoints_queue[index]
+                    self._waypoints_queue[index] = (wp, road_option)
+                    '''
+                    if self._waypoints_queue[index][1] not in [ROAD_OPTIONS.STRAIGHT, ROAD_OPTIONS.LEFT, ROAD_OPTIONS.RIGHT]:
+                        self._waypoints_queue[index][1] = road_option
+                    else:
+                        break
+                    '''
+
+                NUM_FUTURE_WP = 8
+                self.count_down = NUM_FUTURE_WP
+                self.count_down_value = road_option
 
             self._waypoints_queue.append((next_waypoint, road_option))
 
@@ -183,7 +212,15 @@ class LocalPlanner(object):
         if debug:
             draw_waypoints(self._vehicle.get_world(), [self._target_waypoint], z=40)
 
-        return control
+        map_option_to_numeric = {
+            ROAD_OPTIONS.LANEFOLLOW: 2.0,
+            ROAD_OPTIONS.LEFT: 3.0,
+            ROAD_OPTIONS.RIGHT: 4.0,
+            ROAD_OPTIONS.STRAIGHT: 5.0,
+            ROAD_OPTIONS.VOID: 2.0
+        }
+
+        return control, map_option_to_numeric[self._current_road_option]
 
 def retrieve_options(list_waypoints, current_waypoint):
     """

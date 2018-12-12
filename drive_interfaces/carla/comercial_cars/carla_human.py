@@ -650,7 +650,7 @@ class CarlaHuman(Driver):
                 print('[Throttle = {}] [Steering = {}] [Brake = {}]'.format(control.throttle, control.steer, control.brake))
             else:
                 if self._world.wait_for_tick(10.0):
-                    control = self._agent_autopilot.run_step()
+                    control, self._current_command = self._agent_autopilot.run_step()
 
         print('[Throttle = {}] [Steering = {}] [Brake = {}]'.format(control.throttle, control.steer, control.brake))
         return control

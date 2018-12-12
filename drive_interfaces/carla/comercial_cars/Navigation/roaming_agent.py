@@ -88,12 +88,14 @@ class RoamingAgent(object):
 
         if hazard_detected:
             control = self.emergency_stop()
+            command = self._last_command
         else:
             self._state = AGENT_STATE.NAVIGATING
             # standard local planner behavior
-            control = self._local_planner.run_step()
+            control, command = self._local_planner.run_step()
+            self._last_command = command
 
-        return control
+        return control, command
 
     def emergency_stop(self):
         """

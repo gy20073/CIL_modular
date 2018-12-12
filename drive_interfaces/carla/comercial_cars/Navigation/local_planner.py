@@ -262,9 +262,11 @@ def compute_connection(current_waypoint, next_waypoint):
     c_ = c_ % 360.0
 
     diff_angle = (n_ - c_) % 180.0
-    if diff_angle < 1.0:
+    if diff_angle < 1.0 or diff_angle > 178.0:
         return ROAD_OPTIONS.STRAIGHT
     elif diff_angle > 90.0:
+        print("left because angle is ", diff_angle)
         return ROAD_OPTIONS.LEFT
     else:
+        print("right because angle is ", diff_angle)
         return ROAD_OPTIONS.RIGHT

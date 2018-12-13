@@ -12,6 +12,8 @@ import random
 from Navigation.controller import *
 from Tools.misc import *
 
+import global_vars
+
 class ROAD_OPTIONS(Enum):
     """
     ROAD_OPTION represents the possible topological configurations when moving from a segment of lane to other.
@@ -108,7 +110,7 @@ class LocalPlanner(object):
         self._vehicle_controller.warmup()
 
         # compute initial waypoints
-        self._waypoints_queue.append((self._current_waypoint.next(self._sampling_radius)[0], ROAD_OPTIONS.LANEFOLLOW))
+        self._waypoints_queue.append((self._current_waypoint.next(self._sampling_radius)[0], ROAD_OPTIONS.LANEFOLLOW, None))
         self._target_road_option = ROAD_OPTIONS.LANEFOLLOW
 
         # fill waypoint trajectory queue
@@ -138,6 +140,7 @@ class LocalPlanner(object):
             last_waypoint = self._waypoints_queue[-1][0]
             next_waypoints = list(last_waypoint.next(self._sampling_radius))
 
+            diff_angle = None
             if len(next_waypoints) == 1:
                 # only one option available ==> lanefollowing
                 next_waypoint = next_waypoints[0]
@@ -151,8 +154,8 @@ class LocalPlanner(object):
                 self.count_down = 0
                 # random choice between the possible options
                 road_options_list = retrieve_options(next_waypoints, last_waypoint)
-                road_option = random.choice(road_options_list)
-                next_waypoint = next_waypoints[road_options_list.index(road_option)]
+                road_option, diff_angle = random.choice(road_options_list)
+                next_waypoint = next_waypoints[road_options_list.index((road_option, diff_angle))]
                 if road_option in [ROAD_OPTIONS.STRAIGHT, ROAD_OPTIONS.LEFT, ROAD_OPTIONS.RIGHT]:
                     non_follow_event_happened = True
                 else:
@@ -163,8 +166,8 @@ class LocalPlanner(object):
                 NUM_PAST_WP = 5
                 for i in range(min(NUM_PAST_WP, len(self._waypoints_queue))):
                     index = -(i+1)
-                    wp, option = self._waypoints_queue[index]
-                    self._waypoints_queue[index] = (wp, road_option)
+                    wp, option, diff_angle0 = self._waypoints_queue[index]
+                    self._waypoints_queue[index] = (wp, road_option, diff_angle0)
                     '''
                     if self._waypoints_queue[index][1] not in [ROAD_OPTIONS.STRAIGHT, ROAD_OPTIONS.LEFT, ROAD_OPTIONS.RIGHT]:
                         self._waypoints_queue[index][1] = road_option
@@ -176,7 +179,7 @@ class LocalPlanner(object):
                 self.count_down = NUM_FUTURE_WP
                 self.count_down_value = road_option
 
-            self._waypoints_queue.append((next_waypoint, road_option))
+            self._waypoints_queue.append((next_waypoint, road_option, diff_angle))
 
     def run_step(self, debug=False):
         """
@@ -194,7 +197,10 @@ class LocalPlanner(object):
         # current vehicle waypoint
         self._current_waypoint = self._map.get_waypoint(self._vehicle.get_location())
         # target waypoint
-        self._target_waypoint, self._current_road_option = self._waypoints_queue[0]
+        self._target_waypoint, self._current_road_option, diff_angle = self._waypoints_queue[0]
+
+        global_vars.set(diff_angle)
+        #print("------------------------------------------------------------------->diff angle is ", diff_angle)
         # move using PID controllers
         control, diff = self._vehicle_controller.run_step(self._target_speed, self._target_waypoint)
 
@@ -202,7 +208,7 @@ class LocalPlanner(object):
         vehicle_transform = self._vehicle.get_transform()
         max_index = -1
 
-        for i, (waypoint, road_option) in enumerate(self._waypoints_queue):
+        for i, (waypoint, road_option, diff_angle) in enumerate(self._waypoints_queue):
             if distance_vehicle(waypoint, vehicle_transform) < self._min_distance:
                 max_index = i
         if max_index >= 0:
@@ -262,11 +268,11 @@ def compute_connection(current_waypoint, next_waypoint):
     c_ = c_ % 360.0
 
     diff_angle = (n_ - c_) % 180.0
-    if diff_angle < 1.0 or diff_angle > 178.0:
-        return ROAD_OPTIONS.STRAIGHT
+    if diff_angle < 10.0 or diff_angle > 170.0:
+        return ROAD_OPTIONS.STRAIGHT, diff_angle
     elif diff_angle > 90.0:
         print("left because angle is ", diff_angle)
-        return ROAD_OPTIONS.LEFT
+        return ROAD_OPTIONS.LEFT, diff_angle
     else:
         print("right because angle is ", diff_angle)
-        return ROAD_OPTIONS.RIGHT
+        return ROAD_OPTIONS.RIGHT, diff_angle

@@ -1,9 +1,12 @@
 
 
-
 import sys, os
 sys.path.append('drive_interfaces')
 sys.path.append('drive_interfaces/carla')
+
+sys.path.append("drive_interfaces/carla/comercial_cars/Navigation/")
+import global_vars
+global_vars.init()
 
 __CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.8.X')
 if __CARLA_VERSION__ == '0.8.X':
@@ -187,6 +190,14 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
                     mapping = {2.0: "follow", 3.0: "left", 4.0: "right", 5.0: "straight"}
                     image = write_text_on_image(image, mapping[direction], 30, (0, image.shape[0]-80))
                     image = write_text_on_image(image, '{:03.2f}'.format(speed_kmh), 30, (150, image.shape[0]-80))
+
+                    diff_angle_global = global_vars.get()
+                    if diff_angle_global is None:
+                        output = -1.0
+                    else:
+                        output = diff_angle_global
+
+                    image = write_text_on_image(image, '{:03.2f}'.format(output), 30, (300, image.shape[0] - 80))
 
                     image = pygame.surfarray.make_surface(np.transpose(image, (1, 0, 2)))
                     gameDisplay.blit(image, (0, 0))

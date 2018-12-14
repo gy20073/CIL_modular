@@ -293,10 +293,16 @@ class Dataset(object):
                         std = self._config.map_pos_noise_std
                         fun_trunc_normal = lambda std: max(min(np.random.normal(scale=std), 2*std), -2*std)
                         pos = [pos[0] + fun_trunc_normal(std), pos[1] + fun_trunc_normal(std)]
-                        # noise to the yaw
-                        yaw = np.arctan2(-ori[1], ori[0]) + np.random.normal(scale=np.deg2rad(self._config.map_yaw_noise_std))
-                        ori[0] = np.cos(yaw)
-                        ori[1] = - np.sin(yaw)
+
+                        if town_id == "01" or town_id == "02":
+                            # noise to the yaw
+                            yaw = np.arctan2(-ori[1], ori[0]) + np.random.normal(scale=np.deg2rad(self._config.map_yaw_noise_std))
+                            ori[0] = np.cos(yaw)
+                            ori[1] = - np.sin(yaw)
+                        elif town_id == "10":
+                            ori[2] += np.rad2deg(np.random.normal(scale=np.deg2rad(self._config.map_yaw_noise_std)))
+                        else:
+                            raise ValueError()
 
                     map = self.mapping_helper.get_map(town_id, pos, ori)
                     # add a flattened operator, to make it compatible with the original format, remember to reshape it back

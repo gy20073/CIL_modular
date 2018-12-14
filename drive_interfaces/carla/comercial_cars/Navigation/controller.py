@@ -193,7 +193,6 @@ class PIDLateralController():
         self._K_D = K_D
         self._K_I = K_I
         self._dt = dt
-        self._eps = -0.1
         self._e_buffer = deque(maxlen=30)
 
     def run_step(self, waypoint):
@@ -223,7 +222,7 @@ class PIDLateralController():
         w_vec = np.array([waypoint.transform.location.x - v_begin.x, waypoint.transform.location.y - v_begin.y, 0.0])
         _dot = math.acos(np.dot(w_vec, v_vec) / (np.linalg.norm(w_vec) * np.linalg.norm(v_vec)))
         _cross = np.cross(v_vec, w_vec)
-        if _cross[2] < -self._eps:
+        if _cross[2] < 0:
             _dot *= -1.0
 
         self._e_buffer.append(_dot)

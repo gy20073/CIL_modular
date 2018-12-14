@@ -27,7 +27,8 @@ class mapping_helper:
         # map path, meters per pixel
         infos = {"rfs": (get_current_folder()+"/data_lanes/human_marked5.png", 0.272736441511),
                  "01" : (get_current_folder()+"/data_lanes/Town01Lanes.png",   0.1643),
-                 "02":  (get_current_folder()+"/data_lanes/Town02Lanes.png",   0.1643)}
+                 "02":  (get_current_folder()+"/data_lanes/Town02Lanes.png",   0.1643),
+                 "rfs_sim": (get_current_folder() + "/data_lanes/rfs_sim.png", 0.277045)}
         self.maps = {}
         self.output_pixel_size = {}
 
@@ -41,7 +42,13 @@ class mapping_helper:
                           "02": CarlaMap("Town02", 0.1643, 50.0)}
         self.loc_to_pix = {"rfs": lambda loc: self.loc_to_pix_rfs(loc),
                            "01":  lambda loc: self.loc_to_pix_01_02(loc, "01"),
-                           "02":  lambda loc: self.loc_to_pix_01_02(loc, "02")}
+                           "02":  lambda loc: self.loc_to_pix_01_02(loc, "02"),
+                           "rfs_sim": lambda loc: self.loc_to_pix_rfs_sim(loc)}
+
+    def loc_to_pix_rfs_sim(self, loc):
+        u = 3.6090651558073654 * loc[1] + 2500.541076487252
+        v = -3.6103367739019054 * loc[0] + 2501.862578166202
+        return [int(v), int(u)]
 
     def loc_to_pix_rfs(self, latlog):
         UL = [37.918355, -122.338461]
@@ -78,8 +85,12 @@ class mapping_helper:
         elif town_id == "01" or town_id == "02":
             yaw = np.arctan2(-ori[1], ori[0]) - np.pi / 2
             return -yaw
-        elif town_id == "03" or town_id == "04":
-            raise NotImplemented()
+        elif town_id == "03" or town_id == "04" or town_id == "rfs_sim":
+            ori0=np.cos(np.radians(ori[2]))
+            ori1=np.sin(np.radians(ori[2]))
+            yaw = np.arctan2(-ori1, ori0) - np.pi / 2
+
+            return -yaw - np.pi/2
 
     def get_map(self, town_id, pos, ori):
         map = self.maps[town_id]

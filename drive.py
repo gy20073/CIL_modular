@@ -180,6 +180,9 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
                 if drive_config.interface == "Carla":
                     print('FPS: {}'.format(1.0 / (time.time() - capture_time)))
 
+                    import copy
+                    sensor_data = copy.deepcopy(sensor_data)
+
                     if __CARLA_VERSION__ == '0.8.X':
                         image = preprocess_image(image_converter.to_bgra_array(sensor_data['CameraMiddle']),
                                              drive_config.image_cut,

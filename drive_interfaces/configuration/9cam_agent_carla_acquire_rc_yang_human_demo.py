@@ -12,7 +12,7 @@ class configDrive:
         self.port = 2000
         self.path = "./"  # If path is set go for it , if not expect a name set
         self.resolution = [768, 576]
-        self.noise = "None" #"Spike"  # NON CARLA SETTINGS PARAM # TODO: experiment with this
+        self.noise = "Spike" #"Spike"  # NON CARLA SETTINGS PARAM # TODO: experiment with this
         self.type_of_driver = "Human"
         self.interface = "Carla"
 
@@ -45,9 +45,9 @@ class configDrive:
 
         self.carla_api_version =  os.getenv('CARLA_VERSION', '0.8.X')
 
+        # noiser related params
         self.noise_frequency = 45
-        self.noise_intensity = 5
+        self.noise_intensity = 10
         self.min_noise_time_amount = 0.5
         self.no_noise_decay_stage = True
         self.use_tick = True
-

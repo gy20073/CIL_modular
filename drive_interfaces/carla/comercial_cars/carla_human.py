@@ -79,16 +79,19 @@ class CallBack():
         array = array[:, :, :3]
         array = array[:, :, ::-1]
 
+        '''
         if self._tag == "CameraMiddle":
             while self._obj.update_once == True:
                 time.sleep(0.01)
+        '''
 
         data_buffer_lock.acquire()
         self._obj._data_buffers[self._tag] = array
         data_buffer_lock.release()
+        '''
         if self._tag == "CameraMiddle":
             self._obj.update_once = True
-
+        '''
 
 collision_lock = threading.Lock()
 class CollisionSensor(object):
@@ -696,8 +699,8 @@ class CarlaHuman(Driver):
             #self.last_timestamp = self.carla.get_world().wait_for_tick(30.0)
             #print(timestamp.delta_seconds, "delta seconds")
 
-            while self.update_once == False:
-                time.sleep(0.01)
+            #while self.update_once == False:
+            #    time.sleep(0.01)
 
             self.last_estimated_speed = self.estimate_speed()
 
@@ -705,7 +708,7 @@ class CarlaHuman(Driver):
             sensor_data = copy.deepcopy(self._data_buffers)
             data_buffer_lock.release()
 
-            self.update_once = False
+            #self.update_once = False
 
 
             collision_lock.acquire()

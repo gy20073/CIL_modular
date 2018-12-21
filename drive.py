@@ -125,8 +125,7 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
         print('before starting')
         driver.start()
         if drive_config.show_screen:
-            gameDisplay = pygame.display.set_mode(drive_config.resolution,
-                                                  pygame.HWSURFACE | pygame.DOUBLEBUF)
+            gameDisplay = pygame.display.set_mode(drive_config.resolution, pygame.HWSURFACE | pygame.DOUBLEBUF)
             '''
             screen_manager = ScreenManager()
             screen_manager.start_screen(drive_config.resolution,
@@ -205,7 +204,7 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
 
                     image = pygame.surfarray.make_surface(np.transpose(image, (1, 0, 2)))
                     gameDisplay.blit(image, (0, 0))
-                    pygame.display.update()
+                    pygame.display.flip()
                     # todo: display other necessary info, include but not limited to actions.steer
                 else:
                     raise ValueError("Not supported interface")

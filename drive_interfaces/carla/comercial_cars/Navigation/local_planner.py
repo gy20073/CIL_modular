@@ -86,8 +86,9 @@ class LocalPlanner(object):
         self._target_speed = 20.0  # Km/h
         self._sampling_radius = self._target_speed * 0.5 / 3.6 # 0.5 seconds horizon
         self._min_distance = self._sampling_radius * self.MIN_DISTANCE_PERCENTAGE
-        args_lateral_dict = {'K_P': 1.9, 'K_D': 0.0, 'K_I': 1.4, 'dt': self._dt}
-        args_longitudinal_dict = {'K_P': 1.0, 'K_D': 0, 'K_I': 1, 'dt': self._dt}
+        #args_lateral_dict = {'K_P': 1.9, 'K_D': 0.0, 'K_I': 1.4, 'dt': self._dt}
+        args_lateral_dict = {'K_P': 1.9, 'K_D': 0.0, 'K_I': 0.0, 'dt': self._dt}
+        args_longitudinal_dict = {'K_P': 1.0, 'K_D': 0, 'K_I': 0.0, 'dt': self._dt}
 
         # parameters overload
         if 'dt' in opt_dict:
@@ -202,7 +203,8 @@ class LocalPlanner(object):
         global_vars.set(diff_angle)
         #print("------------------------------------------------------------------->diff angle is ", diff_angle)
         # move using PID controllers
-        control, diff = self._vehicle_controller.run_step(self._target_speed, self._target_waypoint)
+        recent_3_waypoints = [x[0] for x in self._waypoints_queue[0:3]]
+        control, diff = self._vehicle_controller.run_step(self._target_speed, recent_3_waypoints)
 
         # purge the queue of obsolete waypoints
         vehicle_transform = self._vehicle.get_transform()

@@ -10,6 +10,9 @@ from collections import deque
 
 import carla
 from Tools.misc import *
+import numpy as np
+from scipy import interpolate
+import math
 
 class VehiclePIDController():
     """
@@ -195,6 +198,78 @@ class PIDLateralController():
         self._dt = dt
         self._e_buffer = deque(maxlen=30)
 
+        self._previous_waypoints = deque(maxlen=10)
+        self.future_waypoint_dis = 2.0 # meters
+
+
+    def is_same_waypoint(self, a, b):
+        a=a[0]
+        b=b[0]
+        if a.transform.location.x == b.transform.location.x and a.transform.location.y == b.transform.location.y:
+            return True
+        else:
+            return False
+
+    def distance(self, a, b):
+        return math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
+
+    def find_closest_point_on_spline(self, splinex2y, spliney2x, query):
+        grained = 0.2
+        range_max = 5.0 # meters
+
+        delta = np.arange(-range_max, range_max, grained)
+        newy = interpolate.splev(delta+query[0], splinex2y, der=0)
+        querys_x2y = zip(delta+query[0], newy)
+
+        newx = interpolate.splev(delta+query[1], spliney2x, der=0)
+        querys_y2x = zip(newx, query[1] + delta)
+        ans = querys_x2y + querys_y2x
+
+        min_dis = 9999999
+        best_waypoint = None
+        for item in ans:
+            dis = self.distance(query, item)
+            if min_dis>dis:
+                min_dis = dis
+                best_waypoint = item
+        return best_waypoint
+
+
+    def adjust_waypoint(self, future_3_waypoint):
+        if len(self._previous_waypoints) > 0 and self.is_same_waypoint(self._previous_waypoints[-1], future_3_waypoint[0]):
+            all_waypoints = list(self._previous_waypoints[:-1]) + list(future_3_waypoint)
+        else:
+            all_waypoints = list(self._previous_waypoints) + list(future_3_waypoint)
+
+        xs = [x.transform.location.x for x in all_waypoints]
+        ys = [x.transform.location.y for x in all_waypoints]
+        current = self._vehicle.get_transform()
+        current = np.array([current.x, current.y])
+
+        # fit a spline
+        tckx2y = interpolate.splrep(xs, ys)
+        tcky2x = interpolate.splrep(ys, xs)
+
+        vec = [future_3_waypoint[0].transform.location.x - current[0],
+               future_3_waypoint[0].transform.location.y - current[1] ]
+        current_future_waypoint = np.array([future_3_waypoint[0].transform.location.x,
+                                            future_3_waypoint[0].transform.location.y])
+        expected_distance = 3.0 # meters
+        for i in range(3):
+            vec = current_future_waypoint - current
+            vec = vec / np.linalg.norm(vec) * expected_distance
+            rescaled = current + vec
+            projected = self.find_closest_point_on_spline(tckx2y, tcky2x, rescaled)
+            current_future_waypoint = projected
+
+        # store the old waypoints
+        if len(self._previous_waypoints)==0 or \
+                not self.is_same_waypoint(future_3_waypoint[0], self._previous_waypoints[-1]):
+            self._previous_waypoints.append(future_3_waypoint[0])
+
+        return current_future_waypoint
+        # TODO: here, visualize the computed waypoint, might be errors.
+
     def run_step(self, waypoint):
         """
         Execute one step of lateral control to steer the vehicle towards a certain waypoin.
@@ -204,7 +279,8 @@ class PIDLateralController():
             -1 represent maximum steering to left
             +1 maximum steering to right
         """
-        return self._pid_control(waypoint, self._vehicle.get_transform())
+        adjusted_waypoint = self.adjust_waypoint(waypoint)
+        return self._pid_control(adjusted_waypoint, self._vehicle.get_transform())
 
     def _pid_control(self, waypoint, vehicle_transform):
         """

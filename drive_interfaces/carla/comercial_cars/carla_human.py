@@ -266,7 +266,7 @@ class CarlaHuman(Driver):
             #     self._vehicle.destroy()
             #     self._vehicle = None
 
-    def try_spawn_random_vehicle_at(self, blueprints, transform):
+    def try_spawn_random_vehicle_at(self, blueprints, transform, auto_drive=True):
         blueprint = random.choice(blueprints)
         if blueprint.has_attribute('color'):
             color = random.choice(blueprint.get_attribute('color').recommended_values)
@@ -274,10 +274,21 @@ class CarlaHuman(Driver):
         vehicle = self._world.try_spawn_actor(blueprint, transform)
         if vehicle is not None:
             self._actor_list.append(vehicle)
-            vehicle.set_autopilot()
+            if auto_drive:
+                vehicle.set_autopilot()
             #print('spawned %r at %s' % (vehicle.type_id, transform.location))
             return True
         return False
+
+    def get_parking_locations(self, filename):
+        with open(filename, "r") as f:
+            lines = f.readlines()
+            ans = []
+            for line in lines:
+                x, y, yaw = [float(v.strip()) for v in line.split(",")]
+                ans.append(carla.Transform(location=carla.Location(x=x, y=y, z=0),
+                                           rotation=carla.Rotation(roll=0, pitch=0, yaw=yaw)))
+        return ans
 
     def _reset(self):
 
@@ -373,7 +384,19 @@ class CarlaHuman(Driver):
                     count -= 1
             # end traffic addition!
 
+            # begin parking addition
+            if hasattr(self._driver_conf, "parking_position_file") and self._driver_conf.parking_position_file is not None:
+                parking_points = self.get_parking_locations(self._driver_conf.parking_position_file)
+                random.shuffle(parking_points)
+                print('found %d parking points.' % len(parking_points))
+                count = 50
 
+                for spawn_point in parking_points:
+                    self.try_spawn_random_vehicle_at(blueprints_vehi, spawn_point, False)
+                    count -= 1
+                    if count <= 0:
+                        break
+            # end of parking addition
 
             blueprints = self._world.get_blueprint_library().filter('vehicle')
             vechile_blueprint = [e for i, e in enumerate(blueprints) if e.id == 'vehicle.lincoln.mkz2017'][0]

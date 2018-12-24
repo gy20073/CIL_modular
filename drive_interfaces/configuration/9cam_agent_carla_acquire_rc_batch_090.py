@@ -6,7 +6,7 @@ class configDrive:
         # resource related
         self.host = "127.0.0.1"
         self.port = 2000
-        self.path = "/scratch/yang/aws_data/carla_collect/rfs_sim/"  # If path is set go for it , if not expect a name set
+        self.path = "/scratch/yang/aws_data/carla_collect/rfs_sim_nojitter/"  # If path is set go for it , if not expect a name set
 
         # data collection related
         self.city_name = 'RFS_MAP'
@@ -55,7 +55,20 @@ class configDrive:
         # the actual noise is: 0.03 * 0.5 * self.intensity
         # self.noise_time_amount = self.min_noise_time_amount
         '''
+
+        '''
         # noiser related params
+        self.noise_frequency = 45 # FIXED, something has enough noise
+        self.noise_intensity = 15.0 * 2
+        self.min_noise_time_amount = 0.5
+        self.no_noise_decay_stage = True #FIXED
+        self.use_tick = True # FIXED
+        # originally default values
+        self.time_amount_multiplier = 1.0 # the smaller the better
+        self.noise_std=0.0 # same effect as self.intensity, IGNORE
+        self.no_time_offset = True
+        # 0.03 * this_intensity = 0.03 * 7.5 =  0.225
+        '''
         self.noise_frequency = 45
         self.noise_intensity = 5
         self.min_noise_time_amount = 0.5

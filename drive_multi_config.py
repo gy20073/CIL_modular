@@ -3,7 +3,7 @@ import sys, os, time, threading
 TownName = "RFS_MAP"
 start_port=2100
 available_gpus = [0]
-num_processes = 8
+num_processes = 1
 use_docker = False
 # 9cam_agent_carla_acquire_rc_batch_090, change its contents
 

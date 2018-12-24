@@ -87,7 +87,7 @@ class LocalPlanner(object):
         self._sampling_radius = self._target_speed * 0.5 / 3.6 # 0.5 seconds horizon
         self._min_distance = self._sampling_radius * self.MIN_DISTANCE_PERCENTAGE
         #args_lateral_dict = {'K_P': 1.9, 'K_D': 0.0, 'K_I': 1.4, 'dt': self._dt}
-        args_lateral_dict = {'K_P': 1.9, 'K_D': 0.0, 'K_I': 0.0, 'dt': self._dt}
+        args_lateral_dict = {'K_P': 1.0, 'K_D': 0.0, 'K_I': 0.0, 'dt': self._dt}
         args_longitudinal_dict = {'K_P': 1.0, 'K_D': 0, 'K_I': 0.0, 'dt': self._dt}
 
         # parameters overload
@@ -203,8 +203,8 @@ class LocalPlanner(object):
         global_vars.set(diff_angle)
         #print("------------------------------------------------------------------->diff angle is ", diff_angle)
         # move using PID controllers
-        recent_3_waypoints = [x[0] for x in self._waypoints_queue[0:3]]
-        control, diff = self._vehicle_controller.run_step(self._target_speed, recent_3_waypoints)
+        recent_5_waypoints = [self._waypoints_queue[i][0] for i in range(5)]
+        control, diff, adjusted_waypoint = self._vehicle_controller.run_step(self._target_speed, recent_5_waypoints)
 
         # purge the queue of obsolete waypoints
         vehicle_transform = self._vehicle.get_transform()
@@ -218,7 +218,18 @@ class LocalPlanner(object):
                 self._waypoints_queue.popleft()
 
         if debug:
-            draw_waypoints(self._vehicle.get_world(), [self._target_waypoint], z=40)
+            # the original target waypoint
+            draw_waypoints(self._vehicle.get_world(), [self._target_waypoint], z=0.5)
+            # the adjusted waypint
+            draw_waypoints_norotation(self._vehicle.get_world(), [adjusted_waypoint], z=0.5)
+
+            # the all future waypoint
+            wp_queue = []
+            for wp in self._waypoints_queue:
+                w = wp[0]
+                wp_queue.append([w.transform.location.x, w.transform.location.y])
+            draw_waypoints_norotation(self._vehicle.get_world(), wp_queue, z=0.5, color=carla.Color(r=0,g=0,b=255))
+
 
         map_option_to_numeric = {
             ROAD_OPTIONS.LANEFOLLOW: 2.0,

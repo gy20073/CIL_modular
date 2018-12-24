@@ -49,7 +49,7 @@ class VehiclePIDController():
         :return: control command and distance (in meters) to the waypoint
         """
         throttle = self._long_controller.run_step(target_speed)
-        steering = self._later_controller.run_step(waypoint)
+        steering, adjusted_waypoint = self._later_controller.run_step(waypoint)
 
         control = carla.VehicleControl()
         control.steer = steering
@@ -58,7 +58,7 @@ class VehiclePIDController():
         control.hand_brake = False
 
         vehicle_transform = self._vehicle.get_transform()
-        return control, distance_vehicle(waypoint, vehicle_transform)
+        return control, None, adjusted_waypoint # distance_vehicle(waypoint, vehicle_transform)
 
     def run_iter(self, target_speed, waypoint, radius, max_iters):
         """
@@ -203,8 +203,6 @@ class PIDLateralController():
 
 
     def is_same_waypoint(self, a, b):
-        a=a[0]
-        b=b[0]
         if a.transform.location.x == b.transform.location.x and a.transform.location.y == b.transform.location.y:
             return True
         else:
@@ -218,12 +216,15 @@ class PIDLateralController():
         range_max = 5.0 # meters
 
         delta = np.arange(-range_max, range_max, grained)
-        newy = interpolate.splev(delta+query[0], splinex2y, der=0)
+        newy = splinex2y(delta+query[0])
         querys_x2y = zip(delta+query[0], newy)
 
-        newx = interpolate.splev(delta+query[1], spliney2x, der=0)
+        newx = spliney2x(delta+query[1])
         querys_y2x = zip(newx, query[1] + delta)
         ans = querys_x2y + querys_y2x
+
+        # draw all the interpolated points, this indicates that the intepolation is wrong, since it need to sort xs internally
+        # draw_waypoints_norotation(self._vehicle.get_world(), ans, z=0.5, color=carla.Color(r=0, g=255, b=255))
 
         min_dis = 9999999
         best_waypoint = None
@@ -237,27 +238,25 @@ class PIDLateralController():
 
     def adjust_waypoint(self, future_3_waypoint):
         if len(self._previous_waypoints) > 0 and self.is_same_waypoint(self._previous_waypoints[-1], future_3_waypoint[0]):
-            all_waypoints = list(self._previous_waypoints[:-1]) + list(future_3_waypoint)
+            all_waypoints = list(self._previous_waypoints)[:-1] + list(future_3_waypoint)
         else:
             all_waypoints = list(self._previous_waypoints) + list(future_3_waypoint)
 
         xs = [x.transform.location.x for x in all_waypoints]
         ys = [x.transform.location.y for x in all_waypoints]
-        current = self._vehicle.get_transform()
+        current = self._vehicle.get_transform().location
         current = np.array([current.x, current.y])
 
         # fit a spline
-        tckx2y = interpolate.splrep(xs, ys)
-        tcky2x = interpolate.splrep(ys, xs)
+        tckx2y = interpolate.interp1d(xs, ys, kind='cubic', fill_value='extrapolate')
+        tcky2x = interpolate.interp1d(ys, xs, kind='cubic', fill_value='extrapolate')
 
-        vec = [future_3_waypoint[0].transform.location.x - current[0],
-               future_3_waypoint[0].transform.location.y - current[1] ]
-        current_future_waypoint = np.array([future_3_waypoint[0].transform.location.x,
-                                            future_3_waypoint[0].transform.location.y])
-        expected_distance = 3.0 # meters
+        current_future_waypoint = np.array([future_3_waypoint[3].transform.location.x,
+                                            future_3_waypoint[3].transform.location.y])
+        expected_distance = 5.0 # meters
         for i in range(3):
             vec = current_future_waypoint - current
-            vec = vec / np.linalg.norm(vec) * expected_distance
+            vec = vec / (np.linalg.norm(vec)+0.01) * expected_distance
             rescaled = current + vec
             projected = self.find_closest_point_on_spline(tckx2y, tcky2x, rescaled)
             current_future_waypoint = projected
@@ -279,8 +278,11 @@ class PIDLateralController():
             -1 represent maximum steering to left
             +1 maximum steering to right
         """
-        adjusted_waypoint = self.adjust_waypoint(waypoint)
-        return self._pid_control(adjusted_waypoint, self._vehicle.get_transform())
+        # this line below adjust waypoint based on the interpolation, but now we have abandoned it
+        #adjusted_waypoint = self.adjust_waypoint(waypoint)
+        adjusted_waypoint = waypoint[2] # way into the future waypoint
+        adjusted_waypoint = [adjusted_waypoint.transform.location.x, adjusted_waypoint.transform.location.y]
+        return self._pid_control(adjusted_waypoint, self._vehicle.get_transform()), adjusted_waypoint
 
     def _pid_control(self, waypoint, vehicle_transform):
         """
@@ -295,8 +297,8 @@ class PIDLateralController():
                                          y=math.sin(math.radians(vehicle_transform.rotation.yaw)))
 
         v_vec = np.array([v_end.x - v_begin.x, v_end.y - v_begin.y, 0.0])
-        w_vec = np.array([waypoint.transform.location.x - v_begin.x, waypoint.transform.location.y - v_begin.y, 0.0])
-        _dot = math.acos(np.dot(w_vec, v_vec) / (np.linalg.norm(w_vec) * np.linalg.norm(v_vec)))
+        w_vec = np.array([waypoint[0] - v_begin.x, waypoint[1] - v_begin.y, 0.0])
+        _dot = math.acos(np.dot(w_vec, v_vec) / (np.linalg.norm(w_vec) * np.linalg.norm(v_vec) + 0.001))
         _cross = np.cross(v_vec, w_vec)
         if _cross[2] < 0:
             _dot *= -1.0

@@ -200,7 +200,12 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
                     else:
                         output = diff_angle_global
 
-                    image = write_text_on_image(image, '{:03.2f}'.format(output), 30, (300, image.shape[0] - 80))
+                    # this line below is for writing the difference angle when computing the command
+                    #image = write_text_on_image(image, '{:03.2f}'.format(output), 30, (300, image.shape[0] - 80))
+                    image = write_text_on_image(image, 'is_noisy:'+str(action_noisy.steer!=actions.steer),
+                                                30, (250, image.shape[0] - 80))
+                    image = write_text_on_image(image, 'steer:{:03.2f}'.format(actions.steer),
+                                                30, (500, image.shape[0] - 80))
 
                     image = pygame.surfarray.make_surface(np.transpose(image, (1, 0, 2)))
                     gameDisplay.blit(image, (0, 0))

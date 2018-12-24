@@ -29,6 +29,16 @@ import random
 import time
 
 
+def get_parking_locations(filename):
+    with open(filename, "r") as f:
+        lines = f.readlines()
+        ans = []
+        for line in lines:
+            x, y, yaw = [float(v.strip()) for v in line.split(",")]
+            ans.append(carla.Transform(location=carla.Location(x=x, y=y, z=0),
+                                       rotation=carla.Rotation(roll=0, pitch=0, yaw=yaw)))
+    return ans
+
 def main():
     argparser = argparse.ArgumentParser(
         description=__doc__)
@@ -46,7 +56,7 @@ def main():
     argparser.add_argument(
         '-n', '--number-of-vehicles',
         metavar='N',
-        default=1,
+        default=50,
         type=int,
         help='number of vehicles (default: 10)')
     argparser.add_argument(
@@ -94,8 +104,8 @@ def main():
         #print("here is the structure of the spawn points", spawn_points)
         random.shuffle(spawn_points)
         print('found %d spawn points.' % len(spawn_points))
-        a=carla.Transform(location=carla.Location(x=1.89999735355, y=83.8999862671, z=10), rotation=carla.Rotation(roll=0, pitch=0, yaw=-160.01700316))
-        spawn_points=[a]
+
+        spawn_points = get_parking_locations("town03_intersections/positions_file_RFS_MAP.txt")
 
         count = args.number_of_vehicles
 

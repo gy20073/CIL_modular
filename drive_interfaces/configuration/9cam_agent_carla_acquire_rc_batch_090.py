@@ -78,3 +78,5 @@ class configDrive:
         self.positions_file = "town03_positions/merged.csv"
         if self.city_name == "RFS_MAP":
             self.parking_position_file = "town03_intersections/positions_file_RFS_MAP.parking.txt"
+            self.extra_explore_prob = 1.0 # now for debugging purpose, let all of them be the extra positions file
+            self.extra_explore_position_file = "town03_intersections/positions_file_RFS_MAP.extra_explore.txt"

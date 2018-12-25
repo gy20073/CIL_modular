@@ -410,7 +410,12 @@ class CarlaHuman(Driver):
                 while self._vehicle == None:
                     if self._autopilot:
                         # from designated points
-                        START_POSITION = random.choice(spawn_points)
+                        if hasattr(self._driver_conf, "extra_explore_prob") and random.random() < self._driver_conf.extra_explore_prob:
+                            extra_positions = self.get_parking_locations(self._driver_conf.extra_explore_position_file)
+                            print("spawning hero vehicle from the extra exploration")
+                            START_POSITION = random.choice(extra_positions)
+                        else:
+                            START_POSITION = random.choice(spawn_points)
                     else:
                         random_position = start_positions[np.random.randint(start_positions.shape[0]), :]
                         START_POSITION = carla.Transform(

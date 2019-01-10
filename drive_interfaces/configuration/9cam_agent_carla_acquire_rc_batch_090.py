@@ -6,7 +6,7 @@ class configDrive:
         # resource related
         self.host = "127.0.0.1"
         self.port = 2000
-        self.path = "/scratch/yang/aws_data/carla_collect/rfs_sim_v2/"  # If path is set go for it , if not expect a name set
+        self.path = "/scratch/yang/aws_data/carla_collect/rfs_sim_v3/"  # If path is set go for it , if not expect a name set
 
         # data collection related
         self.city_name = 'RFS_MAP'
@@ -79,5 +79,5 @@ class configDrive:
         if self.city_name == "RFS_MAP":
             self.parking_position_file = "town03_intersections/positions_file_RFS_MAP.parking.txt"
             # there are some bug in this function, that the whole simulation will get stuck
-            #self.extra_explore_prob = 0.1 # now for debugging purpose, let all of them be the extra positions file
-            #self.extra_explore_position_file = "town03_intersections/positions_file_RFS_MAP.extra_explore.txt"
+            self.extra_explore_prob = 0.1 # now for debugging purpose, let all of them be the extra positions file
+            self.extra_explore_position_file = "town03_intersections/positions_file_RFS_MAP.extra_explore.txt"

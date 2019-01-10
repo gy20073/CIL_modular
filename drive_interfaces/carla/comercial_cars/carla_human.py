@@ -280,15 +280,19 @@ class CarlaHuman(Driver):
             return True
         return False
 
-    def get_parking_locations(self, filename):
+    def get_parking_locations(self, filename, z_default=0.0):
         with open(filename, "r") as f:
             lines = f.readlines()
             ans = []
             for line in lines:
                 x, y, yaw = [float(v.strip()) for v in line.split(",")]
-                ans.append(carla.Transform(location=carla.Location(x=x, y=y, z=0),
+                ans.append(carla.Transform(location=carla.Location(x=x, y=y, z=z_default),
                                            rotation=carla.Rotation(roll=0, pitch=0, yaw=yaw)))
         return ans
+
+    def print_transform(self, t):
+        print(t.location.x, t.location.y, t.location.z)
+        print(t.rotation.roll, t.rotation.pitch, t.rotation.yaw)
 
     def _reset(self):
 
@@ -411,7 +415,8 @@ class CarlaHuman(Driver):
                     if self._autopilot:
                         # from designated points
                         if hasattr(self._driver_conf, "extra_explore_prob") and random.random() < self._driver_conf.extra_explore_prob:
-                            extra_positions = self.get_parking_locations(self._driver_conf.extra_explore_position_file)
+                            extra_positions = self.get_parking_locations(self._driver_conf.extra_explore_position_file,
+                                                                         z_default=3.0)
                             print("spawning hero vehicle from the extra exploration")
                             START_POSITION = random.choice(extra_positions)
                         else:

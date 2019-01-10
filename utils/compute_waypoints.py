@@ -4,8 +4,8 @@ import numpy as np
 sys.path.append('drive_interfaces/carla/carla_client')
 
 # TODO change this
-input_id = "rfs_sim"
-output_id = "rfs_sim_way"
+input_id = "rfs_sim_v2"
+output_id = "rfs_sim_v2_way"
 debug_start = 0
 debug_end= 140000000
 future_time = 2.0 # second
@@ -24,7 +24,12 @@ noisy = []
 ori = []
 for one_h5 in sorted(all_files)[debug_start:debug_end]:
     print(one_h5)
-    hin = h5py.File(one_h5, 'r')
+    try:
+        hin = h5py.File(one_h5, 'r')
+    except:
+        print("removing ", one_h5)
+        os.remove(one_h5)
+        continue
     pos.append(hin["targets"][:, 8: 10])
     times.append(hin['targets'][:, 20])
     is_noisy = (hin['targets'][:, 0] != hin['targets'][:, 5])

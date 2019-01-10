@@ -210,9 +210,22 @@ class LocalPlanner(object):
         vehicle_transform = self._vehicle.get_transform()
         max_index = -1
 
+        # Fix a potential bug: the pattern might be False True False, but never True again
+        # when we observe a second True, break the loop
+        encountered_first_true = False
+        encountered_false_after_true = False
+        encountered_second_true = False
         for i, (waypoint, road_option, diff_angle) in enumerate(self._waypoints_queue):
             if distance_vehicle(waypoint, vehicle_transform) < self._min_distance:
+                encountered_first_true = True
+                if encountered_false_after_true:
+                    encountered_second_true = True
+                    break
                 max_index = i
+            else:
+                if encountered_first_true:
+                    encountered_false_after_true = True
+
         if max_index >= 0:
             for i in range(max_index + 1):
                 self._waypoints_queue.popleft()

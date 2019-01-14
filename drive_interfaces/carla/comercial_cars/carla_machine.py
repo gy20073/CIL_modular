@@ -13,12 +13,6 @@ sys.path.append('drive_interfaces')
 sys.path.append('configuration')
 
 sldist = lambda c1, c2: math.sqrt((c2[0] - c1[0])**2 + (c2[1] - c1[1])**2)
-# carla related import
-from carla.agent.agent import Agent
-from carla.client import VehicleControl
-#from carla.client import make_carla_client
-from carla.client import CarlaClient
-from carla import image_converter
 
 from codification import *
 from training_manager import TrainManager
@@ -47,7 +41,7 @@ def load_system(config):
     return training_manager
 
 
-class CarlaMachine(Agent, Driver):
+class CarlaMachine(Driver):
     def __init__(self, gpu_number="0", experiment_name='None', driver_conf=None, memory_fraction=0.9,
                  gpu_perception=None, perception_paths=None, batch_size=1):
         Driver.__init__(self)
@@ -122,6 +116,8 @@ class CarlaMachine(Agent, Driver):
                 output_height_pix=self._config.map_height)
 
     def start(self):
+        raise NotImplementedError()
+        '''
         self.carla = CarlaClient(self._host, int(self._port), timeout=120)
         self.carla.connect()
 
@@ -129,6 +125,7 @@ class CarlaMachine(Agent, Driver):
             self.positions = self.carla.load_settings(f.read()).player_start_spots
         self.carla.start_episode(random.randint(0, len(self.positions)))
         self._target = random.randint(0, len(self.positions))
+        '''
 
     def __del__(self):
         if hasattr(self, 'carla'):
@@ -182,11 +179,18 @@ class CarlaMachine(Agent, Driver):
     def get_reset(self):
         return False
 
+
+    def to_bgra_array(self, image):
+        """Convert a CARLA raw image to a BGRA numpy array."""
+        array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
+        array = np.reshape(array, (image.height, image.width, 4))
+        return array
+
     # TODO: change to the agent interface, this depend on the sensor names
     def run_step(self, measurements, sensor_data, direction, target, mapping_support=None):
         sensors = []
         for name in self._config.sensor_names:
-            sensors.append(image_converter.to_bgra_array(sensor_data[name]))
+            sensors.append(self.to_bgra_array(sensor_data[name]))
 
         speed_kmh = measurements.player_measurements.forward_speed * 3.6
 
@@ -493,7 +497,7 @@ class CarlaMachine(Agent, Driver):
         if speed_kmh > 35 and brake == 0.0:
             acc = 0.0
 
-        control = VehicleControl()
+        control = lambda x: x
         control.steer = steer
         control.throttle = acc
         control.brake = brake

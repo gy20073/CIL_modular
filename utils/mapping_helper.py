@@ -4,7 +4,6 @@ import numpy as np
 def get_current_folder():
     return os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 sys.path.append(get_current_folder() + "/../drive_interfaces/carla/carla_client_deprecated")
-from carla.planner.map import CarlaMap
 
 def rotate(im, angle_radian, output_size):
     m = im
@@ -38,8 +37,7 @@ class mapping_helper:
             # apply the padding
             padding = 3*self.output_pixel_size[key]
             self.maps[key] = np.pad(self.maps[key], ((padding, padding), (padding, padding), (0, 0)), 'constant')
-        self.carla_map = {"01": CarlaMap("Town01", 0.1643, 50.0),
-                          "02": CarlaMap("Town02", 0.1643, 50.0)}
+        self.carla_map = None
         self.loc_to_pix = {"rfs": lambda loc: self.loc_to_pix_rfs(loc),
                            "01":  lambda loc: self.loc_to_pix_01_02(loc, "01"),
                            "02":  lambda loc: self.loc_to_pix_01_02(loc, "02"),
@@ -60,6 +58,10 @@ class mapping_helper:
         return [relx, rely]
 
     def loc_to_pix_01_02(self, location, town_name):
+        if self.carla_map is None:
+            from carla.planner.map import CarlaMap
+            self.carla_map = {"01": CarlaMap("Town01", 0.1643, 50.0),
+                              "02": CarlaMap("Town02", 0.1643, 50.0)}
         cur = self.carla_map[town_name].convert_to_pixel([location[0], location[1], .22])
         cur = [int(cur[1]), int(cur[0])]
         return cur

@@ -18,7 +18,8 @@ from carla_machine import *
 # some configs
 vehicle_initial_pos = carla.Transform(location=carla.Location(x=101.5, y=-69.0, z=3.0),
                                              rotation=carla.Rotation(roll=0, yaw=0, pitch=-69.4439547804))
-condition=2.0
+condition=4.0
+test_steps = 100
 
 exp_id="mm45_v4_wp2town3cam_parallel_control_2p3town_map_sensor_dropout_rfssim_moremap_simv2"
 gpu=0
@@ -147,12 +148,16 @@ class Carla090Eval():
         pos = [v_transform.location.x, v_transform.location.y]
         ori = [0, 0, v_transform.rotation.yaw]
 
-        control, to_be_visualized = self.driving_model.compute_action(sensors, speed_ms * 3.6,
-                                                                   condition,
-                                                                   save_image_to_disk=False,
-                                                                   return_vis=True,
-                                                                   return_extra=False,
-                                                                   mapping_support={"town_id": "10", "pos": pos, "ori": ori})
+        extra_extra = "speed: {:.2f} m/s".format(speed_ms)
+
+        control, to_be_visualized = self.driving_model.compute_action(sensors,
+                                                                      speed_ms * 3.6,
+                                                                      condition,
+                                                                      save_image_to_disk=False,
+                                                                      return_vis=True,
+                                                                      return_extra=False,
+                                                                      mapping_support={"town_id": "10", "pos": pos, "ori": ori},
+                                                                      extra_extra=extra_extra)
         return control, to_be_visualized
 
     def show_image_dict_on_screen(self, image_dict):
@@ -161,7 +166,7 @@ class Carla090Eval():
 
     def save_to_disk(self, to_be_viz, down_factor=2):
         to_be_viz = to_be_viz[::down_factor, ::down_factor, :]
-        
+
         if not self._video_init:
             fourcc = cv2.VideoWriter_fourcc(*'DIVX')
             self.video = cv2.VideoWriter(self.video_output_name, fourcc, 20,
@@ -172,7 +177,7 @@ class Carla090Eval():
         self.video.write(to_be_viz)
 
     def run(self, condition):
-        for i in range(300):
+        for i in range(test_steps):
             self._world.wait_for_tick(10.0)
             data_buffer_lock.acquire()
             image_dict = copy.deepcopy(self._data_buffers)
@@ -198,6 +203,15 @@ class Carla090Eval():
 
             if i % 10 == 0:
                 print(i)
+        self.destroy()
+
+    def destroy(self):
+        self.video.release()
+        self._vehicle.destroy()
+        self._camera_left.destroy()
+        self._camera_center.destroy()
+        self._camera_right.destroy()
+        self.driving_model.destroy()
 
 eval_instance = Carla090Eval(vehicle_pos=vehicle_initial_pos,
                              video_output_name=video_output_name,

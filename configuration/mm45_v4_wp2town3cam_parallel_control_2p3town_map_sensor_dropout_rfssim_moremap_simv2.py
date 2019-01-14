@@ -74,7 +74,7 @@ class configMain:
             self.feature_input_size = (39, 52, 295)  # hardcoded for now
             self.image_as_float = [False]*3
             self.sensors_normalize = [False]*3
-            self.perception_initialization_sleep=15
+            self.perception_initialization_sleep=5
             # debug
             self.feature_input_size = (39, 52, 54*3)
         else:

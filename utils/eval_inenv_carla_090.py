@@ -31,8 +31,8 @@ class Carla090Eval():
     def __init__(self,
                  host='localhost',
                  port=2000,
-                 vehicle_pos=carla.Transform(location=carla.Location(x=0.5, y=0.0, z=3),
-                                             rotation=carla.Rotation(roll=0, yaw=0, pitch=0.0))):
+                 vehicle_pos=carla.Transform(location=carla.Location(x=101.5, y=-69.0, z=3.0),
+                                             rotation=carla.Rotation(roll=0, yaw=0, pitch=-69.4439547804))):
         # first create the carla evaluation environment
         self._client = carla.Client(host, port)
         self._client.set_timeout(2.0)
@@ -84,7 +84,7 @@ class Carla090Eval():
     def compute_control(self, image_dict):
         control = carla.VehicleControl()
         control.steer = 0.0
-        control.throttle = 1.0
+        control.throttle = 0.0
         control.brake = 0.0
         control.hand_brake = False
         control.reverse = False
@@ -92,16 +92,20 @@ class Carla090Eval():
 
     def show_image_dict_on_screen(self, image_dict):
         image = np.concatenate((image_dict['CameraLeft'], image_dict['CameraMiddle'], image_dict['CameraRight']), axis=1)
-        cv2.imshow(image)
+        cv2.imshow('viz', image[::2,::2,::-1])
 
     def save_to_disk(self):
         pass
 
     def run(self):
         while True:
+            self._world.wait_for_tick(10.0)
             data_buffer_lock.acquire()
             image_dict = copy.deepcopy(self._data_buffers)
             data_buffer_lock.release()
+            if len(image_dict) < 3:
+                print("image dict has len ", len(image_dict), " elements, continuing")
+                continue
 
             self.show_image_dict_on_screen(image_dict)
             if cv2.waitKey(25) & 0xFF == ord('q'):

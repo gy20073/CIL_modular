@@ -18,12 +18,12 @@ from carla_machine import *
 # some configs
 vehicle_initial_pos = carla.Transform(location=carla.Location(x=101.5, y=-69.0, z=3.0),
                                              rotation=carla.Rotation(roll=0, yaw=0, pitch=-69.4439547804))
-condition=4.0
+condition=2.0
 test_steps = 100
 
 exp_id="mm45_v4_wp2town3cam_parallel_control_2p3town_map_sensor_dropout_rfssim_moremap_simv2"
 gpu=0
-video_output_name="eval_output.avi"
+video_output_name="eval_output"
 # end of all configs
 
 data_buffer_lock = threading.Lock()
@@ -60,19 +60,7 @@ def get_driver_config():
 
 
 class Carla090Eval():
-    def __init__(self,
-                 host='localhost',
-                 port=2000,
-                 vehicle_pos=carla.Transform(location=carla.Location(x=101.5, y=-69.0, z=3.0),
-                                             rotation=carla.Rotation(roll=0, yaw=0, pitch=-69.4439547804)),
-                 video_output_name="eval_output.avi",
-                 exp_id="mm45_v4_wp2town3cam_parallel_control_2p3town_map_sensor_dropout_rfssim_moremap_simv2",
-                 gpu = 0):
-        # first create the carla evaluation environment
-        self._client = carla.Client(host, port)
-        self._client.set_timeout(2.0)
-        self._world = self._client.get_world()
-
+    def spawn_agents(self, vehicle_pos):
         # spawn a vehicle
         blueprints = self._world.get_blueprint_library().filter('vehicle')
         vechile_blueprint = [e for i, e in enumerate(blueprints) if e.id == 'vehicle.lincoln.mkz2017'][0]
@@ -109,16 +97,31 @@ class Carla090Eval():
         self._camera_left.listen(CallBack('CameraLeft', self))
         self._camera_right.listen(CallBack('CameraRight', self))
 
-        self._video_init = False
-        self.video_output_name = video_output_name
+
+    def __init__(self,
+                 host='localhost',
+                 port=2000,
+                 exp_id="mm45_v4_wp2town3cam_parallel_control_2p3town_map_sensor_dropout_rfssim_moremap_simv2",
+                 gpu = 0):
+        # first create the carla evaluation environment
+        self._client = carla.Client(host, port)
+        self._client.set_timeout(2.0)
+        self._world = self._client.get_world()
 
         # load the trained model
         self.load_trained_model(exp_id, gpu)
 
+    def start_from_place(self,
+                         vehicle_pos=carla.Transform(location=carla.Location(x=101.5, y=-69.0, z=3.0),
+                                                     rotation=carla.Rotation(roll=0, yaw=0, pitch=-69.4439547804)),
+                         video_output_name="eval_output.avi"):
+        self.spawn_agents(vehicle_pos)
+
+        self._video_init = False
+        self.video_output_name = video_output_name
+
     def load_trained_model(self, exp_id, gpu):
         os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
-
-
         self.driving_model = CarlaMachine("0", exp_id, get_driver_config(), 0.1,
                                      gpu_perception=[gpu],
                                      perception_paths="path_jormungandr_newseg",
@@ -211,10 +214,31 @@ class Carla090Eval():
         self._camera_left.destroy()
         self._camera_center.destroy()
         self._camera_right.destroy()
+        self._video_init = False
+
+    def __del__(self):
         self.driving_model.destroy()
 
-eval_instance = Carla090Eval(vehicle_pos=vehicle_initial_pos,
-                             video_output_name=video_output_name,
-                             exp_id=exp_id,
-                             gpu=gpu)
-eval_instance.run(condition)
+
+def get_parking_locations(filename, z_default=0.0):
+    with open(filename, "r") as f:
+        lines = f.readlines()
+        ans = []
+        for line in lines:
+            x, y, yaw = [float(v.strip()) for v in line.split(",")]
+            ans.append(carla.Transform(location=carla.Location(x=x, y=y, z=z_default),
+                                       rotation=carla.Rotation(roll=0, pitch=0, yaw=yaw)))
+    return ans
+
+extra_explore_file = "town03_intersections/positions_file_RFS_MAP.extra_explore.txt"
+poses = get_parking_locations(extra_explore_file, 3.0)
+
+eval_instance = Carla090Eval(exp_id=exp_id, gpu=gpu)
+
+for i in range(len(poses)):
+    print("places ", i)
+    eval_instance.start_from_place(vehicle_pos=poses[i],
+                                   video_output_name=video_output_name+str(i).zfill(2)+".avi")
+    eval_instance.run(condition)
+
+eval_instance.__del__()

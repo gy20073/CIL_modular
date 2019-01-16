@@ -67,14 +67,14 @@ class configMain:
         self.perception_gpus = [0, 5]
         self.perception_paths = "path_jormungandr_newseg"
         self.perception_batch_sizes = {"det_COCO": 3, "det_TL": 3, "seg": 4, "depth": 4, "det_TS": -1}
-        self.perception_num_replicates = {"det_COCO": -1, "det_TL": -1, "seg": 3, "depth": -1, "det_TS": -1}
+        self.perception_num_replicates = {"det_COCO": -1, "det_TL": -1, "seg": 6, "depth": -1, "det_TS": -1}
         # debug
         #self.perception_num_replicates = {"det_COCO": -1, "det_TL": -1, "seg": -1, "depth": 1, "det_TS": -1}
         if self.use_perception_stack:
             self.feature_input_size = (39, 52, 295)  # hardcoded for now
             self.image_as_float = [False]*3
             self.sensors_normalize = [False]*3
-            self.perception_initialization_sleep=15
+            self.perception_initialization_sleep=3
             # debug
             self.feature_input_size = (39, 52, 54*3)
         else:
@@ -113,7 +113,7 @@ class configInput(configMain):
 
         all_files = []
         self.val_db_path = []
-        ids = ["steer103_v5_way_v2", 'steer103_v5_way_v2_town02', 'rfs_sim_v2_way']
+        ids = ['rfs_sim_v4_extra_way']
 
         for id in ids:
             all_files += glob.glob("/data/yang/code/aws/scratch/carla_collect/"+id+"/*/data_*.h5")

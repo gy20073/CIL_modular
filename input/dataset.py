@@ -334,14 +334,14 @@ class Dataset(object):
         if self._augmenter[0] != None and hasattr(self._config, "sensor_dropout") and self._config.sensor_dropout > 0:
             # do the sensor dropout
             # sensors[i] B H W C, after concat is 3B H W C
-            print("augmenting the sensors dropout")
+            #print("augmenting the sensors dropout")
             num_images = sensors.shape[0]
             for i in range(num_images):
                 if np.random.rand() < self._config.sensor_dropout:
                     sensors[i, :, :, :] = np.mean(sensors[i, :, :, :])
 
             if "mapping" in self._config.inputs_names:
-                print("augmenting the mapping dropout")
+                #print("augmenting the mapping dropout")
                 id = self._config.inputs_names.index("mapping")
                 for i in range(inputs[id].shape[0]):
                     if np.random.rand() < self._config.mapping_dropout:
@@ -351,7 +351,7 @@ class Dataset(object):
         return sensors, targets, inputs
 
     @staticmethod
-    def random_region(H, W, size, diversity_prob):
+    def random_region_old(H, W, size, diversity_prob):
         image = np.zeros((H, W), dtype=np.bool)
         openlist = []
 
@@ -399,33 +399,47 @@ class Dataset(object):
         return image
 
     @staticmethod
-    def batch_random_region(B, H, W):
-        ans = []
-        for i in range(B):
-            size = np.random.randint(H*W//8, H*W//3)
-            ans.append(Dataset.random_region(H, W, size, 0.05))
-        return np.stack(ans, axis=0)
+    def random_region(H, W, un, un2):
+        image = np.zeros((H, W), dtype=np.bool)
+        # from 1/3 expectation 2 to minimum 3 in shape, each time
+        sizeW = W // 3
+        nregions = 1.5
+        while sizeW >= 3:
+            sizeH = int(sizeW * 1.0 / W * H)
+            for i in range(np.random.poisson(nregions)):
+                this_w = sizeW + int(np.random.normal(0, sizeW // 4))
+                this_h = sizeH + int(np.random.normal(0, sizeH // 4))
+                left_up_h = np.random.randint(0, H - this_h)
+                left_up_w = np.random.randint(0, W - this_w)
+                image[left_up_h:(left_up_h + this_h), left_up_w:(left_up_w + this_w)] = True
 
-    # Used by enqueue
+            sizeW = sizeW // 2
+            nregions *= 2
+        return image
+
     def process_run(self, sess, data_loaded):
+        t00 = time.time()
         reshaped = data_loaded[0]
         nB, nH, nW, nC = reshaped.shape
         num_sensors = len(self._config.sensor_names)
         if hasattr(self._config, "camera_middle_split") and self._config.camera_middle_split:
             num_sensors += 1
 
+        t0 = time.time()
         reshaped = np.reshape(reshaped, (num_sensors, nB//num_sensors, nH, nW, nC))
         if (not hasattr(self._config, "camera_combine")) or self._config.camera_combine == "width_stack":
             reshaped = np.transpose(reshaped, (1, 2, 0, 3, 4))
             # now has shape nB//num_sensors, nH, num_sensors, nW, nC
             reshaped = np.reshape(reshaped, (nB//num_sensors, nH, num_sensors*nW, nC))
             print("width stack")
+            #print("width stack cost ", time.time() - t0)
         elif self._config.camera_combine == "channel_stack":
             reshaped = np.transpose(reshaped, (1, 2, 3, 4, 0))
             # now has shape nB//num_sensors, nH, nW, nC, num_sensors
             reshaped = np.reshape(reshaped, (nB // num_sensors, nH, nW, nC * num_sensors))
             print("channel stack")
             print("shape of channel stack", reshaped.shape)
+            # print("channel stack total cost ", time.time() - t0)
 
 
         if hasattr(self._config, "add_gaussian_noise") and self._augmenter[0]!=None:
@@ -433,12 +447,14 @@ class Dataset(object):
             print("!!!!!!!!!!!!!!!!!!adding gaussian noise", std)
             reshaped += np.random.normal(0, std, reshaped.shape)
 
+        t0 = time.time()
         if hasattr(self._config, "add_random_region_noise") and self._augmenter[0] != None:
             std = self._config.add_random_region_noise
             print("!!!!!!!!!!!!!!!!!add random region noise", std)
             mask = Dataset.batch_random_region(reshaped.shape[0], reshaped.shape[1], reshaped.shape[2])
             mask = np.reshape(mask, (reshaped.shape[0], reshaped.shape[1], reshaped.shape[2], 1))
             reshaped += np.random.normal(0, std, (reshaped.shape[0], 1, 1, reshaped.shape[3])) * mask
+            #print("random region noise total cost ", time.time() - t0)
 
         queue_feed_dict = {self._queue_image_input: reshaped}  # images we already put by default
 
@@ -448,7 +464,20 @@ class Dataset(object):
         for i in range(len(self._config.inputs_names)):
             queue_feed_dict.update({self._queue_inputs[i]: data_loaded[2][i]})
 
+        t0 = time.time()
         sess.run(self._enqueue_op, feed_dict=queue_feed_dict)
+        #print("feed dict cost ", time.time() - t0)
+
+        #print("total in process run cost ", time.time() - t00)
+
+    # Used by enqueue
+    @staticmethod
+    def batch_random_region(B, H, W):
+        ans = []
+        for i in range(B):
+            size = np.random.randint(H*W//8, H*W//3)
+            ans.append(Dataset.random_region(H, W, size, 0.05))
+        return np.stack(ans, axis=0)
 
     def __getstate__(self):
         """Return state values to be pickled."""
@@ -497,6 +526,7 @@ class Dataset(object):
         while True:
             #start = time.time()
             one_batch = output_queue.get()
+            print("qsize is", output_queue.qsize())
             self.process_run(sess, one_batch)
             #print("fetched one output, cost ", time.time()-start)
 

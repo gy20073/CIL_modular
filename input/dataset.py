@@ -437,8 +437,8 @@ class Dataset(object):
             reshaped = np.transpose(reshaped, (1, 2, 3, 4, 0))
             # now has shape nB//num_sensors, nH, nW, nC, num_sensors
             reshaped = np.reshape(reshaped, (nB // num_sensors, nH, nW, nC * num_sensors))
-            print("channel stack")
-            print("shape of channel stack", reshaped.shape)
+            #print("channel stack")
+            #print("shape of channel stack", reshaped.shape)
             # print("channel stack total cost ", time.time() - t0)
 
 
@@ -450,7 +450,7 @@ class Dataset(object):
         t0 = time.time()
         if hasattr(self._config, "add_random_region_noise") and self._augmenter[0] != None:
             std = self._config.add_random_region_noise
-            print("!!!!!!!!!!!!!!!!!add random region noise", std)
+            #print("!!!!!!!!!!!!!!!!!add random region noise", std)
             mask = Dataset.batch_random_region(reshaped.shape[0], reshaped.shape[1], reshaped.shape[2])
             mask = np.reshape(mask, (reshaped.shape[0], reshaped.shape[1], reshaped.shape[2], 1))
             reshaped += np.random.normal(0, std, (reshaped.shape[0], 1, 1, reshaped.shape[3])) * mask
@@ -513,6 +513,7 @@ class Dataset(object):
     def _thread_perception_splitting(self, input_queue):
         while True:
             one_batch = input_queue.get()
+            print("input queue qsize", input_queue.qsize())
             self.output_remaining_queue.put(one_batch[1:])
             self.output_image_queue.put(one_batch[0])
 
@@ -526,7 +527,7 @@ class Dataset(object):
         while True:
             #start = time.time()
             one_batch = output_queue.get()
-            print("qsize is", output_queue.qsize())
+            print("output qsize is", output_queue.qsize())
             self.process_run(sess, one_batch)
             #print("fetched one output, cost ", time.time()-start)
 

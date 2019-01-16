@@ -300,8 +300,6 @@ class CarlaHuman(Driver):
         print(t.rotation.roll, t.rotation.pitch, t.rotation.yaw)
 
     def _reset(self):
-
-        self._start_time = time.time()
         self._episode_t0 = datetime.now()
 
 
@@ -488,6 +486,7 @@ class CarlaHuman(Driver):
 
         self._skiped_frames = 0
         self._stucked_counter = 0
+        self._start_time = time.time()
 
     def get_recording(self):
         if self._autopilot:

@@ -17,7 +17,7 @@ class configDrive:
         self.noise = "Spike" #"Spike"  # NON CARLA SETTINGS PARAM
         # TODO: some spike related numbers
 
-        self.reset_period = 960 # reset when the system time goes beyond this number
+        self.reset_period = 15 # 960 # reset when the system time goes beyond this number
         # Those parameters will override carla_config
         self.weather = "1" # This will be override by the caller
         self.cars = "50"

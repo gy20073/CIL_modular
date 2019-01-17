@@ -42,6 +42,7 @@ class mapping_helper:
                            "01":  lambda loc: self.loc_to_pix_01_02(loc, "01"),
                            "02":  lambda loc: self.loc_to_pix_01_02(loc, "02"),
                            "10": lambda loc: self.loc_to_pix_rfs_sim(loc)} # rfs_sim
+        self.output_physical_size_meter = output_physical_size_meter
 
     def loc_to_pix_rfs_sim(self, loc):
         u = 3.6090651558073654 * loc[1] + 2500.541076487252
@@ -124,11 +125,27 @@ class mapping_helper:
     def map_to_debug_image(self, map):
         im = np.stack((map, map, map), axis=2)
         im = im * 255
-        sz = 5
+        sz = 2
         h0 = im.shape[0] * 3 // 2 // 2
         h1 = im.shape[1] // 2
         im[h0-sz: h0+sz, h1-sz: h1+sz, :] = np.array([255, 0, 0])
         return im
+
+    def compute_dis_to_border(self, map):
+        # return the distance to border(other part of the road), in meters
+        # positive for inside the road, and negative for outside the road.
+
+        H, W = map.shape
+        center = (H * 3 // 4, W // 2)
+        cv = map[center[0], center[1]]
+        mesh = np.meshgrid(range(H), range(W), indexing='ij')
+        mesh = [mesh[0][map!=cv], mesh[1][map!=cv]]
+        dists = np.square(mesh[0]-center[0]) + np.square(mesh[1]-center[1])
+        min_dist = np.sqrt(np.min(dists)) / W * self.output_physical_size_meter
+        if cv == False:
+            min_dist = -min_dist
+        return min_dist
+
 
 # this should goes to Ros publishing the message
 def quaternion_to_yaw(msg):

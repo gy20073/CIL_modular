@@ -1,7 +1,7 @@
 import tensorflow as tf
 import copy
 
-def mse_branched(network_outputs, ground_truths, control_input, config):
+def mse_branched(network_outputs, ground_truths, control_input, config, **kwargs):
     # typical input: network_outputs: output from network,
     #                ground_truths: _targets_data
     #                control_input: _input_data[self._config.inputs_names.index("Control")]
@@ -54,7 +54,16 @@ def mse_branched(network_outputs, ground_truths, control_input, config):
             l2_loss = wd * tf.add_n(decay_set)
             loss_function = loss_function + l2_loss
 
-    #print(loss_function, error_vec, energy_vec)
+    if "dis_to_road_border" in config.inputs_names:
+        print(" use the hinge loss of inside road")
+        all_inputs=kwargs["all_inputs"]
+        dist = all_inputs[config.inputs_names.index('dis_to_road_border')]
+        # this is a batch_size * 1 matrix
+        loss_hinge = tf.squeeze(tf.maximum(-dist + 0.5, 0.0))
+        tf.summary.scalar("loss_inside_road", tf.reduce_mean(loss_hinge))
+        loss_function = loss_function + loss_hinge
+
+        #print(loss_function, error_vec, energy_vec)
     return loss_function, error_vec, energy_vec, None, branch_selection
 
 def mse_coarse_to_fine(network_outputs, ground_truths, control_input, config):

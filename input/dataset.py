@@ -317,7 +317,24 @@ class Dataset(object):
                         cv2.imwrite("debug_map.png", im)
                         cv2.imwrite("debug_center_cam.png", center)
                         '''
+                elif this_name == "dis_to_road_border":
+                    pos_x = self._config.variable_names.index("Pos_X")
+                    pos_y = self._config.variable_names.index("Pos_Y")
+                    ori_x = self._config.variable_names.index("Ori_X")
+                    ori_y = self._config.variable_names.index("Ori_Y")
+                    ori_z = self._config.variable_names.index("Ori_Z")
+                    town_id = self._config.variable_names.index("town_id")
 
+                    pos = [target_selected[pos_x, ibatch], target_selected[pos_y, ibatch]]
+                    ori = [target_selected[ori_x, ibatch], target_selected[ori_y, ibatch],
+                           target_selected[ori_z, ibatch]]
+                    town_id = int(target_selected[town_id, ibatch])
+                    town_id = str(town_id).zfill(2)
+                    map = self.mapping_helper.get_map(town_id, pos, ori)
+
+                    # add a flattened operator, to make it compatible with the original format, remember to reshape it back
+                    inputs[iinput][ibatch] = self.mapping_helper.compute_dis_to_border(map)
+                    #again
                 else:
                     k = self._config.variable_names.index(self._config.inputs_names[iinput])
                     if this_name == "Control":

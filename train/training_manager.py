@@ -94,7 +94,8 @@ class TrainManager(object):
                 = self._loss_function(self._output_network,
                                       self._targets_data,
                                       self._input_data[self._config.inputs_names.index("Control")],
-                                      self._config)
+                                      self._config,
+                                      all_inputs=self._input_data)
 
     def build_optimization(self):
         """ List of Interesting Parameters """

@@ -64,6 +64,9 @@ class CarlaMachine(Driver):
             if perception_paths is not None:
                 self._config.perception_paths = perception_paths
 
+            all_params = use_mode.copy()
+            all_params.update(self._config.perception_other_params)
+
             self.perception_interface = Perceptions(
                 batch_size={key: batch_size for key in use_mode if use_mode[key]},
                 gpu_assignment=self._config.perception_gpus,
@@ -71,7 +74,7 @@ class CarlaMachine(Driver):
                 viz_methods={},
                 num_replicates=self._config.perception_num_replicates,
                 path_config =self._config.perception_paths,
-                **use_mode
+                **all_params
             )
             time.sleep(self._config.perception_initialization_sleep)
 

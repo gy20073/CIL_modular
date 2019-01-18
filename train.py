@@ -34,6 +34,9 @@ def train(experiment_name, memory_fraction):
             else:
                 use_mode[key] = False
 
+        all_params = use_mode.copy()
+        all_params.update(config_input.perception_other_params)
+
         perception_interface = Perceptions(
             batch_size=config_input.perception_batch_sizes,
             gpu_assignment=config_input.perception_gpus,
@@ -41,7 +44,7 @@ def train(experiment_name, memory_fraction):
             viz_methods={},
             num_replicates=config_input.perception_num_replicates,
             path_config=config_input.perception_paths,
-            **use_mode
+            **all_params
         )
         time.sleep(config_input.perception_initialization_sleep)
 

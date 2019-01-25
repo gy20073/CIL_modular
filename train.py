@@ -35,7 +35,8 @@ def train(experiment_name, memory_fraction):
                 use_mode[key] = False
 
         all_params = use_mode.copy()
-        all_params.update(config_input.perception_other_params)
+        if hasattr(config_input, "perception_other_params"):
+            all_params.update(config_input.perception_other_params)
 
         perception_interface = Perceptions(
             batch_size=config_input.perception_batch_sizes,

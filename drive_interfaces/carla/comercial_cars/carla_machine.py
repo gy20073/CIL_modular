@@ -65,7 +65,8 @@ class CarlaMachine(Driver):
                 self._config.perception_paths = perception_paths
 
             all_params = use_mode.copy()
-            all_params.update(self._config.perception_other_params)
+            if hasattr(self._config, "perception_other_params"):
+                all_params.update(self._config.perception_other_params)
 
             self.perception_interface = Perceptions(
                 batch_size={key: batch_size for key in use_mode if use_mode[key]},

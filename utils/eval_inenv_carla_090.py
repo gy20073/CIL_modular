@@ -18,11 +18,11 @@ from carla_machine import *
 # some configs
 condition=2.0
 test_steps = 100
-exp_id="mm45_v4_PcSensordropLessmap_rfsv4_extra"
+exp_id="mm45_v4_PcSensordropLessmap_rfsv4_extra_structure_noise_lanecolor"
 
 gpu=0
 video_output_name="eval_output"
-extra_explore_file = "town03_intersections/positions_file_RFS_MAP.extra_explore.txt"
+extra_explore_file = "town03_intersections/positions_file_RFS_MAP.extra_explore_v2.txt"
 # end of all configs
 
 data_buffer_lock = threading.Lock()

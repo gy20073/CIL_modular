@@ -4,8 +4,8 @@ import numpy as np
 sys.path.append('drive_interfaces/carla/carla_client')
 
 # TODO change this
-input_id = "rfs_sim_v4_extra"
-output_id = "rfs_sim_v4_extra_way"
+input_id = "rfs_sim_v5_extra"
+output_id = "rfs_sim_v5_extra_way"
 debug_start = 0
 debug_end= 140000000
 future_time = 2.0 # second

@@ -396,7 +396,7 @@ class CarlaHuman(Driver):
                 parking_points = self.get_parking_locations(self._driver_conf.parking_position_file)
                 random.shuffle(parking_points)
                 print('found %d parking points.' % len(parking_points))
-                count = 50
+                count = 150
 
                 for spawn_point in parking_points:
                     self.try_spawn_random_vehicle_at(blueprints_vehi, spawn_point, False)

@@ -19,6 +19,7 @@ from carla_machine import *
 condition=5.0
 test_steps = 100
 exp_id="mm45_v4_PcSensordropLessmap_rfsv5_extra_structure_noise_lanecolor"
+pid_p = 0.5 # 1.0
 
 gpu=0
 video_output_name="eval_output"
@@ -197,7 +198,7 @@ class Carla090Eval():
 
             self.save_to_disk(to_be_viz)
             vc = VehicleControl(float(action.throttle),
-                                float(action.steer),
+                                float(action.steer) * pid_p,
                                 float(action.brake),
                                 bool(action.hand_brake),
                                 bool(action.reverse))

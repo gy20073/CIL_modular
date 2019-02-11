@@ -18,8 +18,8 @@ def get_driver_config():
     return driver_conf
 
 # TODO begin the configs
-exp_id = "mm45_v4_wp2town3cam_2p3town_map_sensor_dropout_less_noise_mapdrop"
-short_id = "less_noise_mapdrop"
+exp_id = "mm45_v4_PcSensordropLessmap_rfsv45_extra_structure_noise_lanecolor_drivable"
+short_id = "drivable"
 use_left_right = True
 video_path = "/scratch/yang/aws_data/mkz/recordings/11.28-2/video_enable.avi"
 pickle_path = "/scratch/yang/aws_data/mkz/recordings/11.28-2/video_enable.pkl"

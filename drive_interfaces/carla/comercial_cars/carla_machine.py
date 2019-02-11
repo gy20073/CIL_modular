@@ -256,6 +256,26 @@ class CarlaMachine(Driver):
             out_ncol = 3
             out_irow = 0
             out_icol = 1
+        elif nrow == 2 and ncol == 2 and len(out_vis)==3:
+            # the most common config for the seg & drivable area only, and 3 cameras
+            # output target is first row images, second row
+            transposed = []
+            for viz in out_vis:
+                single_H = viz.shape[0] // 2
+                single_W = viz.shape[1] // 2
+                trans=np.concatenate((viz[:viz.shape[0] // 2, :viz.shape[1] // 2, :],
+                                      viz[:viz.shape[0] // 2, viz.shape[1] // 2: , :],
+                                      viz[viz.shape[0] // 2:, :viz.shape[1] // 2, :]), axis=0)
+                transposed.append(trans)
+            out = np.concatenate(transposed, axis=1)
+            out = np.pad(out, ((0, single_H), (0,0), (0,0)), 'constant')
+            if map is not None:
+                map = cv2.resize(map, (single_W, single_H))
+                out[single_H*3:, single_W:single_W*2, :] = map
+            out_nrow = 4
+            out_ncol = 3
+            out_irow = 0
+            out_icol = 1
         else:
             # a fall back version
             single_H = out_vis[0].shape[0] // nrow

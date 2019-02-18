@@ -146,6 +146,13 @@ class mapping_helper:
             min_dist = -min_dist
         return min_dist
 
+    def is_on_road(self, map):
+        # return true for onroad and false for not
+        H, W = map.shape
+        center = (H * 3 // 4, W // 2)
+        cv = map[center[0], center[1]]
+        return cv==1
+
 
 # this should goes to Ros publishing the message
 def quaternion_to_yaw(msg):

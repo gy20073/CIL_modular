@@ -30,7 +30,7 @@ class configMain:
                               'wp6x', 'wp6y', 'wp7x', 'wp7y', 'wp8x', 'wp8y', 'wp9x', 'wp9y', 'wp10x', 'wp10y']
         self.targets_sizes = [1] * len(self.targets_names)
 
-        self.inputs_names = ['Control', 'Speed', "mapping", "dis_to_road_border"]
+        self.inputs_names = ['Control', 'Speed', "mapping", "is_onroad"]
         self.map_height = 50
         self.map_pos_noise_std = 2.0  # measured in meter
         self.map_yaw_noise_std = 5.0 # in degree

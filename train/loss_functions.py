@@ -69,9 +69,9 @@ def mse_branched(network_outputs, ground_truths, control_input, config, **kwargs
     if hasattr(config, "loss_onroad"):
         print("the onroad loss")
         all_inputs = kwargs["all_inputs"]
-        dist = all_inputs[config.inputs_names.index('dis_to_road_border')]
+        onroad = all_inputs[config.inputs_names.index('is_onroad')]
         onroad_logits = network_outputs[-1]
-        onroad_gt = tf.cast(dist > 0.0, tf.int32)
+        onroad_gt = tf.cast(onroad, tf.int32)
         loss_onroad = tf.losses.sparse_softmax_cross_entropy(onroad_gt,
                                                              onroad_logits,
                                                              reduction=tf.losses.Reduction.NONE)

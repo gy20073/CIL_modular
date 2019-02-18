@@ -157,6 +157,14 @@ def create_structure(tf, input_image, input_data, input_size, dropout, config):
 
         print(branch_output)
 
+    if hasattr(config, "loss_onroad"):
+        # start the onroad loss
+        tmp = network_manager.fc_block(x, 256)
+        tmp = network_manager.fc_block(tmp, 256)
+        onroad = network_manager.fc(tmp, 2)
+        branches.append(onroad)
+        # end the onroad loss
+
     weights = network_manager.get_weigths_dict()
 
     features = network_manager.get_feat_tensors_dict()

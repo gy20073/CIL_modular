@@ -54,6 +54,7 @@ def mse_branched(network_outputs, ground_truths, control_input, config, **kwargs
             l2_loss = wd * tf.add_n(decay_set)
             loss_function = loss_function + l2_loss
 
+    '''
     if "dis_to_road_border" in config.inputs_names:
         print(" use the hinge loss of inside road")
         all_inputs=kwargs["all_inputs"]
@@ -62,8 +63,23 @@ def mse_branched(network_outputs, ground_truths, control_input, config, **kwargs
         loss_hinge = tf.squeeze(tf.maximum(-dist + 0.5, 0.0))
         tf.summary.scalar("loss_inside_road", tf.reduce_mean(loss_hinge))
         loss_function = loss_function + loss_hinge
+        # print(loss_function, error_vec, energy_vec)
+    '''
 
-        #print(loss_function, error_vec, energy_vec)
+    if hasattr(config, "loss_onroad"):
+        print("the onroad loss")
+        all_inputs = kwargs["all_inputs"]
+        dist = all_inputs[config.inputs_names.index('dis_to_road_border')]
+        onroad_logits = network_outputs[-1]
+        onroad_gt = tf.cast(dist > 0.0, tf.int32)
+        loss_onroad = tf.losses.sparse_softmax_cross_entropy(onroad_gt,
+                                                             onroad_logits,
+                                                             reduction=tf.losses.Reduction.NONE)
+
+        tf.summary.scalar("loss_inside_road", tf.reduce_mean(loss_onroad))
+        loss_function = loss_function + loss_onroad * config.loss_onroad
+
+
     return loss_function, error_vec, energy_vec, None, branch_selection
 
 def mse_coarse_to_fine(network_outputs, ground_truths, control_input, config):

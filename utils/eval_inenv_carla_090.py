@@ -18,10 +18,10 @@ from carla_machine import *
 # some configs
 condition=5.0
 test_steps = 100
-exp_id="mm45_v4_PcSensordropLessmap_rfsv5_extra_structure_noise"
+exp_id="mm45_v4_PcSensordropLessmap_rfsv45_extra_structure_noise_lanecolor_drivable"
 pid_p = 0.5 # 1.0
 
-gpu=7
+gpu=1
 video_output_name="eval_output"
 extra_explore_file = "town03_intersections/positions_file_RFS_MAP.extra_explore_v3.txt"
 # end of all configs

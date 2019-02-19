@@ -34,7 +34,7 @@ class configMain:
         self.map_height = 50
         self.map_pos_noise_std = 2.0  # measured in meter
         self.map_yaw_noise_std = 5.0 # in degree
-        self.inputs_sizes = [4, 1] + [self.map_height * self.map_height * 3 // 2]
+        self.inputs_sizes = [4, 1] + [self.map_height * self.map_height * 3 // 2 * 3]
 
         # if there is branching, this is used to build the network. Names should be same as targets
         # currently the ["Steer"]x4 should not be changed

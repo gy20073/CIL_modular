@@ -60,7 +60,12 @@ def create_structure(tf, input_image, input_data, input_size, dropout, config):
     x = input_image
     mapping = input_data[config.inputs_names.index("mapping")]
     # now have shape batchsize*(50*75)
-    mapping = tf.reshape(mapping, [-1, config.map_height, config.map_height * 3 // 2, 1])
+    map_n_channel = 1
+    if hasattr(config, "mapping_version"):
+        if config.mapping_version == "v2":
+            map_n_channel = 3
+
+    mapping = tf.reshape(mapping, [-1, config.map_height, config.map_height * 3 // 2, map_n_channel])
     mapping = tf.image.resize_bilinear(mapping, [39, 52], name="resize_mapping")
 
     network_manager = Network(config, dropout, tf.shape(x))

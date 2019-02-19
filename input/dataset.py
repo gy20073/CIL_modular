@@ -68,7 +68,11 @@ class Dataset(object):
         self.perception_interface = perception_interface
 
         if "mapping" in self._config.inputs_names:
-            self.mapping_helper = mapping_helper.mapping_helper(output_height_pix=self._config.map_height) # using the default values, 30 meters of width view, 50*75*1 output size
+            version = "v1"
+            if hasattr(self._config, "mapping_version"):
+                version = self._config.mapping_version
+            self.mapping_helper = mapping_helper.mapping_helper(output_height_pix=self._config.map_height,
+                                                                version=version) # using the default values, 30 meters of width view, 50*75*1 output size
 
 
     def get_batch_tensor(self):

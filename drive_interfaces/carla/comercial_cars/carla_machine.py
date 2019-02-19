@@ -116,8 +116,13 @@ class CarlaMachine(Driver):
         self.error_p = 0.0
 
         if hasattr(self._config, "map_height"):
+            version = "v1"
+            if hasattr(self._config, "mapping_version"):
+                version = self._config.mapping_version
+
             self.mapping_helper = mapping_helper.mapping_helper(
-                output_height_pix=self._config.map_height)
+                output_height_pix=self._config.map_height,
+                version=version)
 
     def start(self):
         raise NotImplementedError()

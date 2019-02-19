@@ -75,10 +75,9 @@ def mse_branched(network_outputs, ground_truths, control_input, config, **kwargs
         loss_onroad = tf.losses.sparse_softmax_cross_entropy(onroad_gt,
                                                              onroad_logits,
                                                              reduction=tf.losses.Reduction.NONE)
-
+        loss_onroad = tf.reshape(loss_onroad, (-1, 1))
         tf.summary.scalar("loss_inside_road", tf.reduce_mean(loss_onroad))
         loss_function = loss_function + loss_onroad * config.loss_onroad
-
 
     return loss_function, error_vec, energy_vec, None, branch_selection
 

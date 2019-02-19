@@ -21,13 +21,23 @@ def rotate(im, angle_radian, output_size):
 
 
 class mapping_helper:
-    def __init__(self, output_physical_size_meter=30.0, output_height_pix=50):
+    def __init__(self, output_physical_size_meter=30.0, output_height_pix=50, version="v1"):
+        '''
+        :param output_physical_size_meter:
+        :param output_height_pix:
+        :param version: v1 is the original road vs non road
+                        v2 is the road mask + shoulder region
+        '''
+
+        self.version = version
+        print("the version of mapping we are using is ", self.version)
+
         self.output_height_pix = output_height_pix
         # map path, meters per pixel
-        infos = {"rfs": (get_current_folder()+"/data_lanes/human_marked5.png", 0.272736441511),
-                 "01" : (get_current_folder()+"/data_lanes/Town01Lanes.png",   0.1643),
-                 "02":  (get_current_folder()+"/data_lanes/Town02Lanes.png",   0.1643),
-                 "10": (get_current_folder() + "/data_lanes/rfs_sim.png", 0.277045)} # rfs_sim
+        infos = {"rfs": (get_current_folder()+"/data_lanes/human_marked5_"+version+".png", 0.272736441511),
+                 "01" : (get_current_folder()+"/data_lanes/Town01Lanes_"+version+".png",   0.1643),
+                 "02":  (get_current_folder()+"/data_lanes/Town02Lanes_"+version+".png",   0.1643),
+                 "10": (get_current_folder() + "/data_lanes/rfs_sim_"+version+".png", 0.277045)} # rfs_sim
         self.maps = {}
         self.output_pixel_size = {}
 
@@ -74,11 +84,16 @@ class mapping_helper:
         return im
 
     def rgb_to_machine_format(self, im):
-        # this returns a 3d image, H, W, Channel==1
-        bin = np.sum(im, axis=2, keepdims=True)
-        bin = (bin > 0)
-        bin = bin.astype(np.uint8)
-        return bin
+        if self.version == "v1":
+            # this returns a 3d image, H, W, Channel==1
+            bin = np.sum(im, axis=2, keepdims=True)
+            bin = (bin > 0)
+            bin = bin.astype(np.uint8)
+            return bin
+        elif self.version == "v2":
+            im = (np.array(im) > 100)
+            im = im.astype(np.uint8)
+            return im
 
 
     def ori_to_yaw(self, ori, town_id):
@@ -118,24 +133,32 @@ class mapping_helper:
         # cut the lower 1/3
         dst = cropped[: cropped.shape[0] * 2 // 3, :, :]
         # resize
+        # here dst has dim 3
         dst = cv2.resize(dst, (int(self.output_height_pix * 1.0 / dst.shape[0] * dst.shape[1]),
                                self.output_height_pix))
+        # here dst has dimension 2, if the last channel is 1.
         return dst
 
     def map_to_debug_image(self, map):
-        im = np.stack((map, map, map), axis=2)
+        if self.version == "v1":
+            im = np.stack((map, map, map), axis=2)
         im = im * 255
         sz = 2
         h0 = im.shape[0] * 3 // 2 // 2
         h1 = im.shape[1] // 2
-        im[h0-sz: h0+sz, h1-sz: h1+sz, :] = np.array([255, 0, 0])
+        im[h0-sz: h0+sz, h1-sz: h1+sz, :] = np.array([38, 239, 232])
         return im
+
 
     def compute_dis_to_border(self, map):
         # return the distance to border(other part of the road), in meters
         # positive for inside the road, and negative for outside the road.
+        if self.version=="v1":
+            H, W = map.shape
+        else: #elif self.version == "v2":
+            H, W, C = map.shape
+            map = map[:, :, 0] * map[:, :, 1] * map[:, :, 2]
 
-        H, W = map.shape
         center = (H * 3 // 4, W // 2)
         cv = map[center[0], center[1]]
         mesh = np.meshgrid(range(H), range(W), indexing='ij')
@@ -148,10 +171,15 @@ class mapping_helper:
 
     def is_on_road(self, map):
         # return true for onroad and false for not
-        H, W = map.shape
+        if self.version=="v1":
+            H, W = map.shape
+        else: #elif self.version == "v2":
+            H, W, C = map.shape
+            map = map[:, :, 0] * map[:, :, 1] * map[:, :, 2]
+
         center = (H * 3 // 4, W // 2)
         cv = map[center[0], center[1]]
-        return cv==1
+        return cv == 1
 
 
 # this should goes to Ros publishing the message

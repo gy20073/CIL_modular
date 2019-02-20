@@ -3,5 +3,5 @@
 export CUDA_VISIBLE_DEVICES=3
 ulimit -Sn 600000
 python chauffeur.py train \
-    -e mm45_v4_PcSensordropLessmap_rfsv45_extra_structure_noise_nocolor_shoulder \
+    -e mm45_v4_PcSensordropLessmap_rfsv45_extra_structure_noise_nocolor_shoulder_accurate_map \
     -m 0.05

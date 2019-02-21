@@ -93,7 +93,7 @@ def single_branch_yang_wp_stack(image_input, speed, control_input, config, sess,
     if map is not None:
         feedDict.update({train_manager._input_data[config.inputs_names.index("mapping")]: map})
 
-    output_all, predicted_speed = sess.run([all_net, branches[4]], feed_dict=feedDict)
+    output_all, predicted_speed, onroad_output = sess.run([all_net, branches[4], branches[-1]], feed_dict=feedDict)
 
     waypoints = np.reshape(output_all[0][3:], (-1, 2))
     predicted_steers = (output_all[0][0])
@@ -110,7 +110,7 @@ def single_branch_yang_wp_stack(image_input, speed, control_input, config, sess,
         predicted_acc += 20.0 / config.speed_factor - speed  # print "DURATION"
         predicted_brake = 0.0
 
-    return waypoints, predicted_steers, predicted_acc, predicted_brake, real_predicted
+    return waypoints, predicted_steers, predicted_acc, predicted_brake, real_predicted, onroad_output
 
 
 def single_branch_yang_cls_reg(image_input, speed, control_input, config, sess, train_manager):

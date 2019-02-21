@@ -465,7 +465,7 @@ class CarlaMachine(Driver):
                     return waypoints, to_be_visualized
 
         elif (self._train_manager._config.control_mode == 'single_branch_yang_wp_stack'):
-            waypoints, steer, acc, brake, real_predicted = \
+            waypoints, steer, acc, brake, real_predicted, onroad = \
                 self._control_function(image_input, speed_kmh, direction,
                                        self._config, self._sess, self._train_manager, map=map)
 
@@ -535,6 +535,9 @@ class CarlaMachine(Driver):
 
         # print all info on the image
         extra = "\nSteer {:.2f} \nThrottle {:.2f} \nBrake {:.2f}\n".format(float(steer), float(acc), float(brake))
+        if hasattr(self._config, "loss_onroad"):
+            extra += "Onroad {:.2f} {:.2f}\n".format(float(onroad[0, 0]), float(onroad[0, 1]))
+
         t5 = time.time()
         to_be_visualized = self.annotate_image(to_be_visualized, direction, extra+extra_extra)
         #print("annotate image takes ", time.time() - t5)

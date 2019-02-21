@@ -142,6 +142,8 @@ class mapping_helper:
     def map_to_debug_image(self, map):
         if self.version == "v1":
             im = np.stack((map, map, map), axis=2)
+        else:
+            im = map
         im = im * 255
         sz = 2
         h0 = im.shape[0] * 3 // 2 // 2

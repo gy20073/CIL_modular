@@ -34,7 +34,7 @@ class configMain:
         self.map_height = 50
         self.map_pos_noise_std = 2.0  # measured in meter
         self.map_yaw_noise_std = 5.0 # in degree
-        self.inputs_sizes = [4, 1] + [self.map_height * self.map_height * 3 // 2]
+        self.inputs_sizes = [4, 1] + [self.map_height * self.map_height * 3 // 2 * 3]
 
         # if there is branching, this is used to build the network. Names should be same as targets
         # currently the ["Steer"]x4 should not be changed
@@ -90,6 +90,8 @@ class configMain:
         self.sensor_dropout = 0.5
         self.mapping_dropout = 0.5
 
+        self.mapping_version = "v2"
+
 
 class configInput(configMain):
     def __init__(self):
@@ -114,7 +116,7 @@ class configInput(configMain):
         all_files = []
         self.val_db_path = []
         # wait! I already has the v2 dataset :(
-        ids = ["steer103_v5_way_v2", 'steer103_v5_way_v2_town02', 'rfs_sim_v2_way', 'rfs_sim_v4_extra_way', 'rfs_sim_v5_extra_way']
+        ids = ["steer103_v5_way_v2", 'steer103_v5_way_v2_town02', 'rfs_sim_v2_way', 'rfs_sim_v5_extra_way']# , 'rfs_sim_v4_extra_way']
 
         for id in ids:
             all_files += glob.glob("/data/yang/code/aws/scratch/carla_collect/"+id+"/*/data_*.h5")

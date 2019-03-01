@@ -226,7 +226,7 @@ class CarlaMachine(Driver):
                  5.0: "straight",
                  0.0: "goal"}
         font_sz = int(5.0 / 88 * sensor.shape[0]) + 1
-        font_sz = min(font_sz, 35)
+        font_sz = min(font_sz, 25)
         viz = self.write_text_on_image(sensor, txtdt[direction]+extra, font_sz)
         return viz
 

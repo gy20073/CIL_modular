@@ -221,7 +221,7 @@ class CarlaGame(object):
                 lines = f.readlines()
                 for line in lines:
                     sp = line.strip().split(",")
-                    x, y = [float(t.strip()) for t in sp]
+                    x, y, angle = [float(t.strip()) for t in sp]
                     print(x, y)
 
         if self._spawn_new_car:
@@ -241,10 +241,11 @@ class CarlaGame(object):
                 lines = f.readlines()
                 for line in lines:
                     sp = line.strip().split(",")
-                    x, y = [float(t.strip()) for t in sp]
+                    x, y, angle = [float(t.strip()) for t in sp]
                     print(x, y)
                     start_transform.location.x = x
                     start_transform.location.y = y
+                    start_transform.rotation.yaw = angle
                     self._world.try_spawn_actor(vechile_blueprint, start_transform)
 
             cam_blueprint =  self._world.get_blueprint_library().find('sensor.camera.rgb')

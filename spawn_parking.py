@@ -56,7 +56,7 @@ def main():
     argparser.add_argument(
         '-n', '--number-of-vehicles',
         metavar='N',
-        default=50,
+        default=181,
         type=int,
         help='number of vehicles (default: 10)')
     argparser.add_argument(

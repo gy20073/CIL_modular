@@ -2,7 +2,7 @@ import threading
 import weakref
 import cv2
 import copy
-import sys, os
+import sys, os, inspect
 import pygame, io, math, time
 import random
 from configparser import ConfigParser
@@ -32,6 +32,10 @@ else:
 from driver import Driver
 
 sldist = lambda c1, c2: math.sqrt((c2[0] - c1[0]) ** 2 + (c2[1] - c1[1]) ** 2)
+
+def get_current_folder():
+    return os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+
 
 def v3d_to_array(v3d):
     return [v3d.x, v3d.y, v3d.z]
@@ -205,6 +209,7 @@ class CarlaHuman(Driver):
         self.last_timestamp.elapsed_seconds = 0.0
         self.last_timestamp.delta_seconds = 0.2
 
+        self.initialize_map(driver_conf.city_name)
 
     def start(self):
         if __CARLA_VERSION__ == '0.8.X':
@@ -396,7 +401,7 @@ class CarlaHuman(Driver):
                 parking_points = self.get_parking_locations(self._driver_conf.parking_position_file)
                 random.shuffle(parking_points)
                 print('found %d parking points.' % len(parking_points))
-                count = 150
+                count = 200
 
                 for spawn_point in parking_points:
                     self.try_spawn_random_vehicle_at(blueprints_vehi, spawn_point, False)
@@ -512,6 +517,37 @@ class CarlaHuman(Driver):
                 print("end recording!!!!!!!!!!!!!!!!!!!!!!!!1")
             return self._recording
 
+    def initialize_map(self, city_name):
+        self.city_name_demo = city_name
+        if city_name == "RFS_MAP":
+            path = get_current_folder() + "/maps_demo_area/rfs_demo_area.png"
+            im = cv2.imread(path)
+            im = im[:, :, :3]
+            im = im[:, :, ::-1]
+            self.demo_area_map = im
+        else:
+            print("do nothing since not a city with demo area")
+            #raise ValueError("wrong city name: " + city_name)
+
+    def loc_to_pix_rfs_sim(self, loc):
+        u = 3.6090651558073654 * loc[1] + 2500.541076487252
+        v = -3.6103367739019054 * loc[0] + 2501.862578166202
+        return [int(v), int(u)]
+
+
+    def in_valid_area(self, x, y):
+        if self.city_name_demo == "RFS_MAP":
+            pos = self.loc_to_pix_rfs_sim([x, y])
+            locality = 50 # 100 pixels
+            local_area = self.demo_area_map[pos[0]-locality: pos[0]+locality,
+                                            pos[1]-locality: pos[1]+locality, 0] > 0
+            valid=np.sum(local_area) > 0
+            if not valid:
+                print("detect the vehicle is not in the valid demonstrated area")
+            return valid
+        else:
+            return True
+
     def get_reset(self):
         if self._autopilot:
             if __CARLA_VERSION__ == '0.8.X':
@@ -548,7 +584,9 @@ class CarlaHuman(Driver):
 
                 if time.time() - self._start_time > self._reset_period \
                 or self._last_collided \
-                or self._stucked_counter > 250:
+                or self._stucked_counter > 250 \
+                or not self.in_valid_area(self._latest_measurements.player_measurements.transform.location.x,
+                                        self._latest_measurements.player_measurements.transform.location.y):
                 #or np.abs(self._vehicle.get_vehicle_control().steer) > 0.95:
                 #or np.abs(self._vehicle.get_vehicle_control().brake) > 1:
                     # TODO intersection other lane is not available, so omit from the condition right now
@@ -796,6 +834,8 @@ class CarlaHuman(Driver):
                                              collision_vehicles),
                                 current_ms_offset)
             direction = self._current_command
+
+            self._latest_measurements = measurements
 
             #print('[Speed = {} Km/h] [Direction = {}]'.format(measurements.player_measurements.forward_speed, direction))
         #print(">>>>> planner output direction: ", direction)

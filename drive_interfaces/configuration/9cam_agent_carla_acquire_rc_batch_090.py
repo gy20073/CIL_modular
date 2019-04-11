@@ -77,7 +77,7 @@ class configDrive:
 
         self.positions_file = "town03_positions/merged.csv"
         if self.city_name == "RFS_MAP":
-            self.parking_position_file = "town03_intersections/positions_file_RFS_MAP.parking.txt"
+            self.parking_position_file = "town03_intersections/positions_file_RFS_MAP.parking_v2.txt"
             # there are some bug in this function, that the whole simulation will get stuck
             # disable the over-exploration since we solve the shoulder by marking it on the map
             self.extra_explore_prob = 0.0 # now for debugging purpose, let all of them be the extra positions file

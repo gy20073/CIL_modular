@@ -4,8 +4,8 @@ import numpy as np
 sys.path.append('drive_interfaces/carla/carla_client')
 
 # TODO change this
-input_id = "rfs_sim_v5_extra"
-output_id = "rfs_sim_v5_extra_way"
+input_id = "rfs_sim_v6"
+output_id = "rfs_sim_v6_way"
 debug_start = 0
 debug_end= 140000000
 future_time = 2.0 # second
@@ -13,6 +13,7 @@ is_carla_090 = True
 base = "/data/yang/code/aws/scratch/carla_collect/"
 #base = "/data/yang/code/aws/scratch/carla_collect/human/"
 #base = "/scratch/yang/aws_data/human_driving/"
+# end of change
 
 all_files = glob.glob(base+str(input_id)+"/*/data_*.h5")
 input_prefix = base+str(input_id)

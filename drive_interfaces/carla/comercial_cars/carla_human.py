@@ -23,6 +23,7 @@ else:
         sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')
     elif __CARLA_VERSION__ == '0.9.5':
         sys.path.append('drive_interfaces/carla/carla_client_095/carla-0.9.5-py2.7-linux-x86_64.egg')
+        sys.path.append('drive_interfaces/carla/carla_client_095/carla')
         #from agents.navigation.basic_agent import BasicAgent
         #from agents.navigation.roaming_agent import RoamingAgent
     else:
@@ -391,20 +392,21 @@ class CarlaHuman(Driver):
             # @todo Needs to be converted to list to be shuffled.
             spawn_points = list(self._world.get_map().get_spawn_points())
             if len(spawn_points) == 0:
-                spawn_points = [carla.Transform()]
-                
+                if self.city_name_demo == "Exp_Town":
+                    spawn_points = [carla.Transform(location=carla.Location(x=-11.5, y=-8.0, z=2.0))]
+
             random.shuffle(spawn_points)
 
             print('found %d spawn points.' % len(spawn_points))
 
             # TODO: debug change 50 to 0
             count = 0
-
-            for spawn_point in spawn_points:
-                if self.try_spawn_random_vehicle_at(blueprints_vehi, spawn_point):
-                    count -= 1
-                if count <= 0:
-                    break
+            if count > 0:
+                for spawn_point in spawn_points:
+                    if self.try_spawn_random_vehicle_at(blueprints_vehi, spawn_point):
+                        count -= 1
+                    if count <= 0:
+                        break
             while count > 0:
                 time.sleep(0.5)
                 if self.try_spawn_random_vehicle_at(blueprints_vehi, random.choice(spawn_points)):

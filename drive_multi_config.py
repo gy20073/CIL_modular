@@ -1,17 +1,17 @@
 import sys, os, time, threading
 
-TownName = "Exp_Town"
+TownName = "Town05"
 start_port=2200
 available_gpus = [0]
 num_processes = 1
 use_docker = False
 # 9cam_agent_carla_acquire_rc_batch_090, change its contents
 
-if TownName == "Exp_Town":
+if TownName == "Exp_Town" or TownName == "Town05":
     CARLA_PATH = "/scratch/yang/aws_data/carla_095/CarlaUE4.sh"
     os.environ['CARLA_VERSION'] = '0.9.5'
     docker_path = None
-    town_within_path = "Exp_Town"
+    town_within_path = TownName
 elif TownName == "Town03" or TownName == "Town04" or TownName == "RFS_MAP":
     CARLA_PATH = "/scratch/yang/aws_data/carla_auto2/CarlaUE4.sh"
     os.environ['CARLA_VERSION'] = '0.9.auto2'
@@ -83,7 +83,7 @@ def process_collect(list_of_configs, port, gpu,
                 t = threading.Thread(target=lambda: os.system(" ".join(cmd)))
                 t.start()
 
-                time.sleep(15)
+                time.sleep(60)
 
             if drive("", driver_conf, this_name, 0):
                 count = 0

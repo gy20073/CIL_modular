@@ -227,7 +227,7 @@ class CarlaHuman(Driver):
             self.carla.connect()
         else:
             self.carla = CarlaClient(self._host, int(self._port))
-            self.carla.set_timeout(2000)
+            self.carla.set_timeout(5000)
 
         self._reset()
 

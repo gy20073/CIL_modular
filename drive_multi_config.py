@@ -1,13 +1,18 @@
 import sys, os, time, threading
 
-TownName = "RFS_MAP"
+TownName = "Exp_Town"
 start_port=2200
 available_gpus = [0]
-num_processes = 2
+num_processes = 1
 use_docker = False
 # 9cam_agent_carla_acquire_rc_batch_090, change its contents
 
-if TownName == "Town03" or TownName == "Town04" or TownName == "RFS_MAP":
+if TownName == "Exp_Town":
+    CARLA_PATH = "/scratch/yang/aws_data/carla_095/CarlaUE4.sh"
+    os.environ['CARLA_VERSION'] = '0.9.5'
+    docker_path = None
+    town_within_path = "Exp_Town"
+elif TownName == "Town03" or TownName == "Town04" or TownName == "RFS_MAP":
     CARLA_PATH = "/scratch/yang/aws_data/carla_auto2/CarlaUE4.sh"
     os.environ['CARLA_VERSION'] = '0.9.auto2'
     docker_path = "gy20073/carla_auto2:latest"
@@ -90,59 +95,12 @@ def process_collect(list_of_configs, port, gpu,
 
 
 if __name__ == "__main__":
-    collect_all = False
-
-    driver_config = "9cam_agent_carla_acquire_rc_batch"
-    driver_config = "9cam_agent_carla_acquire_rc_batch_090"
-    if collect_all:
-        driver_config = "9cam_agent_carla_acquire_rc_batch_allsensors"
-
-    if collect_all:
-        TownName = "Town01"
+    driver_config = "9cam_agent_carla_acquire_rc_batch_095"
 
     generated_config_cache_path = "./drive_interfaces/carla/auto_gen_configs/"
     tag = "default"
     # TODO: tune those base config
-    template_path = "./drive_interfaces/carla/yang_template.ini"
-    if collect_all:
-        template_path = "./drive_interfaces/carla/yang_template_all.ini"
-    template_path = "./drive_interfaces/carla/yang_template_3cams.ini"
     template_path = "./drive_interfaces/carla/yang_template_3cams_103.ini"
-
-    # TODO: tune those numbers
-    # (propertyName, potential value)
-    configs = [("RotationPitch", "0"), # This is the default one
-               ("RotationPitch", "5"),
-               ("RotationPitch", "-5"),
-               ("ImageSizeX", "600"),
-               ("ImageSizeX", "700"),
-               ("ImageSizeX", "900"),
-               ("ImageSizeX", "1000"),
-               ("ImageSizeX", "1100"),
-               ("ImageSizeX", "1200"),
-               ("PositionZ", "0.5"),
-               ("PositionZ", "1.5")]
-    weather_range = range(1, 14)
-    # all the input params ends here
-    configs = [("RotationPitch", "0")]
-    weather_range = range(14)
-    # a simple test config ends here
-    configs = [("RotationPitch", "0"),  # This is the default one
-               ("RotationPitch", "5"),
-               ("RotationPitch", "-5"),
-               ("ImageSizeX", "700"),
-               ("ImageSizeX", "800"),
-               ("PositionZ", "1.4"),
-               ("PositionZ", "1.8")]
-    weather_range = range(1, 14)
-
-    if collect_all:
-        configs = [("RotationPitch", "0") ]
-
-    # a test case
-    configs = [("RotationPitch", "0")]
-    weather_range = [1]
-    # end of test case
 
     # TODO: check whether those are implemented to all 3 cameras
     # the noiser setting

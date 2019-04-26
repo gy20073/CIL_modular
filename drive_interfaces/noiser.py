@@ -5,6 +5,10 @@ if __CARLA_VERSION__ == '0.9.X':
     sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')
     import carla
     from carla import VehicleControl as VehicleControl
+elif __CARLA_VERSION__ == '0.9.5':
+    sys.path.append('drive_interfaces/carla/carla_client_095/carla-0.9.5-py2.7-linux-x86_64.egg')
+    import carla
+    from carla import VehicleControl as VehicleControl
 elif __CARLA_VERSION__.startswith("0.9"):
     sys.path[0:0]=['/scratch/yang/aws_data/carla_auto2/PythonAPI/carla-0.9.1-py2.7-linux-x86_64.egg']
     import carla
@@ -141,7 +145,7 @@ class Noiser(object):
                 minmax = lambda x: max(x, min(x, 1.0), -1.0)
                 steer_noisy = minmax(action.steer + self.get_noise() * (30 / (1.5 * speed_kmh + 5)))
 
-                if __CARLA_VERSION__ == '0.9.X' or __CARLA_VERSION__.startswith("0.9"):
+                if __CARLA_VERSION__.startswith("0.9"):
                     noisy_action = VehicleControl(action.throttle, action.steer, action.brake, action.hand_brake, action.reverse)
                 else:
                     noisy_action = copy.deepcopy(action)

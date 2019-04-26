@@ -21,13 +21,22 @@ if __CARLA_VERSION__ == '0.8.X':
 else:
     if __CARLA_VERSION__ == '0.9.X':
         sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')
+    elif __CARLA_VERSION__ == '0.9.5':
+        sys.path.append('drive_interfaces/carla/carla_client_095/carla-0.9.5-py2.7-linux-x86_64.egg')
+        #from agents.navigation.basic_agent import BasicAgent
+        #from agents.navigation.roaming_agent import RoamingAgent
     else:
         sys.path[0:0]=['/scratch/yang/aws_data/carla_auto2/PythonAPI/carla-0.9.1-py2.7-linux-x86_64.egg']
         print(sys.path)
     import carla
     from carla import Client as CarlaClient
     from carla import VehicleControl as VehicleControl
+
+    # Note: for carla 0.9.5, one should import from agents.navigation.roaming_agent import RoamingAgent, insead of the
+    # following thing, but since the newer version has removed support for the command, I decide to stay with the
+    # original version for now.
     from Navigation.roaming_agent import *
+
 
 from driver import Driver
 
@@ -280,6 +289,8 @@ class CarlaHuman(Driver):
         if vehicle is not None:
             self._actor_list.append(vehicle)
             if auto_drive:
+                # TODO: this won't work in 0.9.5 with Exp_Town
+                # however, we don't have traffic in that town right now, so we just ignore this
                 vehicle.set_autopilot()
             #print('spawned %r at %s' % (vehicle.type_id, transform.location))
             return True
@@ -343,10 +354,11 @@ class CarlaHuman(Driver):
                 self._current_weather = self._weather_list[int(self._driver_conf.weather)-1]
             else:
                 self._current_weather = random.choice(self._weather_list)
-            # select one of the random starting points previously selected
-            start_positions = np.loadtxt(self._driver_conf.positions_file, delimiter=',')
-            if len(start_positions.shape) == 1:
-                start_positions = start_positions.reshape(1, len(start_positions))
+            if not self._autopilot:
+                # select one of the random starting points previously selected
+                start_positions = np.loadtxt(self._driver_conf.positions_file, delimiter=',')
+                if len(start_positions.shape) == 1:
+                    start_positions = start_positions.reshape(1, len(start_positions))
 
 
             # TODO: Assign random position from file
@@ -378,6 +390,9 @@ class CarlaHuman(Driver):
 
             # @todo Needs to be converted to list to be shuffled.
             spawn_points = list(self._world.get_map().get_spawn_points())
+            if len(spawn_points) == 0:
+                spawn_points = [carla.Transform()]
+                
             random.shuffle(spawn_points)
 
             print('found %d spawn points.' % len(spawn_points))

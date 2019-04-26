@@ -12,7 +12,9 @@ __CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.8.X')
 if __CARLA_VERSION__ == '0.8.X':
     sys.path.append('drive_interfaces/carla/carla_client')
     from carla import image_converter
-
+elif __CARLA_VERSION__ == '0.9.5':
+    sys.path.append('drive_interfaces/carla/carla_client_095')
+    sys.path.append('drive_interfaces/carla/carla_client_095/carla-0.9.5-py2.7-linux-x86_64.egg')
 else:
     sys.path.append('drive_interfaces/carla/carla_client_090')
     sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')

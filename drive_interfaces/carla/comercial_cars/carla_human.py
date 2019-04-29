@@ -472,7 +472,11 @@ class CarlaHuman(Driver):
                 self._agent_autopilot = RoamingAgent(self._vehicle)
 
             if self.collision_sensor is not None:
+                print("before destroying the sensor")
                 self.collision_sensor.sensor.destroy()
+                print("after destroying the sensor")
+            else:
+                print("collision sensor is None")
             self.collision_sensor = CollisionSensor(self._vehicle, self)
 
             print("after spawning the collision sensor")

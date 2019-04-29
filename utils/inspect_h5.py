@@ -7,7 +7,7 @@ from common_util import plot_waypoints_on_image
 num_images_per_h5 = 200
 temp_folder = "./temp/"
 cluster_center = "/data/yang/code/aws/CIL_modular/utils/cluster_centers.npy.v4"
-#only_straight = True
+only_straight = False
 
 def write_text_on_image(image, string, fontsize=10):
     image = image.copy()

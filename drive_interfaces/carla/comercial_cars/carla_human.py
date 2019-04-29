@@ -465,6 +465,8 @@ class CarlaHuman(Driver):
 
                 self._vehicle.set_transform(START_POSITION)
 
+            print("after spawning the ego vehicle")
+
             if self._autopilot:
                 # Nope: self._vehicle.set_autopilot()
                 self._agent_autopilot = RoamingAgent(self._vehicle)
@@ -472,6 +474,8 @@ class CarlaHuman(Driver):
             if self.collision_sensor is not None:
                 self.collision_sensor.sensor.destroy()
             self.collision_sensor = CollisionSensor(self._vehicle, self)
+
+            print("after spawning the collision sensor")
 
             # set weather
             weather = getattr(carla.WeatherParameters, self._current_weather)
@@ -611,9 +615,7 @@ class CarlaHuman(Driver):
                         reset_because_stuck = True
                     else:
                         reset_because_stuck = False
-                    if np.abs(self._vehicle.get_vehicle_control().steer) > 0.95:
-                        #print("reset because of large steer")
-                        pass
+
                     if self._last_collided:
                         print("reset becuase collision")
 

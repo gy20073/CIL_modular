@@ -3,14 +3,14 @@ from time import sleep
 import math
 
 if __name__ == "__main__":
-    gpus_agent = [7]
-    gpus_carla = [7]
-    gpus_perception = [7]
+    gpus_agent = [1,2,3]
+    gpus_carla = [0]
+    gpus_perception = [1,2,3]
     num_perception = 1
-    exp_id = "mm45_v4_wp2town3cam_parallel_control_2p3town"
-    weather_batch_size = 14
+    exp_id = "mm45_v4_SqnoiseShoulder_rfsv6_notown0102"
+    weather_batch_size = 14 #7
     test_name = "YangExp3cam"
-    town_list = ["Town02"]
+    town_list = ["Town02"]#["Town01", "Town02"]
     #test_name = "YangExp3camFov90"
     #test_name = "YangExp3camGTA"
     # TODO make a new test setting to mimic the camera locations

@@ -527,9 +527,9 @@ class CarlaMachine(Driver):
             acc = 0.0
 
         control = lambda x: x
-        control.steer = steer
-        control.throttle = acc
-        control.brake = brake
+        control.steer = float(steer)
+        control.throttle = float(acc)
+        control.brake = float(brake)
         control.hand_brake = 0
         control.reverse = 0
 
@@ -545,6 +545,7 @@ class CarlaMachine(Driver):
         if save_image_to_disk:
             self.save_image(to_be_visualized)
 
+        print("steer", control.steer, "throttle", control.throttle, "brake", control.brake)
         if return_vis:
             return control, to_be_visualized
         else:

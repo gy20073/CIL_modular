@@ -4,7 +4,7 @@ import numpy as np
 
 dataset_ids = ["steer103_v5_way_v2", 'steer103_v5_way_v2_town02', 'rfs_sim_v6_way']
 def changing(self):
-    self.perception_gpus = [0, 1]
+    self.perception_gpus = [0, 3]
     self.map_pos_noise_std = 2.0
     self.perception_num_replicates["seg"] = 2
 

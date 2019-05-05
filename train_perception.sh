@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-export CUDA_VISIBLE_DEVICES=2
+export CUDA_VISIBLE_DEVICES=1
 ulimit -Sn 600000
 python chauffeur.py train \
-    -e mm45_v4_SqnoiseShoulder_rfsv6_withTL \
+    -e mm45_v4_SqnoiseShoulder_rfsv6_goodv2map_datarfsv2 \
     -m 0.05

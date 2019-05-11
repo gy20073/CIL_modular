@@ -248,6 +248,12 @@ class Dataset(object):
 
         # self._targets is the targets variables concatenated
         # Get the targets
+
+        # merge the follow and the straights in targets
+        k = self._config.variable_names.index('Control')
+        self._targets[(self._targets[:, k]).astype(np.int) == 5, k] = 2.0
+        # end of the merging
+
         target_selected = self._targets[generated_ids, :]
         target_selected = target_selected.T
 

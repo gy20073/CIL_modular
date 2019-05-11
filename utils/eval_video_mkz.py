@@ -18,13 +18,13 @@ def get_driver_config():
     return driver_conf
 
 # TODO begin the configs
-exp_id = "mm45_v4_PcSensordropLessmap_rfsv45_extra_structure_noise_lanecolor_drivable"
-short_id = "drivable"
+exp_id = "mm45_v4_SqnoiseShoulder_rfsv6_goodv2map_lessmap"
+short_id = "v2lessmap"
 use_left_right = True
-video_path = "/scratch/yang/aws_data/mkz/recordings/11.28-2/video_enable.avi"
-pickle_path = "/scratch/yang/aws_data/mkz/recordings/11.28-2/video_enable.pkl"
-gpu = [5]
-offset = 80 # actually around 82 to 84
+video_path = "/data1/yang/aws_data/mkz/2019-05-05_23-09-19/video_enable.mp4"
+pickle_path = "/data1/yang/aws_data/mkz/2019-05-05_23-09-19/video_enable.pkl"
+gpu = [0]
+offset = 0 # actually around 82 to 84
 # TODO end of the config
 
 # The color encoding is: blue predicted, green ground truth, red approximated ground truth
@@ -54,6 +54,7 @@ def loop_over_video(path, func, temp_down_factor=1, batch_size=1, output_name="o
     while (cap.isOpened()):
         ret, frame = cap.read()
         if not ret:
+            print("breaking")
             break
 
         if i % temp_down_factor:
@@ -102,9 +103,12 @@ def callback(frames, extra_info):
         speed_ms, condition = extra_info
         pos = None
         ori = None
-    else:
+    elif len(extra_info) == 4:
         # we require that the pos and ori should be directly input to the compute action function
         speed_ms, condition, pos, ori = extra_info
+    else:
+        # we require that the pos and ori should be directly input to the compute action function
+        speed_ms, condition, pos, ori, gps = extra_info
 
     waypoints, to_be_visualized = driving_model.compute_action(sensors, speed_ms*3.6,
                                                                key_to_value(condition),

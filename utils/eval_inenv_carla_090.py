@@ -1,4 +1,4 @@
-import sys
+import sys, random
 sys.path.append('../drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')
 import carla, cv2, threading, copy, os, inspect, math
 import numpy as np
@@ -16,14 +16,19 @@ from carla_machine import *
 
 
 # some configs
+# start carla_rfs/CarlaUE4.sh first
 condition=5.0
 test_steps = 100
-exp_id="mm45_v4_PcSensordropLessmap_rfsv45_extra_structure_noise_lanecolor_drivable"
+exp_id="mm45_v4_SqnoiseShoulder_rfsv6_goodv2map_lessmap"
 pid_p = 0.5 # 1.0
 
 gpu=1
 video_output_name="eval_output"
-extra_explore_file = "town03_intersections/positions_file_RFS_MAP.extra_explore_v3.txt"
+#extra_explore_file = "town03_intersections/positions_file_RFS_MAP.extra_explore_v3.txt" # the shoulder problem
+extra_explore_file = "town03_intersections/positions_file_RFS_MAP.parked_car_attract.txt" # the parking problem
+
+add_parked_car = True
+parking_locations = "town03_intersections/positions_file_RFS_MAP.parking_v2.txt"
 # end of all configs
 
 data_buffer_lock = threading.Lock()
@@ -41,7 +46,7 @@ class CallBack():
 
         array = np.reshape(array, (image.height, image.width, 4))
         array = array[:, :, :3]
-        array = array[:, :, ::-1]
+        #array = array[:, :, ::-1] # we actually need bgr, instead of rgb
 
         data_buffer_lock.acquire()
         self._obj._data_buffers[self._tag] = array
@@ -98,6 +103,7 @@ class Carla090Eval():
         self._camera_right.listen(CallBack('CameraRight', self))
 
 
+
     def __init__(self,
                  host='localhost',
                  port=2000,
@@ -107,6 +113,14 @@ class Carla090Eval():
         self._client = carla.Client(host, port)
         self._client.set_timeout(2.0)
         self._world = self._client.get_world()
+
+        blueprints = self._world.get_blueprint_library().filter('vehicle')
+        self.parked_vehicles = []
+        if add_parked_car:
+            parking_poses = get_parking_locations(parking_locations, z_default=3.0)
+            for pos in parking_poses:
+                v = self._world.try_spawn_actor(np.random.choice(blueprints), pos)
+                self.parked_vehicles.append(v)
 
         # load the trained model
         self.load_trained_model(exp_id, gpu)
@@ -168,7 +182,7 @@ class Carla090Eval():
         cv2.imshow('viz', image[::2,::2,::-1])
 
     def save_to_disk(self, to_be_viz, down_factor=2):
-        to_be_viz = to_be_viz[::down_factor, ::down_factor, :]
+        to_be_viz = to_be_viz[::down_factor, ::down_factor, ::-1]
 
         if not self._video_init:
             fourcc = cv2.VideoWriter_fourcc(*'DIVX')
@@ -218,6 +232,9 @@ class Carla090Eval():
 
     def __del__(self):
         self.driving_model.destroy()
+        for v in self.parked_vehicles:
+            if v is not None:
+                v.destroy()
 
 
 def get_parking_locations(filename, z_default=0.0):
@@ -231,7 +248,7 @@ def get_parking_locations(filename, z_default=0.0):
     return ans
 
 
-poses = get_parking_locations(extra_explore_file, 3.0)
+poses = get_parking_locations(extra_explore_file, z_default=3.0)
 
 eval_instance = Carla090Eval(exp_id=exp_id, gpu=gpu)
 

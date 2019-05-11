@@ -6,8 +6,8 @@ if __name__ == "__main__":
     gpus_agent = [1,2,3]
     gpus_carla = [0]
     gpus_perception = [1,2,3]
-    num_perception = 1
-    exp_id = "mm45_v4_SqnoiseShoulder_rfsv6_notown0102"
+    num_perception = 2
+    exp_id = "mm45_v4_SqnoiseShoulder_rfsv6_withTL_lessmap"
     weather_batch_size = 14 #7
     test_name = "YangExp3cam"
     town_list = ["Town02"]#["Town01", "Town02"]

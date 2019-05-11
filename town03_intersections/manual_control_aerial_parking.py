@@ -27,6 +27,7 @@ import sys
 import math
 
 sys.path.append('../drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')
+#sys.path.append('../drive_interfaces/carla/carla_client_095/carla-0.9.5-py2.7-linux-x86_64.egg')
 '''
 sys.path.append(
     'PythonAPI/carla-0.9.0-py%d.%d-linux-x86_64.egg' % (sys.version_info.major,

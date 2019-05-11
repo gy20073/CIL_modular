@@ -24,7 +24,7 @@ STARTING in a moment...
 from __future__ import print_function
 
 import sys
-
+'''
 sys.path.append(
     'PythonAPI/carla-0.9.0-py%d.%d-linux-x86_64.egg' % (sys.version_info.major,
                                                         sys.version_info.minor))
@@ -32,6 +32,8 @@ sys.path.append(
 sys.path.append(
     'PythonAPI/carla-0.9.1-py%d.%d-linux-x86_64.egg' % (sys.version_info.major,
                                                         sys.version_info.minor))
+'''
+sys.path.append('../drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')
 
 import carla
 import cv2
@@ -73,7 +75,7 @@ except ImportError:
 
 # the configuration begin
 DELTA_POS = 1
-save_map_mode = True
+save_map_mode = False
 
 if save_map_mode:
     WINDOW_WIDTH = 5000

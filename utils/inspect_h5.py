@@ -7,7 +7,7 @@ from common_util import plot_waypoints_on_image
 num_images_per_h5 = 200
 temp_folder = "./temp/"
 cluster_center = "/data/yang/code/aws/CIL_modular/utils/cluster_centers.npy.v4"
-
+only_straight = False
 
 def write_text_on_image(image, string, fontsize=10):
     image = image.copy()
@@ -50,6 +50,10 @@ def sample_images_from_h5(path, temp, show_all, is3, pure_video):
         counter = 0
         key = 'CameraMiddle'
         for imid in range(f[key].shape[0]):
+            if only_straight:
+                if int(f["targets"][imid, 24]) !=5:
+                    continue
+
             path = os.path.join(temp, str(counter).zfill(5)+".jpg")
 
             image = cv2.imdecode(f[key][imid], 1)

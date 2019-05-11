@@ -742,7 +742,11 @@ def game_loop(args):
             agent = RoamingAgent(world.player)
         else:
             agent = BasicAgent(world.player)
-            spawn_point = world.map.get_spawn_points()[0]
+            list = world.map.get_spawn_points()
+            if list == []:
+                spawn_point = carla.Transform()
+            else:
+                spawn_point = list[0]
             agent.set_destination((spawn_point.location.x,
                                    spawn_point.location.y,
                                    spawn_point.location.z))

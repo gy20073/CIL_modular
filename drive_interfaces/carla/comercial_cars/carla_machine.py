@@ -241,7 +241,6 @@ class CarlaMachine(Driver):
     def reshape_visualization(self, out_vis, map, nrow, ncol):
         # out_vis is an array of visualization for all sensors, typically 3 sensors
         # nrow, ncol descirbe the dimension of each element in out_vis
-
         if nrow == 1 and ncol == 2 and len(out_vis)==3:
             # the most common config for the seg only, and 3 cameras
             # output target is first row images, second row
@@ -268,10 +267,20 @@ class CarlaMachine(Driver):
             for viz in out_vis:
                 single_H = viz.shape[0] // 2
                 single_W = viz.shape[1] // 2
+                '''
+                # this is for drivable area
                 trans=np.concatenate((viz[:viz.shape[0] // 2, :viz.shape[1] // 2, :],
                                       viz[:viz.shape[0] // 2, viz.shape[1] // 2: , :],
                                       viz[viz.shape[0] // 2:, :viz.shape[1] // 2, :]), axis=0)
+                '''
+                # this is for seg+det
+                trans = np.concatenate((viz[:viz.shape[0] // 2, :viz.shape[1] // 2, :],
+                                        viz[viz.shape[0] // 2:, viz.shape[1] // 2:, :],
+                                        viz[:viz.shape[0] // 2, viz.shape[1] // 2:, :],
+                                        ), axis=0)
+
                 transposed.append(trans)
+
             out = np.concatenate(transposed, axis=1)
             out = np.pad(out, ((0, single_H), (0,0), (0,0)), 'constant')
             if map is not None:
@@ -527,9 +536,9 @@ class CarlaMachine(Driver):
             acc = 0.0
 
         control = lambda x: x
-        control.steer = steer
-        control.throttle = acc
-        control.brake = brake
+        control.steer = float(steer)
+        control.throttle = float(acc)
+        control.brake = float(brake)
         control.hand_brake = 0
         control.reverse = 0
 
@@ -545,6 +554,7 @@ class CarlaMachine(Driver):
         if save_image_to_disk:
             self.save_image(to_be_visualized)
 
+        print("steer", control.steer, "throttle", control.throttle, "brake", control.brake)
         if return_vis:
             return control, to_be_visualized
         else:

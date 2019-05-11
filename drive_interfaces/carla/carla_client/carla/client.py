@@ -135,6 +135,16 @@ class CarlaClient(object):
         """
         if isinstance(args[0] if args else None, carla_protocol.Control):
             pb_message = args[0]
+        elif len(args) > 0 and hasattr(args[0], "steer") and \
+             hasattr(args[0], "throttle") and hasattr(args[0], "brake") and hasattr(args[0], "hand_brake") and \
+             hasattr(args[0], "reverse"):
+            pb_message = carla_protocol.Control()
+            ct = args[0]
+            pb_message.steer = ct.steer
+            pb_message.throttle = ct.throttle
+            pb_message.brake = ct.brake
+            pb_message.hand_brake = ct.hand_brake
+            pb_message.reverse = ct.reverse
         else:
             pb_message = carla_protocol.Control()
             pb_message.steer = kwargs.get('steer', 0.0)

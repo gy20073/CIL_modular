@@ -9,7 +9,7 @@ class configDrive:
         self.path = "/scratch/yang/aws_data/carla_collect/exptown_v1/"  # If path is set go for it , if not expect a name set
 
         # data collection related
-        self.city_name = 'Exp_Town'
+        self.city_name = 'Town05'
         self.carla_config = None # This will be filled by the caller
         # collect method
         self.autopilot = True

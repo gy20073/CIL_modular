@@ -415,7 +415,7 @@ class CarlaMachine(Driver):
             #print("compute logits and resizing takes", time.time() - t3)
 
         t4 = time.time()
-
+        predicted_speed = None
         if (self._train_manager._config.control_mode == 'single_branch_wp'):
             # Yang: use the waypoints to predict the steer, in theory PID controller, but in reality just P controller
             # TODO: ask, only the regression target is different, others are the same
@@ -474,7 +474,7 @@ class CarlaMachine(Driver):
                     return waypoints, to_be_visualized
 
         elif (self._train_manager._config.control_mode == 'single_branch_yang_wp_stack'):
-            waypoints, steer, acc, brake, real_predicted, onroad = \
+            waypoints, steer, acc, brake, predicted_speed, onroad = \
                 self._control_function(image_input, speed_kmh, direction,
                                        self._config, self._sess, self._train_manager, map=map)
 
@@ -541,11 +541,14 @@ class CarlaMachine(Driver):
         control.brake = float(brake)
         control.hand_brake = 0
         control.reverse = 0
+        control.predicted_speed = float(predicted_speed)
 
         # print all info on the image
         extra = "\nSteer {:.2f} \nThrottle {:.2f} \nBrake {:.2f}\n".format(float(steer), float(acc), float(brake))
         if hasattr(self._config, "loss_onroad"):
             extra += "Onroad {:.2f} {:.2f}\n".format(float(onroad[0, 0]), float(onroad[0, 1]))
+        if predicted_speed is not None:
+            extra += "Predicted Speed {:.2f} m/s \n".format(float(predicted_speed)/3.6)
 
         t5 = time.time()
         to_be_visualized = self.annotate_image(to_be_visualized, direction, extra+extra_extra)

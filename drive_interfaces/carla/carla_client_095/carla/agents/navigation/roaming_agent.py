@@ -29,7 +29,13 @@ class RoamingAgent(Agent):
         super(RoamingAgent, self).__init__(vehicle)
         self._proximity_threshold = 10.0  # meters
         self._state = AgentState.NAVIGATING
-        self._local_planner = LocalPlanner(self._vehicle)
+        args_lateral_dict = {
+            'K_P': 0.2,
+            'K_D': 0.02,
+            'K_I': 0,
+            'dt': 1.0 / 20.0}
+        self._local_planner = LocalPlanner(self._vehicle,
+                                           opt_dict={'lateral_control_dict':args_lateral_dict})
 
     def run_step(self, debug=False):
         """
@@ -70,5 +76,5 @@ class RoamingAgent(Agent):
             self._state = AgentState.NAVIGATING
             # standard local planner behavior
             control = self._local_planner.run_step()
-
-        return control
+        #TODO: change this to the actual command
+        return control, 2.0 # 0.0 is a placeholder

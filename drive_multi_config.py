@@ -1,13 +1,22 @@
 import sys, os, time, threading
 
-TownName = "Town05"
-start_port=2200
+TownName = "Exp_Town"
+start_port=2400
 available_gpus = [0]
 num_processes = 1
 use_docker = False
+driver_config = "9cam_agent_carla_acquire_rc_batch_095"
+#driver_config = "9cam_agent_carla_acquire_rc_batch_090"
 # 9cam_agent_carla_acquire_rc_batch_090, change its contents
+nightly = False
 
-if TownName == "Exp_Town" or TownName == "Town05":
+
+if TownName == "Exp_Town" and nightly:
+    CARLA_PATH = "/scratch/yang/aws_data/carla_095_nightly/CarlaUE4.sh"
+    os.environ['CARLA_VERSION'] = '0.9.5'
+    docker_path = None
+    town_within_path = TownName
+elif TownName == "Exp_Town" or TownName == "Town05":
     CARLA_PATH = "/scratch/yang/aws_data/carla_095/CarlaUE4.sh"
     os.environ['CARLA_VERSION'] = '0.9.5'
     docker_path = None
@@ -95,8 +104,6 @@ def process_collect(list_of_configs, port, gpu,
 
 
 if __name__ == "__main__":
-    driver_config = "9cam_agent_carla_acquire_rc_batch_095"
-
     generated_config_cache_path = "./drive_interfaces/carla/auto_gen_configs/"
     tag = "default"
     # TODO: tune those base config

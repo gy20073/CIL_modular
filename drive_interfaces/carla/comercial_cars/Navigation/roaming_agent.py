@@ -54,7 +54,7 @@ class RoamingAgent(object):
         lights_list = actor_list.filter("*traffic_light*")
 
         # TODO: disable the vehicle related hazard detection functionality, because we can not handle parking and moving vehicle at the same time
-        '''
+
         # check possible obstacles
         for object in vehicle_list:
             # do not account for the ego vehicle
@@ -73,7 +73,7 @@ class RoamingAgent(object):
                 self._state = AGENT_STATE.BLOCKED_BY_VEHICLE
                 hazard_detected = True
                 break
-        '''
+
 
         # check for the state of the traffic lights
         for object in lights_list:

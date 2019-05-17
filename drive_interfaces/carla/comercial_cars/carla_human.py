@@ -25,7 +25,7 @@ else:
         sys.path.append('drive_interfaces/carla/carla_client_095/carla-0.9.5-py2.7-linux-x86_64.egg')
         sys.path.append('drive_interfaces/carla/carla_client_095/carla')
         #from agents.navigation.basic_agent import BasicAgent
-        #from agents.navigation.roaming_agent import RoamingAgent
+        from agents.navigation.roaming_agent import RoamingAgent
     else:
         sys.path[0:0]=['/scratch/yang/aws_data/carla_auto2/PythonAPI/carla-0.9.1-py2.7-linux-x86_64.egg']
         print(sys.path)
@@ -36,7 +36,7 @@ else:
     # Note: for carla 0.9.5, one should import from agents.navigation.roaming_agent import RoamingAgent, insead of the
     # following thing, but since the newer version has removed support for the command, I decide to stay with the
     # original version for now.
-    from Navigation.roaming_agent import *
+    #from Navigation.roaming_agent import *
 
 
 from driver import Driver
@@ -469,8 +469,9 @@ class CarlaHuman(Driver):
 
             if self._autopilot:
                 # Nope: self._vehicle.set_autopilot()
+                print("before roaming agent")
                 self._agent_autopilot = RoamingAgent(self._vehicle)
-
+            print("after roaming agent")
             if self.collision_sensor is not None:
                 print("before destroying the sensor")
                 self.collision_sensor.sensor.destroy()

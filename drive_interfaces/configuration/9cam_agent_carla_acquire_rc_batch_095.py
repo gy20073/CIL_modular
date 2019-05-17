@@ -9,7 +9,7 @@ class configDrive:
         self.path = "/scratch/yang/aws_data/carla_collect/exptown_v1/"  # If path is set go for it , if not expect a name set
 
         # data collection related
-        self.city_name = 'Town05'
+        self.city_name = 'Exp_Town'
         self.carla_config = None # This will be filled by the caller
         # collect method
         self.autopilot = True
@@ -41,7 +41,7 @@ class configDrive:
         # others
         self.interface = "Carla" # always fixed
 
-        self.noise_frequency = 45
+        self.noise_frequency = 0
         self.noise_intensity = 5
         self.min_noise_time_amount = 0.5
         self.no_noise_decay_stage = True

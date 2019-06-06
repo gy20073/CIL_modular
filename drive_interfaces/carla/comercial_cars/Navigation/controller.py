@@ -106,6 +106,7 @@ class VehiclePIDController():
         """
         speed = get_speed(self._vehicle)
         while speed < 0.5:
+            self._world.tick()
             if not self._world.wait_for_tick(10.0):
                 continue
 

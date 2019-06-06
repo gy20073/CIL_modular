@@ -108,7 +108,8 @@ class LocalPlanner(object):
                                                         args_longitudinal=args_longitudinal_dict)
 
         # vehicles need to be pre activated in order to compensate for the "manual gear" problem
-        self._vehicle_controller.warmup()
+        #self._vehicle_controller.warmup()
+        # it seems like in 0.9.5 we don't have such a problem
 
         # compute initial waypoints
         self._waypoints_queue.append((self._current_waypoint.next(self._sampling_radius)[0], ROAD_OPTIONS.LANEFOLLOW, None))

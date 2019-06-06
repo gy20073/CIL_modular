@@ -772,6 +772,18 @@ def game_loop(args):
         world = World(client.get_world(), hud, args.filter)
         controller = KeyboardControl(world, False)
 
+        print("warm up process to make the vehicle location correct")
+        clock = pygame.time.Clock()
+        for i in range(25):
+            world.world.tick()
+            if not world.world.wait_for_tick(10.0):
+                continue
+
+            world.tick(clock)
+            world.render(display)
+            pygame.display.flip()
+
+
         global agent
         if args.agent == "Roaming":
             print("using the roaming agent")
@@ -787,7 +799,7 @@ def game_loop(args):
                                    spawn_point.location.y,
                                    spawn_point.location.z))
 
-        clock = pygame.time.Clock()
+
 
         while True:
 
@@ -803,7 +815,7 @@ def game_loop(args):
             world.render(display)
             pygame.display.flip()
 
-            control, condition = agent.run_step()
+            control, condition = agent.run_step(debug=True)
             #time.sleep(1.0)
             control.manual_gear_shift = False
             #print("before apply control")

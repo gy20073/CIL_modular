@@ -112,7 +112,18 @@ class LocalPlanner(object):
         # it seems like in 0.9.5 we don't have such a problem
 
         # compute initial waypoints
+
+        loc = self._vehicle.get_location()
+        print("initial location is ", loc.x, loc.y)
+
+        cw = self._current_waypoint
+        print("current waypoint druing init is ", cw.transform.location.x, cw.transform.location.y)
+
         self._waypoints_queue.append((self._current_waypoint.next(self._sampling_radius)[0], ROAD_OPTIONS.LANEFOLLOW, None))
+        tw = self._waypoints_queue[0][0]
+        print("target waypoint during init is ", tw.transform.location.x, tw.transform.location.y)
+
+
         self._target_road_option = ROAD_OPTIONS.LANEFOLLOW
 
         # fill waypoint trajectory queue
@@ -163,6 +174,9 @@ class LocalPlanner(object):
                 else:
                     non_follow_event_happened = False
 
+            #print("last waypoint generation", last_waypoint.transform.location.x, last_waypoint.transform.location.y)
+            #print("during waypoint generation", next_waypoint.transform.location.x, next_waypoint.transform.location.y)
+
             if non_follow_event_happened:
                 # change past
                 NUM_PAST_WP = 5
@@ -198,8 +212,13 @@ class LocalPlanner(object):
 
         # current vehicle waypoint
         self._current_waypoint = self._map.get_waypoint(self._vehicle.get_location())
+        #cw = self._current_waypoint
+        #print("current waypoint is ", cw.transform.location.x, cw.transform.location.y)
+
         # target waypoint
         self._target_waypoint, self._current_road_option, diff_angle = self._waypoints_queue[0]
+        #tw = self._target_waypoint
+        #print("target waypoint is ", tw.transform.location.x, tw.transform.location.y)
 
         global_vars.set(diff_angle)
         #print("------------------------------------------------------------------->diff angle is ", diff_angle)
@@ -234,8 +253,6 @@ class LocalPlanner(object):
         if debug:
             # the original target waypoint
             draw_waypoints(self._vehicle.get_world(), [self._target_waypoint], z=0.5)
-            # the adjusted waypint
-            draw_waypoints_norotation(self._vehicle.get_world(), [adjusted_waypoint], z=0.5)
 
             # the all future waypoint
             wp_queue = []
@@ -244,6 +261,8 @@ class LocalPlanner(object):
                 wp_queue.append([w.transform.location.x, w.transform.location.y])
             draw_waypoints_norotation(self._vehicle.get_world(), wp_queue, z=0.5, color=carla.Color(r=0,g=0,b=255))
 
+            # the adjusted waypint
+            draw_waypoints_norotation(self._vehicle.get_world(), [adjusted_waypoint], z=0.5)
 
         map_option_to_numeric = {
             ROAD_OPTIONS.LANEFOLLOW: 2.0,

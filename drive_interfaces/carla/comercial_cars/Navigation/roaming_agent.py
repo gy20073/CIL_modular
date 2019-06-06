@@ -47,6 +47,8 @@ class RoamingAgent(object):
         hazard_detected = False
         current_location = self._vehicle.get_location()
         vehicle_waypoint = self._map.get_waypoint(self._vehicle.get_location())
+        #print("current position", current_location.x, current_location.y,
+        #      "vehicle waypoint", vehicle_waypoint.transform.location.x, vehicle_waypoint.transform.location.y)
 
         # retrieve relevant elements for safe navigation, i.e.: traffic lights and other vehicles
         actor_list = self._world.get_actors()
@@ -97,7 +99,7 @@ class RoamingAgent(object):
         else:
             self._state = AGENT_STATE.NAVIGATING
             # standard local planner behavior
-            control, command = self._local_planner.run_step()
+            control, command = self._local_planner.run_step(debug)
             self._last_command = command
 
         return control, command

@@ -252,9 +252,9 @@ class PIDLateralController():
         tckx2y = interpolate.interp1d(xs, ys, kind='cubic', fill_value='extrapolate')
         tcky2x = interpolate.interp1d(ys, xs, kind='cubic', fill_value='extrapolate')
 
-        current_future_waypoint = np.array([future_3_waypoint[3].transform.location.x,
-                                            future_3_waypoint[3].transform.location.y])
-        expected_distance = 5.0 # meters
+        current_future_waypoint = np.array([future_3_waypoint[2].transform.location.x,
+                                            future_3_waypoint[2].transform.location.y])
+        expected_distance = 5 # meters
         for i in range(3):
             vec = current_future_waypoint - current
             vec = vec / (np.linalg.norm(vec)+0.01) * expected_distance
@@ -270,6 +270,22 @@ class PIDLateralController():
         return current_future_waypoint
         # TODO: here, visualize the computed waypoint, might be errors.
 
+    def adjust_waypoint2(self, future_3_waypoint):
+        current = self._vehicle.get_transform().location
+        current = np.array([current.x, current.y])
+
+        xs = [x.transform.location.x for x in future_3_waypoint]
+        ys = [x.transform.location.y for x in future_3_waypoint]
+
+        # alpha is the percentage to go for the nearest waypoint
+        alpha = self.distance(current, [xs[0], ys[0]]) / self.distance([xs[0], ys[0]], [xs[1], ys[1]])
+
+        index = 1 # this means average over (index, index+1)
+        prev = np.array([xs[index], ys[index]])
+        next = np.array([xs[index+1], ys[index+1]])
+        adjusted = next * (1 - alpha) + alpha * prev
+        return adjusted
+
     def run_step(self, waypoint):
         """
         Execute one step of lateral control to steer the vehicle towards a certain waypoin.
@@ -281,8 +297,11 @@ class PIDLateralController():
         """
         # this line below adjust waypoint based on the interpolation, but now we have abandoned it
         #adjusted_waypoint = self.adjust_waypoint(waypoint)
-        adjusted_waypoint = waypoint[2] # way into the future waypoint
-        adjusted_waypoint = [adjusted_waypoint.transform.location.x, adjusted_waypoint.transform.location.y]
+
+        adjusted_waypoint = self.adjust_waypoint2(waypoint)
+
+        #adjusted_waypoint = waypoint[1] # way into the future waypoint
+        #adjusted_waypoint = [adjusted_waypoint.transform.location.x, adjusted_waypoint.transform.location.y]
         return self._pid_control(adjusted_waypoint, self._vehicle.get_transform()), adjusted_waypoint
 
     def _pid_control(self, waypoint, vehicle_transform):

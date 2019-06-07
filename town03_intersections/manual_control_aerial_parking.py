@@ -82,14 +82,14 @@ last_recorded_position = None
 
 # the configuration begin
 DELTA_POS = 1
-save_map_mode = False
+save_map_mode = True
 
 if save_map_mode:
-    WINDOW_WIDTH = 5000
-    WINDOW_HEIGHT = 5000
+    WINDOW_WIDTH = 2000
+    WINDOW_HEIGHT = 2000
 else:
-    WINDOW_WIDTH = 800
-    WINDOW_HEIGHT = 800
+    WINDOW_WIDTH = 2000
+    WINDOW_HEIGHT =1000
 
 CAMERA_FOV = 120.0
 CAMERA_POSITION = carla.Transform(location=carla.Location(x=0.5, z=30), rotation=carla.Rotation(roll=0, yaw=0, pitch=-90))
@@ -98,7 +98,7 @@ CAMERA_CAR_CENTER =  carla.Location(x=0.5, z=1.60)
 CAMERA_CAR_ROTATION = carla.Rotation(roll=0.0, pitch=0.0, yaw=0.0)
 CAMERA_CAR_POSITION = carla.Transform(location=CAMERA_CAR_CENTER, rotation=CAMERA_CAR_ROTATION)
 
-TownName = "RFS_MAP"
+TownName = "Exp_Town" #"RFS_MAP"
 output_path = "positions_file_" + TownName + ".txt"
 
 # the configuration ends
@@ -313,6 +313,10 @@ class CarlaGame(object):
             control['z'] -= DELTA_POS
         if keys[K_e]:
             control['z'] += DELTA_POS
+        if keys[K_m]:
+            global save_map_mode
+            save_map_mode = not save_map_mode
+
         if keys[K_m]:
             global DELTA_POS
             if DELTA_POS == 1:

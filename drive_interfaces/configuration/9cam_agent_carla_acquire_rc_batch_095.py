@@ -7,6 +7,7 @@ class configDrive:
         self.host = "127.0.0.1"
         self.port = 2000
         self.path = "/scratch/yang/aws_data/carla_collect/exptown_v1/"  # If path is set go for it , if not expect a name set
+        # TODO: make sure path exists
 
         # data collection related
         self.city_name = 'Exp_Town'
@@ -15,7 +16,6 @@ class configDrive:
         self.autopilot = True
         self.use_planner = True # only useful in carlaHuman, used to randomly walk in the city
         self.noise = "Spike" #"Spike"  # NON CARLA SETTINGS PARAM
-        # TODO: some spike related numbers
 
         self.reset_period = 960 # reset when the system time goes beyond this number
         # Those parameters will override carla_config
@@ -48,5 +48,4 @@ class configDrive:
         self.use_tick = True
 
         if self.city_name == "Exp_Town":
-            #self.parking_position_file = "TODO" #TODO
-            pass
+            self.parking_position_file = "town03_intersections/positions_file_Exp_Town.parking.txt"

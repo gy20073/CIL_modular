@@ -170,8 +170,8 @@ class PIDLongitudinalController():
         self._e_buffer.append(_e)
 
         if len(self._e_buffer) >= 2:
-            _de = (self._e_buffer[-1] - self._e_buffer[-2]) / self._dt
-            _ie = sum(self._e_buffer) * self._dt
+            _de = (self._e_buffer[-1] - self._e_buffer[-2])
+            _ie = sum(self._e_buffer)
         else:
             _de = 0.0
             _ie = 0.0
@@ -325,8 +325,8 @@ class PIDLateralController():
 
         self._e_buffer.append(_dot)
         if len(self._e_buffer) >= 2:
-            _de = (self._e_buffer[-1] - self._e_buffer[-2]) / self._dt
-            _ie = sum(self._e_buffer) * self._dt
+            _de = (self._e_buffer[-1] - self._e_buffer[-2])
+            _ie = sum(self._e_buffer)
         else:
             _de = 0.0
             _ie = 0.0

@@ -85,8 +85,8 @@ DELTA_POS = 1
 save_map_mode = True
 
 if save_map_mode:
-    WINDOW_WIDTH = 2000
-    WINDOW_HEIGHT = 2000
+    WINDOW_WIDTH = 5000
+    WINDOW_HEIGHT = 5000
 else:
     WINDOW_WIDTH = 2000
     WINDOW_HEIGHT =1000

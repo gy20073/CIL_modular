@@ -65,7 +65,7 @@ class LocalPlanner(object):
         self._target_road_option = None
         self._next_waypoints = None
         self._vehicle_controller = None
-        self._waypoints_queue = deque(maxlen=200) # queue with tuples of (waypoint, ROAD_OPTIONS)
+        self._waypoints_queue = deque(maxlen=10) # queue with tuples of (waypoint, ROAD_OPTIONS)
 
         #
         self.init_controller(opt_dict)
@@ -87,8 +87,8 @@ class LocalPlanner(object):
         self._sampling_radius = self._target_speed * 0.5 / 3.6 # 0.5 seconds horizon
         self._min_distance = self._sampling_radius * self.MIN_DISTANCE_PERCENTAGE
         #args_lateral_dict = {'K_P': 1.9, 'K_D': 0.0, 'K_I': 1.4, 'dt': self._dt}
-        args_lateral_dict = {'K_P': 1.0, 'K_D': 0.0, 'K_I': 0.0, 'dt': self._dt}
-        args_longitudinal_dict = {'K_P': 1.0, 'K_D': 0, 'K_I': 0.0, 'dt': self._dt}
+        args_lateral_dict = {'K_P': 1.25, 'K_D': 0.0, 'K_I': 0.0, 'dt': self._dt}
+        args_longitudinal_dict = {'K_P': 0.2, 'K_D': 0, 'K_I': 0.0, 'dt': self._dt}
 
         # parameters overload
         if 'dt' in opt_dict:
@@ -166,7 +166,7 @@ class LocalPlanner(object):
             else:
                 self.count_down = 0
                 # random choice between the possible options
-                road_options_list = retrieve_options(next_waypoints, last_waypoint)
+                road_options_list = retrieve_options(next_waypoints, last_waypoint, self)
                 road_option, diff_angle = random.choice(road_options_list)
                 next_waypoint = next_waypoints[road_options_list.index((road_option, diff_angle))]
                 if road_option in [ROAD_OPTIONS.STRAIGHT, ROAD_OPTIONS.LEFT, ROAD_OPTIONS.RIGHT]:
@@ -219,6 +219,8 @@ class LocalPlanner(object):
         self._target_waypoint, self._current_road_option, diff_angle = self._waypoints_queue[0]
         #tw = self._target_waypoint
         #print("target waypoint is ", tw.transform.location.x, tw.transform.location.y)
+        #if self._current_road_option !=  ROAD_OPTIONS.LANEFOLLOW:
+        #    print("diff angle is ", diff_angle, " and road option is ", self._current_road_option)
 
         global_vars.set(diff_angle)
         #print("------------------------------------------------------------------->diff angle is ", diff_angle)
@@ -252,17 +254,17 @@ class LocalPlanner(object):
 
         if debug:
             # the original target waypoint
-            draw_waypoints(self._vehicle.get_world(), [self._target_waypoint], z=0.5)
+            #draw_waypoints(self._vehicle.get_world(), [self._target_waypoint], z=0.5)
 
             # the all future waypoint
             wp_queue = []
             for wp in self._waypoints_queue:
                 w = wp[0]
                 wp_queue.append([w.transform.location.x, w.transform.location.y])
-            draw_waypoints_norotation(self._vehicle.get_world(), wp_queue, z=0.5, color=carla.Color(r=0,g=0,b=255))
+            #draw_waypoints_norotation(self._vehicle.get_world(), wp_queue, z=0.5, color=carla.Color(r=0,g=0,b=255))
 
             # the adjusted waypint
-            draw_waypoints_norotation(self._vehicle.get_world(), [adjusted_waypoint], z=0.5)
+            #draw_waypoints_norotation(self._vehicle.get_world(), [adjusted_waypoint], z=0.5)
 
         map_option_to_numeric = {
             ROAD_OPTIONS.LANEFOLLOW: 2.0,
@@ -274,7 +276,10 @@ class LocalPlanner(object):
 
         return control, map_option_to_numeric[self._current_road_option]
 
-def retrieve_options(list_waypoints, current_waypoint):
+def carla_to_list(waypoint):
+    return [waypoint.transform.location.x, waypoint.transform.location.y]
+
+def retrieve_options(list_waypoints, current_waypoint, self):
     """
     Compute the type of connection between the current active waypoint and the multiple waypoints present in
     list_waypoints. The result is encoded as a list of ROAD_OPTIONS enums.
@@ -289,8 +294,16 @@ def retrieve_options(list_waypoints, current_waypoint):
         # this is needed because something we are linking to
         # the beggining of an intersection, therefore the
         # variation in angle is small
-        next_next_waypoint = next_waypoint.next(3.0)[0]
+        next_next_waypoint = next_waypoint.next(15.0)[0]
+        '''
+        draw_waypoints_norotation(self._vehicle.get_world(), [carla_to_list(current_waypoint)], z=0.5, color=carla.Color(r=0,g=0,b=100), life_time=30)
+        draw_waypoints_norotation(self._vehicle.get_world(), [carla_to_list(next_waypoint)], z=0.5, color=carla.Color(r=100, g=0, b=0), life_time=30)
+        draw_waypoints_norotation(self._vehicle.get_world(), [carla_to_list(next_next_waypoint)], z=0.5, color=carla.Color(r=0, g=100, b=0), life_time=30)
+        '''
+
         link = compute_connection(current_waypoint, next_next_waypoint)
+
+        #a = raw_input("pauzing")
         options.append(link)
 
     return options
@@ -308,17 +321,15 @@ def compute_connection(current_waypoint, next_waypoint):
              ROAD_OPTIONS.RIGHT
     """
     n_ = next_waypoint.transform.rotation.yaw
-    n_ = n_ % 360.0
 
     c_ = current_waypoint.transform.rotation.yaw
-    c_ = c_ % 360.0
 
-    diff_angle = (n_ - c_) % 180.0
-    if diff_angle < 10.0 or diff_angle > 170.0:
+    diff_angle = (n_ - c_) % 360.0
+    if diff_angle < 20.0 or diff_angle > 340.0:
         return ROAD_OPTIONS.STRAIGHT, diff_angle
-    elif diff_angle > 90.0:
-        print("left because angle is ", diff_angle)
+    elif diff_angle > 180.0:
+        print("left because angle is ", diff_angle, "current yaw ", c_, "next yaw", n_)
         return ROAD_OPTIONS.LEFT, diff_angle
     else:
-        print("right because angle is ", diff_angle)
+        print("right because angle is ", diff_angle, "current yaw ", c_, "next yaw", n_)
         return ROAD_OPTIONS.RIGHT, diff_angle

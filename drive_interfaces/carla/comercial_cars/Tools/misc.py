@@ -28,7 +28,7 @@ def draw_waypoints(world, waypoints, z=0.5):
         end = begin + carla.Location(x=math.cos(angle)*1, y=math.sin(angle)*1)
         world.debug.draw_arrow(begin, end, arrow_size=0.3, life_time=1.0)
 
-def draw_waypoints_norotation(world, waypoints, z=0.5, color=carla.Color(r=0,g=255,b=0)):
+def draw_waypoints_norotation(world, waypoints, z=0.5, color=carla.Color(r=0,g=255,b=0), life_time=0.2):
     """
     Draw a list of waypoints at a certain height given in z.
 
@@ -41,7 +41,7 @@ def draw_waypoints_norotation(world, waypoints, z=0.5, color=carla.Color(r=0,g=2
         begin = carla.Location(x=w[0], y=w[1], z=z)
         angle = math.radians(0.0)
         end = begin + carla.Location(x=math.cos(angle)*0.1, y=math.sin(angle)*0.1)
-        world.debug.draw_arrow(begin, end, arrow_size=0.3, life_time=0.2, color=color)
+        world.debug.draw_arrow(begin, end, arrow_size=0.3, life_time=life_time, color=color)
 
 def get_speed(vehicle):
     """

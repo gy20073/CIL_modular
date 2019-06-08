@@ -64,7 +64,9 @@ try:
 except ImportError:
     raise RuntimeError(
         'cannot import numpy, make sure numpy package is installed')
+global condition
 
+condition = None
 # ==============================================================================
 # -- find carla module ---------------------------------------------------------
 # ==============================================================================
@@ -157,6 +159,12 @@ class World(object):
         while self.player is None:
             spawn_points = self.map.get_spawn_points()
             spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform(carla.Location(x=-11.5, y=-8.0, z=2.0))
+
+            # debug the stop issue
+            spawn_point = carla.Transform(carla.Location(x=90.78, y=-47.74, z=2.0))
+            spawn_point = carla.Transform(carla.Location(x=171, y=-38, z=2.0))
+
+
             self.player = self.world.try_spawn_actor(blueprint, spawn_point)
         # Set up the sensors.
 
@@ -401,6 +409,15 @@ class HUD(object):
         max_col = max(1.0, max(collision))
         collision = [x / max_col for x in collision]
         vehicles = world.world.get_actors().filter('vehicle.*')
+        global condition
+        if not(condition is None):
+            mapping = {2: "straight",
+                       3: "left",
+                       4: "right",
+                       5: "straight"}
+            text = mapping[int(condition)]
+        else:
+            text = "None"
         self._info_text = [
             'Server:  % 16.0f FPS' % self.server_fps,
             'Client:  % 16.0f FPS' % clock.get_fps(),
@@ -434,7 +451,9 @@ class HUD(object):
             'Collision:',
             collision,
             '',
-            'Number of vehicles: % 8d' % len(vehicles)]
+            'Number of vehicles: % 8d' % len(vehicles),
+            '',
+            'Condition % s' % text]
         if len(vehicles) > 1:
             self._info_text += ['Nearby vehicles:']
 
@@ -815,6 +834,7 @@ def game_loop(args):
             world.render(display)
             pygame.display.flip()
 
+            global condition
             control, condition = agent.run_step(debug=True)
             #time.sleep(1.0)
             control.manual_gear_shift = False

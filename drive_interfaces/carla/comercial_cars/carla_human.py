@@ -228,6 +228,10 @@ class CarlaHuman(Driver):
         else:
             self.carla = CarlaClient(self._host, int(self._port))
             self.carla.set_timeout(5000)
+            wd = self.carla.get_world()
+            settings = wd.get_settings()
+            settings.synchronous_mode = True
+            wd.apply_settings(settings)
 
         self._reset()
 
@@ -382,6 +386,10 @@ class CarlaHuman(Driver):
 
 
             self._world = self.carla.get_world()
+            settings = self._world.get_settings()
+            settings.synchronous_mode = True
+            self._world.apply_settings(settings)
+
 
 
             # add traffic
@@ -466,6 +474,14 @@ class CarlaHuman(Driver):
                 self._vehicle.set_transform(START_POSITION)
 
             print("after spawning the ego vehicle")
+
+            print("warm up process to make the vehicle ego location correct")
+            wd = self._world
+            for i in range(25):
+                wd.tick()
+                if not wd.wait_for_tick(10.0):
+                    continue
+            print("warmup finished")
 
             if self._autopilot:
                 # Nope: self._vehicle.set_autopilot()
@@ -751,6 +767,7 @@ class CarlaHuman(Driver):
                 control = self._latest_measurements.player_measurements.autopilot_control
                 print('[Throttle = {}] [Steering = {}] [Brake = {}]'.format(control.throttle, control.steer, control.brake))
             else:
+                self._world.tick()
                 if self._world.wait_for_tick(10.0):
                     control, self._current_command = self._agent_autopilot.run_step()
 

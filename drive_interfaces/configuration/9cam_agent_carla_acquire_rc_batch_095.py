@@ -6,7 +6,7 @@ class configDrive:
         # resource related
         self.host = "127.0.0.1"
         self.port = 2000
-        self.path = "/scratch/yang/aws_data/carla_collect/exptown_v1/"  # If path is set go for it , if not expect a name set
+        self.path = "/scratch/yang/aws_data/carla_collect/exptown_v3_noise5/"  # If path is set go for it , if not expect a name set
         # TODO: make sure path exists
 
         # data collection related
@@ -41,7 +41,7 @@ class configDrive:
         # others
         self.interface = "Carla" # always fixed
 
-        self.noise_frequency = 0
+        self.noise_frequency = 45
         self.noise_intensity = 5
         self.min_noise_time_amount = 0.5
         self.no_noise_decay_stage = True

@@ -37,7 +37,8 @@ class mapping_helper:
         infos = {"rfs": (get_current_folder()+"/data_lanes/human_marked5_"+version+".png", 0.272736441511),
                  "01" : (get_current_folder()+"/data_lanes/Town01Lanes_"+version+".png",   0.1643),
                  "02":  (get_current_folder()+"/data_lanes/Town02Lanes_"+version+".png",   0.1643),
-                 "10": (get_current_folder() + "/data_lanes/rfs_sim_"+version+".png", 0.277045)} # rfs_sim
+                 "10": (get_current_folder() + "/data_lanes/rfs_sim_"+version+".png", 0.277045),
+                 "11": (get_current_folder() + "/data_lanes/exptown_" + version + ".png", 0.145945)} # rfs_sim
         self.maps = {}
         self.output_pixel_size = {}
 
@@ -51,8 +52,14 @@ class mapping_helper:
         self.loc_to_pix = {"rfs": lambda loc: self.loc_to_pix_rfs(loc),
                            "01":  lambda loc: self.loc_to_pix_01_02(loc, "01"),
                            "02":  lambda loc: self.loc_to_pix_01_02(loc, "02"),
-                           "10": lambda loc: self.loc_to_pix_rfs_sim(loc)} # rfs_sim
+                           "10": lambda loc: self.loc_to_pix_rfs_sim(loc),
+                           "11": lambda loc: self.loc_to_pix_exptown(loc)} # rfs_sim
         self.output_physical_size_meter = output_physical_size_meter
+
+    def loc_to_pix_exptown(self, loc):
+        u = 6.848364717542121 * loc[1] + 1267.9073339940535
+        v = -6.851075806443265 * loc[0] + 2504.8267451634106
+        return [int(v), int(u)]
 
     def loc_to_pix_rfs_sim(self, loc):
         u = 3.6090651558073654 * loc[1] + 2500.541076487252
@@ -103,7 +110,7 @@ class mapping_helper:
         elif town_id == "01" or town_id == "02":
             yaw = np.arctan2(-ori[1], ori[0]) - np.pi / 2
             return -yaw
-        elif town_id == "03" or town_id == "04" or town_id == "10": #rfs_sim
+        elif town_id == "03" or town_id == "04" or town_id == "10" or town_id == "11": #rfs_sim
             ori0=np.cos(np.radians(ori[2]))
             ori1=np.sin(np.radians(ori[2]))
             yaw = np.arctan2(-ori1, ori0) - np.pi / 2

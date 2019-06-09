@@ -29,6 +29,7 @@ extra_explore_file = "town03_intersections/positions_file_RFS_MAP.parked_car_att
 
 add_parked_car = True
 parking_locations = "town03_intersections/positions_file_RFS_MAP.parking_v2.txt"
+townid = "10" # "11"
 # end of all configs
 
 data_buffer_lock = threading.Lock()
@@ -173,7 +174,7 @@ class Carla090Eval():
                                                                       save_image_to_disk=False,
                                                                       return_vis=True,
                                                                       return_extra=False,
-                                                                      mapping_support={"town_id": "10", "pos": pos, "ori": ori},
+                                                                      mapping_support={"town_id": townid, "pos": pos, "ori": ori},
                                                                       extra_extra=extra_extra)
         return control, to_be_visualized
 

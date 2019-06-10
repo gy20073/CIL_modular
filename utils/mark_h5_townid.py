@@ -1,10 +1,10 @@
 import h5py, glob
 
 if __name__ == "__main__":
-    input_id = "rfs_sim_v6_way"
-    townid = 10 # is the rfs_sim town
+    input_id = "exptown_v2_noise10_way"
+    townid = 11 # 10 is the rfs_sim town
 
-    base_path = "/data/yang/code/aws/scratch/carla_collect/"+str(input_id)+"/*/data_*.h5"
+    base_path = "/scratch/yang/aws_data/carla_collect/"+str(input_id)+"/*/data_*.h5"
 
     for file in glob.glob(base_path):
         print(file)

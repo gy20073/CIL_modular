@@ -2,7 +2,7 @@ import glob, os
 from imgaug import augmenters as iaa
 import numpy as np
 
-dataset_ids = ['exptown_v2_noise10']
+dataset_ids = ['exptown_v2_noise10_way']
 def changing(self):
     # notown0102
     # less map

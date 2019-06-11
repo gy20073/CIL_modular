@@ -66,6 +66,8 @@ try:
     from pygame.locals import K_z
     from pygame.locals import K_y
 
+    from pygame.locals import K_o
+
 
 except ImportError:
     raise RuntimeError('cannot import pygame, make sure pygame package is installed')
@@ -82,7 +84,7 @@ last_recorded_position = None
 
 # the configuration begin
 DELTA_POS = 1
-save_map_mode = True
+save_map_mode = False
 
 if save_map_mode:
     WINDOW_WIDTH = 5000
@@ -313,10 +315,11 @@ class CarlaGame(object):
             control['z'] -= DELTA_POS
         if keys[K_e]:
             control['z'] += DELTA_POS
-        if keys[K_m]:
+
+        if keys[K_o]:
             global save_map_mode
             save_map_mode = not save_map_mode
-
+        
         if keys[K_m]:
             global DELTA_POS
             if DELTA_POS == 1:

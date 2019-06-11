@@ -138,6 +138,7 @@ class RoamingAgent(object):
 
         # TODO: disable the vehicle related hazard detection functionality, because we can not handle parking and moving vehicle at the same time
 
+        '''
         # check possible obstacles
         for object in vehicle_list:
             # do not account for the ego vehicle
@@ -156,6 +157,7 @@ class RoamingAgent(object):
                 self._state = AGENT_STATE.BLOCKED_BY_VEHICLE
                 hazard_detected = True
                 break
+        '''
 
         light_state, traffic_light = self._is_light_red()
         if light_state:

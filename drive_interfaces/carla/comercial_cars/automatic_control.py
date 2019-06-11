@@ -136,6 +136,21 @@ class World(object):
         self.recording_enabled = False
         self.recording_start = 0
 
+    def get_parking_locations(self, filename, z_default=0.0, random_perturb=False):
+        with open(filename, "r") as f:
+            lines = f.readlines()
+            ans = []
+            for line in lines:
+                x, y, yaw = [float(v.strip()) for v in line.split(",")]
+                if random_perturb:
+                    x += np.random.normal(0, scale=self._driver_conf.extra_explore_location_std)
+                    y += np.random.normal(0, scale=self._driver_conf.extra_explore_location_std)
+                    yaw+=np.random.normal(0, scale=self._driver_conf.extra_explore_yaw_std)
+
+                ans.append(carla.Transform(location=carla.Location(x=x, y=y, z=z_default),
+                                           rotation=carla.Rotation(roll=0, pitch=0, yaw=yaw)))
+        return ans
+
     def restart(self):
         # Keep same camera config if the camera manager exists.
         cam_index = self.camera_manager.index if self.camera_manager is not None else 0
@@ -163,10 +178,21 @@ class World(object):
             # debug the stop issue
             spawn_point = carla.Transform(carla.Location(x=90.78, y=-47.74, z=2.0))
             spawn_point = carla.Transform(carla.Location(x=171, y=-38, z=2.0))
+            spawn_point = carla.Transform(carla.Location(x=-221.69972229, y=151.900115967, z=2.0))
 
 
             self.player = self.world.try_spawn_actor(blueprint, spawn_point)
         # Set up the sensors.
+        if True:
+            # debug the parked car error
+            parking_points = self.get_parking_locations("/home/yang/aws/CIL_modular/town03_intersections/positions_file_Exp_Town.parking.txt")
+            #print(parking_points)
+            for spawn_point in parking_points:
+                bp = random.choice(self.world.get_blueprint_library().filter(self._actor_filter))
+                vehicle = self.world.try_spawn_actor(bp, spawn_point)
+                if vehicle is not None:
+                    vehicle.set_autopilot(False)
+                print(vehicle)
 
         self.collision_sensor = CollisionSensor(self.player, self.hud)
         self.lane_invasion_sensor = LaneInvasionSensor(self.player, self.hud)

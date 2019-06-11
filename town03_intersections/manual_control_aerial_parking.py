@@ -319,7 +319,7 @@ class CarlaGame(object):
         if keys[K_o]:
             global save_map_mode
             save_map_mode = not save_map_mode
-        
+
         if keys[K_m]:
             global DELTA_POS
             if DELTA_POS == 1:

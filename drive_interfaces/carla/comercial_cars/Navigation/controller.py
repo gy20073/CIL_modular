@@ -298,10 +298,10 @@ class PIDLateralController():
         # this line below adjust waypoint based on the interpolation, but now we have abandoned it
         #adjusted_waypoint = self.adjust_waypoint(waypoint)
 
-        adjusted_waypoint = self.adjust_waypoint2(waypoint)
+        #adjusted_waypoint = self.adjust_waypoint2(waypoint)
 
-        #adjusted_waypoint = waypoint[1] # way into the future waypoint
-        #adjusted_waypoint = [adjusted_waypoint.transform.location.x, adjusted_waypoint.transform.location.y]
+        adjusted_waypoint = waypoint[1] # way into the future waypoint
+        adjusted_waypoint = [adjusted_waypoint.transform.location.x, adjusted_waypoint.transform.location.y]
         return self._pid_control(adjusted_waypoint, self._vehicle.get_transform()), adjusted_waypoint
 
     def _pid_control(self, waypoint, vehicle_transform):
@@ -330,5 +330,7 @@ class PIDLateralController():
         else:
             _de = 0.0
             _ie = 0.0
+        output = np.clip( (self._K_P * _dot) + (self._K_D * _de / self._dt) + (self._K_I * _ie * self._dt), -1.0, 1.0)
+        #print("error in lateral {:5.2f}".format(_dot), "derivative {:5.2f}".format(_de), " integration {:5.2f}".format(_ie), "steer is {:5.2f}".format(output))
 
-        return np.clip( (self._K_P * _dot) + (self._K_D * _de / self._dt) + (self._K_I * _ie * self._dt), -1.0, 1.0)
+        return output

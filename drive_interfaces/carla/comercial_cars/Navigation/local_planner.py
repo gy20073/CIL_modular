@@ -87,7 +87,7 @@ class LocalPlanner(object):
         self._sampling_radius = self._target_speed * 0.5 / 3.6 # 0.5 seconds horizon
         self._min_distance = self._sampling_radius * self.MIN_DISTANCE_PERCENTAGE
         #args_lateral_dict = {'K_P': 1.9, 'K_D': 0.0, 'K_I': 1.4, 'dt': self._dt}
-        args_lateral_dict = {'K_P': 1.25, 'K_D': 0.0, 'K_I': 0.0, 'dt': self._dt}
+        args_lateral_dict = {'K_P': 1.0, 'K_D': 0.0, 'K_I': 0.0, 'dt': self._dt}
         args_longitudinal_dict = {'K_P': 0.2, 'K_D': 0, 'K_I': 0.0, 'dt': self._dt}
 
         # parameters overload
@@ -254,17 +254,17 @@ class LocalPlanner(object):
 
         if debug:
             # the original target waypoint
-            #draw_waypoints(self._vehicle.get_world(), [self._target_waypoint], z=0.5)
+            draw_waypoints(self._vehicle.get_world(), [self._target_waypoint], z=0.5)
 
             # the all future waypoint
             wp_queue = []
             for wp in self._waypoints_queue:
                 w = wp[0]
                 wp_queue.append([w.transform.location.x, w.transform.location.y])
-            #draw_waypoints_norotation(self._vehicle.get_world(), wp_queue, z=0.5, color=carla.Color(r=0,g=0,b=255))
+            draw_waypoints_norotation(self._vehicle.get_world(), wp_queue, z=0.5, color=carla.Color(r=0,g=0,b=255))
 
             # the adjusted waypint
-            #draw_waypoints_norotation(self._vehicle.get_world(), [adjusted_waypoint], z=0.5)
+            draw_waypoints_norotation(self._vehicle.get_world(), [adjusted_waypoint], z=0.5)
 
         map_option_to_numeric = {
             ROAD_OPTIONS.LANEFOLLOW: 2.0,

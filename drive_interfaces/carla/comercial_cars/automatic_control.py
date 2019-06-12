@@ -81,7 +81,7 @@ try:
         #from agents.navigation.roaming_agent import RoamingAgent
         from Navigation.roaming_agent import *
     else:
-        sys.path[0:0]=['/scratch/yang/aws_data/carla_auto2/PythonAPI/carla-0.9.1-py2.7-linux-x86_64.egg']
+        sys.path[0:0]=['/home/yang/Downloads/carla_rfs/PythonAPI/carla-0.9.1-py2.7-linux-x86_64.egg']
 
 except IndexError:
     pass
@@ -865,6 +865,12 @@ def game_loop(args):
             #time.sleep(1.0)
             control.manual_gear_shift = False
             #print("before apply control")
+
+            if random.random()<0.1:
+                print("adding noise to the agent.........")
+                control.steer += random.random()
+                control.steer = min(max(control.steer, -1), 1)
+
             world.player.apply_control(control)
             # as soon as the server is ready continue!
 

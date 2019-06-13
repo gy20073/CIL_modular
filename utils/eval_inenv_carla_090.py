@@ -1,8 +1,13 @@
-import sys, random
-sys.path.append('../drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')
-import carla, cv2, threading, copy, os, inspect, math
-import numpy as np
-from carla import VehicleControl as VehicleControl
+# use ./CarlaUE4.sh  Exp_Town -benchmark -fps=5 to start a server first
+import os, sys
+__CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.9.5')
+if __CARLA_VERSION__ == '0.9.X':
+    sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')
+elif __CARLA_VERSION__ == '0.9.5':
+    sys.path.append('drive_interfaces/carla/carla_client_095/carla-0.9.5-py2.7-linux-x86_64.egg')
+    sys.path.append('drive_interfaces/carla/carla_client_095/carla')
+
+import inspect, os, sys
 
 def get_file_real_path():
     abspath = os.path.abspath(inspect.getfile(inspect.currentframe()))
@@ -10,26 +15,32 @@ def get_file_real_path():
 
 driving_model_code_path = os.path.join(os.path.dirname(get_file_real_path()), "../")
 os.chdir(driving_model_code_path)
-sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')
 sys.path.append("drive_interfaces/carla/comercial_cars")
 from carla_machine import *
+
+import sys, random
+import carla, cv2, threading, copy, os, inspect, math
+import numpy as np
+from carla import VehicleControl as VehicleControl
 
 
 # some configs
 # start carla_rfs/CarlaUE4.sh first
-condition=5.0
-test_steps = 100
-exp_id="mm45_v4_SqnoiseShoulder_rfsv6_goodv2map_lessmap"
-pid_p = 0.5 # 1.0
+condition=2.0
+test_steps = 200
+exp_id="mm45_v4_SqnoiseShoulder_exptownv3_notown0102_mergefollowstraight"
+pid_p = 1.0
 
 gpu=1
 video_output_name="eval_output"
+use_specified_starting_points = False # otherwise use the system default starting points
 #extra_explore_file = "town03_intersections/positions_file_RFS_MAP.extra_explore_v3.txt" # the shoulder problem
-extra_explore_file = "town03_intersections/positions_file_RFS_MAP.parked_car_attract.txt" # the parking problem
+#extra_explore_file = "town03_intersections/positions_file_RFS_MAP.parked_car_attract.txt" # the parking problem
+extra_explore_file = "town03_intersections/positions_file_Exp_Town.parking_attract.txt"
 
-add_parked_car = True
+add_parked_car = False
 parking_locations = "town03_intersections/positions_file_RFS_MAP.parking_v2.txt"
-townid = "10" # "11"
+townid = "11" # "11"
 # end of all configs
 
 data_buffer_lock = threading.Lock()
@@ -115,6 +126,11 @@ class Carla090Eval():
         self._client.set_timeout(2.0)
         self._world = self._client.get_world()
 
+        if __CARLA_VERSION__ == '0.9.5':
+            settings = self._world.get_settings()
+            settings.synchronous_mode = True
+            self._world.apply_settings(settings)
+
         blueprints = self._world.get_blueprint_library().filter('vehicle')
         self.parked_vehicles = []
         if add_parked_car:
@@ -196,6 +212,8 @@ class Carla090Eval():
 
     def run(self, condition):
         for i in range(test_steps):
+            if __CARLA_VERSION__ == '0.9.5':
+                self._world.tick()
             self._world.wait_for_tick(10.0)
             data_buffer_lock.acquire()
             image_dict = copy.deepcopy(self._data_buffers)
@@ -249,9 +267,13 @@ def get_parking_locations(filename, z_default=0.0):
     return ans
 
 
-poses = get_parking_locations(extra_explore_file, z_default=3.0)
 
 eval_instance = Carla090Eval(exp_id=exp_id, gpu=gpu)
+
+if use_specified_starting_points:
+    poses = get_parking_locations(extra_explore_file, z_default=3.0)
+else:
+    poses = list(eval_instance._world.get_map().get_spawn_points())
 
 for i in range(len(poses)):
     print("places ", i)

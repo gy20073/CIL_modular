@@ -7,10 +7,10 @@ if __name__ == "__main__":
     gpus_carla = [0]
     gpus_perception = [1,2,3]
     num_perception = 2
-    exp_id = "mm45_v4_SqnoiseShoulder_rfsv6_withTL_lessmap"
+    exp_id = "mm45_v4_SqnoiseShoulder_exptownv3_notown0102_mergefollowstraight"
     weather_batch_size = 14 #7
     test_name = "YangExp3cam"
-    town_list = ["Town02"]#["Town01", "Town02"]
+    town_list = ["Town01"]#["Town01", "Town02"]
     #test_name = "YangExp3camFov90"
     #test_name = "YangExp3camGTA"
     # TODO make a new test setting to mimic the camera locations
@@ -38,7 +38,7 @@ if __name__ == "__main__":
             percep = percep[:-1]
 
 
-            cmd = ["/data1/yang/code/aws/CIL_modular/eval_one.sh",
+            cmd = ["./eval_one.sh",
                    str(gpus_agent[ithread % len(gpus_agent)]),
                    str(gpus_carla[ithread % len(gpus_carla)]),
                    percep,

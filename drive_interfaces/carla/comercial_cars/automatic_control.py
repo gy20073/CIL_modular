@@ -177,8 +177,9 @@ class World(object):
 
             # debug the stop issue
             spawn_point = carla.Transform(carla.Location(x=90.78, y=-47.74, z=2.0))
-            spawn_point = carla.Transform(carla.Location(x=171, y=-38, z=2.0))
-            spawn_point = carla.Transform(carla.Location(x=-221.69972229, y=151.900115967, z=2.0))
+            #spawn_point = carla.Transform(carla.Location(x=171, y=-38, z=2.0))
+            #spawn_point = carla.Transform(carla.Location(x=-221.69972229, y=151.900115967, z=2.0))
+            spawn_point = carla.Transform(carla.Location(x=5.5, y=-8.5, z=2.0))
 
 
             self.player = self.world.try_spawn_actor(blueprint, spawn_point)
@@ -866,7 +867,7 @@ def game_loop(args):
             control.manual_gear_shift = False
             #print("before apply control")
 
-            if random.random()<0.1:
+            if random.random()<0.000:
                 print("adding noise to the agent.........")
                 control.steer += random.random()
                 control.steer = min(max(control.steer, -1), 1)

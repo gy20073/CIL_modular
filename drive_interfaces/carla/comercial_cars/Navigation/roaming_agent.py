@@ -176,6 +176,7 @@ class RoamingAgent(object):
             if object_waypoint.road_id != vehicle_waypoint.road_id or object_waypoint.lane_id != vehicle_waypoint.lane_id:
                 continue
 
+            print("some matched light")
             loc = object.get_location()
             if is_within_distance_ahead(loc, current_location, self._vehicle.get_transform().rotation.yaw,
                                         self._proximity_threshold):
@@ -185,6 +186,8 @@ class RoamingAgent(object):
                     self._state = AGENT_STATE.BLOCKED_RED_LIGHT
                     hazard_detected = True
                     break
+                else:
+                    print("a non red light")
 
 
         if hazard_detected:

@@ -40,6 +40,7 @@ class RoamingAgent(object):
 
         self._last_command = 2.0
 
+        '''
         self._last_red_light_id = None
         self._list_traffic_lights = []
         all_actors = self._world.get_actors()
@@ -50,6 +51,7 @@ class RoamingAgent(object):
                 for pt in area:
                     waypoints.append(self._map.get_waypoint(pt))
                 self._list_traffic_lights.append((_actor, center, area, waypoints))
+        '''
 
     def rotate_point(self, pt, angle):
         x_ = math.cos(math.radians(angle)) * pt.x - math.sin(math.radians(angle)) * pt.y
@@ -134,7 +136,7 @@ class RoamingAgent(object):
         # retrieve relevant elements for safe navigation, i.e.: traffic lights and other vehicles
         actor_list = self._world.get_actors()
         vehicle_list = actor_list.filter("*vehicle*")
-        #lights_list = actor_list.filter("*traffic_light*")
+        lights_list = actor_list.filter("*traffic_light*")
 
         # TODO: disable the vehicle related hazard detection functionality, because we can not handle parking and moving vehicle at the same time
 
@@ -159,6 +161,7 @@ class RoamingAgent(object):
                 break
         '''
 
+        '''
         light_state, traffic_light = self._is_light_red()
         if light_state:
             if debug:
@@ -166,6 +169,23 @@ class RoamingAgent(object):
 
             self._state = AGENT_STATE.BLOCKED_RED_LIGHT
             hazard_detected = True
+        '''
+        # check for the state of the traffic lights
+        for object in lights_list:
+            object_waypoint = self._map.get_waypoint(object.get_location())
+            if object_waypoint.road_id != vehicle_waypoint.road_id or object_waypoint.lane_id != vehicle_waypoint.lane_id:
+                continue
+
+            loc = object.get_location()
+            if is_within_distance_ahead(loc, current_location, self._vehicle.get_transform().rotation.yaw,
+                                        self._proximity_threshold):
+                if object.state == carla.libcarla.TrafficLightState.Red:
+                    if debug:
+                        print('=== RED LIGHT AHEAD [{}] ==> (x={}, y={})'.format(object.id, loc.x, loc.y))
+                    self._state = AGENT_STATE.BLOCKED_RED_LIGHT
+                    hazard_detected = True
+                    break
+
 
         if hazard_detected:
             control = self.emergency_stop()

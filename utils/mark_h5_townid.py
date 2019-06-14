@@ -1,7 +1,7 @@
 import h5py, glob
 
 if __name__ == "__main__":
-    input_id = "exptown_v2_noise10_way"
+    input_id = "exptown_v8_noise10_varyspeed_way"
     townid = 11 # 10 is the rfs_sim town
 
     base_path = "/scratch/yang/aws_data/carla_collect/"+str(input_id)+"/*/data_*.h5"

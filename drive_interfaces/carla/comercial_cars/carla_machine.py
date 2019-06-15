@@ -242,6 +242,15 @@ class CarlaMachine(Driver):
         self.debug_i += 1
         print("output image id is: ", self.debug_i)
 
+    def mypad(self, arr, dim, size):
+        shape = arr.shape
+        os = shape
+        shape = list(shape)
+        shape[dim] = shape[dim] + size
+        out = np.zeros(shape, dtype=arr.dtype)
+        out[:os[0], :os[1], :os[2]] = arr
+        return out
+
     def reshape_visualization(self, out_vis, map, nrow, ncol):
         # out_vis is an array of visualization for all sensors, typically 3 sensors
         # nrow, ncol descirbe the dimension of each element in out_vis
@@ -257,6 +266,7 @@ class CarlaMachine(Driver):
                 transposed.append(trans)
             out = np.concatenate(transposed, axis=1)
             out = np.pad(out, ((0, single_H), (0,0), (0,0)), 'constant')
+            #out = self.mypad(out, 0, single_H)
             if map is not None:
                 map = cv2.resize(map, (single_W, single_H))
                 out[single_H*2:, single_W:single_W*2, :] = map
@@ -287,6 +297,7 @@ class CarlaMachine(Driver):
 
             out = np.concatenate(transposed, axis=1)
             out = np.pad(out, ((0, single_H), (0,0), (0,0)), 'constant')
+            #out = self.mypad(out, 0, single_H)
             if map is not None:
                 map = cv2.resize(map, (single_W, single_H))
                 out[single_H*3:, single_W:single_W*2, :] = map
@@ -300,6 +311,8 @@ class CarlaMachine(Driver):
             single_W = out_vis[0].shape[1] // ncol
             out = np.concatenate(out_vis, axis=1)
             out = np.pad(out, ((0,0), (0, single_W), (0,0)), 'constant')
+            #out = self.mypad(out, 1, single_W)
+
             if map is not None:
                 map = cv2.resize(map, (single_W, single_H))
                 out[:single_H, -single_W:, :] = map
@@ -401,13 +414,18 @@ class CarlaMachine(Driver):
             # here we should add the visualization
             for i in [0,1,2]: #range(self.batch_size):
                 to_be_visualized = self.perception_interface.visualize(image_input,i)
+                #print(to_be_visualized.shape)
                 nrow, ncol = self.perception_interface.get_viz_nrow_ncol()
+                #print(nrow, ncol)
+                #to_be_visualized = np.zeros((30,40,3), dtype=np.uint8)
+                #nrow, ncol = 1, 1
                 out_vis.append(to_be_visualized)
             #print(" visualize takes, ", time.time() - t2)
 
             t3 = time.time()
             # done the visualization
             image_input = self.perception_interface._merge_logits_all_perception(image_input)
+            #image_input = np.zeros((3, 39, 52, 6*9))
 
             BN, H, W, C = image_input.shape
             image_input = np.reshape(image_input, (self.batch_size, BN//self.batch_size, H, W, C))
@@ -417,7 +435,10 @@ class CarlaMachine(Driver):
 
             to_be_visualized, nrow, ncol, main_irow, main_icol = self.reshape_visualization(out_vis, map_viz, nrow, ncol)
             #print("compute logits and resizing takes", time.time() - t3)
-            
+
+            #to_be_visualized=np.zeros((40,50,3), dtype=np.uint8)
+            #main_irow, main_icol = 0,0
+
         t4 = time.time()
         predicted_speed = None
         if (self._train_manager._config.control_mode == 'single_branch_wp'):

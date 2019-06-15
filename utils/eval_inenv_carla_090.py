@@ -27,8 +27,8 @@ from carla import VehicleControl as VehicleControl
 # some configs
 # start carla_rfs/CarlaUE4.sh first
 condition=2.0
-test_steps = 200
-exp_id="mm45_v4_SqnoiseShoulder_exptownv3_notown0102_mergefollowstraight"
+test_steps = 600
+exp_id="mm45_v4_SqnoiseShoulder_exptownv8_notown0102_mergefollowstraight"
 pid_p = 1.0
 
 gpu=1

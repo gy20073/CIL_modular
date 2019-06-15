@@ -1,16 +1,22 @@
 from subprocess import Popen
 from time import sleep
-import math
+import math, argparse
 
 if __name__ == "__main__":
-    gpus_agent = [1,2,3]
+    parser = argparse.ArgumentParser(description='evaluation in parallel')
+    parser.add_argument('-gpu', '--gpu_perception_agent', default="[1,2,3]", help="which gpu to use")
+    parser.add_argument('-expid', '--expid', default="mm45_v4_SqnoiseShoulder_exptownv3_notown0102_mergefollowstraight", help="expid")
+    parser.add_argument('-townid', '--townid', default='["Town01"]', help="which town to run on")
+    args = parser.parse_args()
+
+    gpus_agent = eval(args.gpu_perception_agent)
     gpus_carla = [0]
-    gpus_perception = [1,2,3]
-    num_perception = 2
-    exp_id = "mm45_v4_SqnoiseShoulder_exptownv3_notown0102_mergefollowstraight"
+    gpus_perception = eval(args.gpu_perception_agent)
+    num_perception = 1
+    exp_id = args.expid
     weather_batch_size = 14 #7
     test_name = "YangExp3cam"
-    town_list = ["Town01"]#["Town01", "Town02"]
+    town_list = eval(args.townid) #["Town01", "Town02"]
     #test_name = "YangExp3camFov90"
     #test_name = "YangExp3camGTA"
     # TODO make a new test setting to mimic the camera locations

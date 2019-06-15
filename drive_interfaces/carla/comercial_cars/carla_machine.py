@@ -197,6 +197,10 @@ class CarlaMachine(Driver):
 
     # TODO: change to the agent interface, this depend on the sensor names
     def run_step(self, measurements, sensor_data, direction, target, mapping_support=None):
+        # removing the straight mode at all
+        if int(direction) == 5:
+            direction = 2
+
         sensors = []
         for name in self._config.sensor_names:
             sensors.append(self.to_bgra_array(sensor_data[name]))
@@ -413,7 +417,7 @@ class CarlaMachine(Driver):
 
             to_be_visualized, nrow, ncol, main_irow, main_icol = self.reshape_visualization(out_vis, map_viz, nrow, ncol)
             #print("compute logits and resizing takes", time.time() - t3)
-
+            
         t4 = time.time()
         predicted_speed = None
         if (self._train_manager._config.control_mode == 'single_branch_wp'):

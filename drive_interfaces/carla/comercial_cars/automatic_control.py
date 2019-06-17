@@ -64,9 +64,10 @@ try:
 except ImportError:
     raise RuntimeError(
         'cannot import numpy, make sure numpy package is installed')
-global condition
+global condition, is_noisy
 
 condition = None
+is_noisy = False
 # ==============================================================================
 # -- find carla module ---------------------------------------------------------
 # ==============================================================================
@@ -85,6 +86,9 @@ try:
 
 except IndexError:
     pass
+
+sys.path.append('drive_interfaces')
+from noiser import Noiser
 
 # ==============================================================================
 # -- add PythonAPI for release mode --------------------------------------------
@@ -186,7 +190,7 @@ class World(object):
         # Set up the sensors.
         if True:
             # debug the parked car error
-            parking_points = self.get_parking_locations("/home/yang/aws/CIL_modular/town03_intersections/positions_file_Exp_Town.parking.txt")
+            parking_points = self.get_parking_locations("/home/yang/code/aws/CIL_modular/town03_intersections/positions_file_Exp_Town.parking.txt")
             #print(parking_points)
             for spawn_point in parking_points:
                 bp = random.choice(self.world.get_blueprint_library().filter(self._actor_filter))
@@ -468,7 +472,10 @@ class HUD(object):
                 ('Reverse:', c.reverse),
                 ('Hand brake:', c.hand_brake),
                 ('Manual:', c.manual_gear_shift),
-                'Gear:        %s' % {-1: 'R', 0: 'N'}.get(c.gear, c.gear)]
+                'Gear:        %s' % {-1: 'R', 0: 'N'}.get(c.gear, c.gear),
+                'Noisy:     %s' % ("True" if is_noisy else "False")
+            ]
+
         elif isinstance(c, carla.WalkerControl):
             self._info_text += [
                 ('Speed:', c.speed, 0.0, 5.556),
@@ -845,7 +852,13 @@ def game_loop(args):
                                    spawn_point.location.y,
                                    spawn_point.location.z))
 
-
+        extra_dict = {"frequency": 45,
+                      "intensity": 7.5,
+                      "min_noise_time_amount": 0.5,
+                      "no_noise_decay_stage": True,
+                      "use_tick": True}
+        # unused key is time_amount_multiplier, noise_std, no_time_offset
+        noiser = Noiser("Spike", **extra_dict)
 
         while True:
 
@@ -872,8 +885,17 @@ def game_loop(args):
                 control.steer += random.random()
                 control.steer = min(max(control.steer, -1), 1)
 
-            world.player.apply_control(control)
+            v = world.player.get_velocity()
+            speed_kmh = 3.6 * math.sqrt(v.x ** 2 + v.y ** 2 + v.z ** 2)
+            control = carlaControl_to_lambda(control)
+            action_noisy = noiser.compute_noise(control, speed_kmh)
+            action_noisy = lambda_to_carlaControl(action_noisy)
+            global is_noisy
+            is_noisy = (action_noisy.steer != control.steer)
+            world.player.apply_control(action_noisy)
             # as soon as the server is ready continue!
+
+            time.sleep(0.2)
 
     finally:
         if world is not None:
@@ -885,6 +907,25 @@ def game_loop(args):
 # ==============================================================================
 # -- main() --------------------------------------------------------------
 # ==============================================================================
+
+
+def carlaControl_to_lambda(input):
+    out = lambda x:x
+    out.steer = input.steer
+    out.throttle = input.throttle
+    out.brake = input.brake
+    out.hand_brake = input.hand_brake
+    out.manual_gear_shift = input.manual_gear_shift
+    return out
+
+def lambda_to_carlaControl(input):
+    out = carla.VehicleControl()
+    out.steer = input.steer
+    out.throttle = input.throttle
+    out.brake = input.brake
+    out.hand_brake = input.hand_brake
+    out.manual_gear_shift = input.manual_gear_shift
+    return out
 
 
 def main():

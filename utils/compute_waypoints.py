@@ -4,8 +4,8 @@ import numpy as np
 sys.path.append('drive_interfaces/carla/carla_client')
 
 # TODO change this
-input_id = "exptown_v8_noise10_varyspeed"
-output_id = "exptown_v8_noise10_varyspeed_way"
+input_id = "exptown_v9_noise75"
+output_id = "exptown_v9_noise75_way"
 debug_start = 0
 debug_end= 140000000
 future_time = 2.0 # second

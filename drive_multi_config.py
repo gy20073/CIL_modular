@@ -1,7 +1,7 @@
 import sys, os, time, threading
 
 TownName = "Exp_Town"
-start_port=2500
+start_port=2200
 available_gpus = [0]
 num_processes = 8
 use_docker = False

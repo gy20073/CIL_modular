@@ -98,7 +98,7 @@ class Noiser(object):
 
         if not self.spike_rise_stage and not self.spike_decay_stage:
             # state no noise
-            if self.return_time() - self.second_counter >= 3.0:
+            if self.return_time() - self.second_counter >= 5.0:
                 self.second_counter = self.return_time()
                 if random.randint(0, 60) < self.frequency:
                     self.spike_rise_stage = True

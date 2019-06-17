@@ -3,7 +3,7 @@ import sys, os, time, threading
 TownName = "Exp_Town"
 start_port=2200
 available_gpus = [0]
-num_processes = 8
+num_processes = 1
 use_docker = False
 driver_config = "9cam_agent_carla_acquire_rc_batch_095"
 #driver_config = "9cam_agent_carla_acquire_rc_batch_090"

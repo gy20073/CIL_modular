@@ -184,6 +184,8 @@ class World(object):
             #spawn_point = carla.Transform(carla.Location(x=171, y=-38, z=2.0))
             #spawn_point = carla.Transform(carla.Location(x=-221.69972229, y=151.900115967, z=2.0))
             spawn_point = carla.Transform(carla.Location(x=5.5, y=-8.5, z=2.0))
+            # this point is for parking
+            spawn_point = carla.Transform(carla.Location(x=-221.69972229, y=151.900115967, z=2.0))
 
 
             self.player = self.world.try_spawn_actor(blueprint, spawn_point)
@@ -853,7 +855,7 @@ def game_loop(args):
                                    spawn_point.location.z))
 
         extra_dict = {"frequency": 45,
-                      "intensity": 7.5,
+                      "intensity": 5,
                       "min_noise_time_amount": 0.5,
                       "no_noise_decay_stage": True,
                       "use_tick": True}

@@ -1,11 +1,16 @@
-import h5py, glob, os, math, sys
+import h5py, glob, os, math, sys, argparse
 import numpy as np
+
+parser = argparse.ArgumentParser(description='convert the steer throttle brake to a new waypoint dataset')
+parser.add_argument('-input', '--input', help="input dataset id")
+parser.add_argument('-output', '--output', help="output dataset id")
+args = parser.parse_args()
 
 sys.path.append('drive_interfaces/carla/carla_client')
 
 # TODO change this
-input_id = "exptown_v9_noise75"
-output_id = "exptown_v9_noise75_way"
+input_id = args.input
+output_id = args.output
 debug_start = 0
 debug_end= 140000000
 future_time = 2.0 # second

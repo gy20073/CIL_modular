@@ -897,7 +897,7 @@ def game_loop(args):
             world.player.apply_control(action_noisy)
             # as soon as the server is ready continue!
 
-            time.sleep(0.2)
+            time.sleep(0.05)
 
     finally:
         if world is not None:

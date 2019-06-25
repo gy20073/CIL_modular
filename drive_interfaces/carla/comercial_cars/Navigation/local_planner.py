@@ -65,10 +65,12 @@ class LocalPlanner(object):
         self._target_road_option = None
         self._next_waypoints = None
         self._vehicle_controller = None
-        self._waypoints_queue = deque(maxlen=10) # queue with tuples of (waypoint, ROAD_OPTIONS)
+        self._waypoints_queue = deque(maxlen=40) # queue with tuples of (waypoint, ROAD_OPTIONS)
 
         #
+        self.dis_to_non_follow = 0
         self.init_controller(opt_dict)
+
 
     def __del__(self):
         self._vehicle.destroy()
@@ -163,6 +165,7 @@ class LocalPlanner(object):
                     road_option = self.count_down_value
                     self.count_down -= 1
                 non_follow_event_happened = False
+                self.dis_to_non_follow += 1
             else:
                 self.count_down = 0
                 # random choice between the possible options
@@ -171,15 +174,18 @@ class LocalPlanner(object):
                 next_waypoint = next_waypoints[road_options_list.index((road_option, diff_angle))]
                 if road_option in [ROAD_OPTIONS.STRAIGHT, ROAD_OPTIONS.LEFT, ROAD_OPTIONS.RIGHT]:
                     non_follow_event_happened = True
+                    previous_dis = self.dis_to_non_follow
+                    self.dis_to_non_follow=0
                 else:
                     non_follow_event_happened = False
+                    self.dis_to_non_follow += 1
 
             #print("last waypoint generation", last_waypoint.transform.location.x, last_waypoint.transform.location.y)
             #print("during waypoint generation", next_waypoint.transform.location.x, next_waypoint.transform.location.y)
 
             if non_follow_event_happened:
                 # change past
-                NUM_PAST_WP = 5
+                NUM_PAST_WP = min(previous_dis // 2, 20)
                 for i in range(min(NUM_PAST_WP, len(self._waypoints_queue))):
                     index = -(i+1)
                     wp, option, diff_angle0 = self._waypoints_queue[index]
@@ -191,7 +197,7 @@ class LocalPlanner(object):
                         break
                     '''
 
-                NUM_FUTURE_WP = 8
+                NUM_FUTURE_WP = 20
                 self.count_down = NUM_FUTURE_WP
                 self.count_down_value = road_option
 

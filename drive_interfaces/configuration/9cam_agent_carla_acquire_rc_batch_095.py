@@ -8,7 +8,7 @@ class configDrive:
         # resource related
         self.host = "127.0.0.1"
         self.port = 2000
-        self.path = "/scratch/yang/aws_data/carla_collect/exptown_v19_weather/"  # If path is set go for it , if not expect a name set
+        self.path = "/scratch/yang/aws_data/carla_collect/exptown_v20_park_overexplore/"  # If path is set go for it , if not expect a name set
         if not os.path.exists(self.path):
             os.makedirs(self.path)
 
@@ -20,13 +20,13 @@ class configDrive:
         self.use_planner = True # only useful in carlaHuman, used to randomly walk in the city
         self.noise = "Spike" #"Spike"  # NON CARLA SETTINGS PARAM
 
-        self.reset_period = 960  # reset when the system time goes beyond this number
+        self.reset_period = 960 //40 # reset when the system time goes beyond this number
         # Those parameters will override carla_config
         self.weather = "1" # This will be override by the caller
         self.cars = "50"
         self.pedestrians = "100"
         # TODO: change hash_data_collection
-        self.num_images_to_collect = 600*20 * 3 # how many images to collect in total
+        self.num_images_to_collect = 600*20 * 3  // 5# how many images to collect in total
         self.re_entry = True # True to allow continue collecting the data, this will make changes to the folder structure
 
         # post processing
@@ -45,7 +45,7 @@ class configDrive:
         self.interface = "Carla" # always fixed
 
         self.noise_frequency = 45
-        self.noise_intensity = 7.5 #7.5 for usual ones
+        self.noise_intensity = 5 #7.5 for usual ones
         self.min_noise_time_amount = 0.5
         self.no_noise_decay_stage = True
         self.use_tick = True
@@ -53,8 +53,8 @@ class configDrive:
         if self.city_name == "Exp_Town":
             self.parking_position_file = "town03_intersections/positions_file_Exp_Town.parking.txt"
 
-            self.extra_explore_prob = 0.0  # now for debugging purpose, let all of them be the extra positions file
-            #self.extra_explore_position_file = "town03_intersections/positions_file_Exp_Town.parking_attract.txt"
-            self.extra_explore_position_file = "town03_intersections/position_file_Exp_Town.shoulder.txt"
+            self.extra_explore_prob = 1.0  # now for debugging purpose, let all of them be the extra positions file
+            self.extra_explore_position_file = "town03_intersections/positions_file_Exp_Town.parking_attract.txt"
+            #self.extra_explore_position_file = "town03_intersections/position_file_Exp_Town.shoulder.txt"
             self.extra_explore_location_std = 2.0
             self.extra_explore_yaw_std = 5.0

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-expid="mm45_v4_SqnoiseShoulder_exptownv8_mergefollowstraight"
+expid="mm45_v4_SqnoiseShoulder_exptownv9_mergefollowstraight"
 
 # setting output related
 output_prefix="/home/yang/data/aws_data/CIL_modular_data/benchmark_all/"
@@ -10,7 +10,7 @@ output_prefix=$output_prefix$expid"/"
 # the town01
 output_folder="/home/yang/data/aws_data/CIL_modular_data/_benchmarks_results/"$expid"_1,2,3,4,5,6,7,8,9,10,11,12,13,14_YangExp3cam_Town01/_images/"
 ln -s $output_folder $output_prefix"Town01"
-python eval_par.py -gpu "[1,2,3]" -expid $expid &
+python eval_par.py -gpu "[4,5,6]" -expid $expid &
 
 
 # RFS parked car
@@ -21,7 +21,7 @@ this_output=$this_output$"video"
 export CARLA_VERSION="0.9.X"
 sleep 25
 python utils/eval_inenv_carla_090.py \
-    --gpu 3 \
+    --gpu 6 \
     --condition 2.0 \
     --expid $expid \
     --output_video_path $this_output \
@@ -38,7 +38,7 @@ this_output=$this_output$"video"
 export CARLA_VERSION="0.9.X"
 sleep 25
 python utils/eval_inenv_carla_090.py \
-    --gpu 2 \
+    --gpu 5 \
     --condition 2.0 \
     --expid $expid \
     --output_video_path $this_output \
@@ -56,7 +56,7 @@ this_output=$this_output$"video"
 export CARLA_VERSION="0.9.5"
 sleep 25
 python utils/eval_inenv_carla_090.py \
-    --gpu 1 \
+    --gpu 4 \
     --condition 2.0 \
     --expid $expid \
     --output_video_path $this_output \

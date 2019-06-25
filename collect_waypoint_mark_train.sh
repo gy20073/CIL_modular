@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-inputds="exptown_v10_park_overexplore"
-expid="mm45_v4_SqnoiseShoulder_exptownv9v10_notown0102_mergefollowstraight"
-policy_gpu=1
+inputds="exptown_v12_longer_turns"
+expid="mm45_v4_SqnoiseShoulder_exptownv12_notown0102_mergefollowstraight"
+policy_gpu=3
 
 townid="11"
 # config ends

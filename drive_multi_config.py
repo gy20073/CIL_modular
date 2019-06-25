@@ -1,9 +1,9 @@
 import sys, os, time, threading
 
 TownName = "Exp_Town"
-start_port=2200
+start_port=2300
 available_gpus = [0]
-num_processes = 1
+num_processes = 4
 use_docker = False
 driver_config = "9cam_agent_carla_acquire_rc_batch_095"
 #driver_config = "9cam_agent_carla_acquire_rc_batch_090"
@@ -118,7 +118,11 @@ if __name__ == "__main__":
                ("ImageSizeX", "800"),
                ("PositionZ", "1.4"),
                ("PositionZ", "1.8")]
-    weather_range = range(1, 15)
+
+    if TownName == "Exp_Town":
+        weather_range = [1, 3, 8, 10]
+    else:
+        weather_range = range(1, 15)
 
     # in total there are 7*14 = 100 configs, each of the 200 h5 file has size of 33M, i.e. 30 h5 = 1G
     # Thus we aim to collect 100 hours of training, that is 400G, so each config has quota of 3G, which is 100 files

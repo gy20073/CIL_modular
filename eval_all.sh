@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-expid="mm45_v4_SqnoiseShoulder_exptownv9_mergefollowstraight"
+expid="mm45_v4_SqnoiseShoulder_exptownv9v10_mergefollowstraight"
 
 # setting output related
 output_prefix="/home/yang/data/aws_data/CIL_modular_data/benchmark_all/"

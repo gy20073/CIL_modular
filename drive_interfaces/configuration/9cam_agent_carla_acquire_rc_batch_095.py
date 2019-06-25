@@ -8,7 +8,7 @@ class configDrive:
         # resource related
         self.host = "127.0.0.1"
         self.port = 2000
-        self.path = "/scratch/yang/aws_data/carla_collect/exptown_v20_park_overexplore/"  # If path is set go for it , if not expect a name set
+        self.path = "/scratch/yang/aws_data/carla_collect/exptown_v21_shoulder_overexplore/"  # If path is set go for it , if not expect a name set
         if not os.path.exists(self.path):
             os.makedirs(self.path)
 
@@ -54,7 +54,7 @@ class configDrive:
             self.parking_position_file = "town03_intersections/positions_file_Exp_Town.parking.txt"
 
             self.extra_explore_prob = 1.0  # now for debugging purpose, let all of them be the extra positions file
-            self.extra_explore_position_file = "town03_intersections/positions_file_Exp_Town.parking_attract.txt"
-            #self.extra_explore_position_file = "town03_intersections/position_file_Exp_Town.shoulder.txt"
+            #self.extra_explore_position_file = "town03_intersections/positions_file_Exp_Town.parking_attract.txt"
+            self.extra_explore_position_file = "town03_intersections/position_file_Exp_Town.shoulder.txt"
             self.extra_explore_location_std = 2.0
             self.extra_explore_yaw_std = 5.0

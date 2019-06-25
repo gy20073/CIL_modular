@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-inputds="exptown_v20_park_overexplore"
-expid="mm45_v4_SqnoiseShoulder_exptownv9v20"
+inputds="exptown_v21_shoulder_overexplore"
+expid="mm45_v4_SqnoiseShoulder_exptownv9v21_notown0102"
 policy_gpu=5
 
 townid="11"

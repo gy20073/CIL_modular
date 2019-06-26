@@ -6,7 +6,7 @@ dataset_ids = ['exptown_v9_noise75_way', 'exptown_v21_shoulder_overexplore_way']
 def changing(self):
     # less map
     # merge follow and straight
-    self.perception_gpus = [4, 5]
+    self.perception_gpus = [6, 7]
     self.map_pos_noise_std = 0.5
 
 

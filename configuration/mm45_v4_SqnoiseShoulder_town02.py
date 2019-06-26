@@ -2,12 +2,12 @@ import glob, os
 from imgaug import augmenters as iaa
 import numpy as np
 
-dataset_ids = ['steer103_v5_way_v2_town02']
+dataset_ids = ['exptown_v9_noise75_way']
 def changing(self):
     # notown0102
     # less map
     # merge follow and straight
-    self.perception_gpus = [0, 1]
+    self.perception_gpus = [2, 3]
     self.map_pos_noise_std = 0.5
 
 

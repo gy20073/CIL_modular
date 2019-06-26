@@ -2,12 +2,11 @@ import glob, os
 from imgaug import augmenters as iaa
 import numpy as np
 
-dataset_ids = ['steer103_v5_way_v2_town02']
+dataset_ids = ['exptown_v9_noise75_way', 'exptown_v22_shoulderu2_way']
 def changing(self):
-    # notown0102
     # less map
     # merge follow and straight
-    self.perception_gpus = [0, 1]
+    self.perception_gpus = [5, 4]
     self.map_pos_noise_std = 0.5
 
 
@@ -73,7 +72,7 @@ class configMain:
         # perception module related
         self.use_perception_stack = True
         self.perception_gpus = [2, 3]
-        self.perception_paths = "path_docker_newseg"
+        self.perception_paths = "path_jormungandr_newseg"
         self.perception_batch_sizes = {"det_COCO": 3, "det_TL": 3, "seg": 4, "depth": 4, "det_TS": -1}
         self.perception_num_replicates = {"det_COCO": -1, "det_TL": -1, "seg": 3, "depth": -1, "det_TS": -1}
         self.perception_other_params = {"add_lane_color": False}

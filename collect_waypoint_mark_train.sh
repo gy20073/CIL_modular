@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-inputds="exptown_v21_shoulder_overexplore"
-expid="mm45_v4_SqnoiseShoulder_exptownv9v21_notown0102"
-policy_gpu=7
+inputds="exptown_v22_shoulderu2"
+expid="mm45_v4_SqnoiseShoulder_exptownv9v22_notown0102"
+policy_gpu=4
 
 townid="11"
 # config ends

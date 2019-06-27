@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-inputds="exptown_v24_park_nocar"
-expid="mm45_v4_SqnoiseShoulder_exptownv9v20v24"
-policy_gpu=5
+inputds="exptown_v25_shoulderu4"
+expid="mm45_v4_SqnoiseShoulder_exptownv9v25_notown0102"
+policy_gpu=7
 
 townid="11"
 # config ends

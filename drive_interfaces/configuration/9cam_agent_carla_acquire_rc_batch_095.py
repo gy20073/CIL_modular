@@ -8,7 +8,7 @@ class configDrive:
         # resource related
         self.host = "127.0.0.1"
         self.port = 2000
-        self.path = "/scratch/yang/aws_data/carla_collect/exptown_v22_shoulderu2/"  # If path is set go for it , if not expect a name set
+        self.path = "/scratch/yang/aws_data/carla_collect/exptown_v23_shoulderu3/"  # If path is set go for it , if not expect a name set
         if not os.path.exists(self.path):
             os.makedirs(self.path)
 
@@ -20,7 +20,7 @@ class configDrive:
         self.use_planner = True # only useful in carlaHuman, used to randomly walk in the city
         self.noise = "Spike" #"Spike"  # NON CARLA SETTINGS PARAM
 
-        self.reset_period = 960 //80  # reset when the system time goes beyond this number
+        self.reset_period = 960 //200  # reset when the system time goes beyond this number
         # Those parameters will override carla_config
         self.weather = "1" # This will be override by the caller
         self.cars = "50"

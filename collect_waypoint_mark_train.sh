@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-inputds="exptown_v25_shoulderu4"
-expid="mm45_v4_SqnoiseShoulder_exptownv9v25_notown0102"
+inputds="exptown_v26_shoulderu5_curve"
+expid="mm45_v4_SqnoiseShoulder_exptownv9v25v26_notown0102"
 policy_gpu=7
 
 townid="11"

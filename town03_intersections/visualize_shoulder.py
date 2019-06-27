@@ -2,6 +2,9 @@ list_of_xy = [[847, 558, -90], [786, 555, -90], [618, 889, 135], [691, 1018, 135
 
 list_of_xy= list_of_xy[:14] + list_of_xy[15:16] + list_of_xy[18:29] + list_of_xy[31:33]
 
+list_of_xy = [[1011, 541, -90], [1317, 1926, 90], [424, 2588, 60], [804, 3006, 30], [1138, 2741, -90], [1164, 3024, 179], [2125, 1652, 0], [1908, 3664, -45]]
+
+
 from PIL import Image, ImageDraw
 
 map = "/Users/yang/Downloads/map.png"

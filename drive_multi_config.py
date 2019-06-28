@@ -1,9 +1,16 @@
-import sys, os, time, threading
+import sys, os, time, threading, argparse
 
-TownName = "Exp_Town"
-start_port=2400
+parser = argparse.ArgumentParser(description='collect a dataset')
+parser.add_argument('-t', '--townname', default="Exp_Town", help="which town to collect data in")
+parser.add_argument('-p', '--port', default=2400, help="use which port")
+parser.add_argument('-parallel', '--parallel', default=2, help="how many carla to use at the same time")
+parser.add_argument('-m', '--mode', default="normal", help="normal / park_withcar / park_nocar / shoulder mode")
+args = parser.parse_args()
+
+TownName = args.townname
+start_port=args.port
 available_gpus = [0]
-num_processes = 2
+num_processes = args.parallel
 use_docker = False
 driver_config = "9cam_agent_carla_acquire_rc_batch_095"
 #driver_config = "9cam_agent_carla_acquire_rc_batch_090"
@@ -61,6 +68,8 @@ def process_collect(list_of_configs, port, gpu,
     port = int(port)
     count = 5  # to flag that initially we need to start the server
     #os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
+    threads = []
+
     for config, weather in list_of_configs:
         # generate this config
         this_name = config_naming(tag, config, weather)
@@ -75,6 +84,44 @@ def process_collect(list_of_configs, port, gpu,
         driver_conf.carla_config = config_fname
         driver_conf.weather = str(weather)
         driver_conf.port = port
+
+        driver_conf.path = "/scratch/yang/aws_data/carla_collect/"+args.townname + "_" + args.mode + "/" # If path is set go for it , if not expect a name set
+        driver_conf.city_name = args.townname
+        if args.mode == "normal":
+            driver_conf.reset_period = 960
+            driver_conf.num_images_to_collect = 600 * 20 * 3
+            driver_conf.noise_intensity = 7.5
+
+            driver_conf.parking_position_file = "town03_intersections/positions_file_Exp_Town.parking.txt"
+            driver_conf.extra_explore_prob = 0.0
+            # driver_conf.extra_explore_position_file = "town03_intersections/positions_file_Exp_Town.parking_attract.txt"
+        elif args.mode.startswith("park"):
+            driver_conf.reset_period = 960 // 80
+            driver_conf.num_images_to_collect = 600 * 20 * 3 // 5
+            driver_conf.noise_intensity = 5.0
+
+            if args.mode == "park_withcar":
+                driver_conf.parking_position_file = "town03_intersections/positions_file_Exp_Town.parking.txt"
+            elif args.mode == "park_nocar":
+                driver_conf.parking_position_file = None
+            else:
+                raise ValueError()
+            driver_conf.extra_explore_prob = 1.0
+            driver_conf.extra_explore_position_file = "town03_intersections/positions_file_Exp_Town.parking_attract.txt"
+        elif args.mode == "shoulder":
+            driver_conf.reset_period = 960 // 200
+            driver_conf.num_images_to_collect = 600 * 20 * 3 // 5
+            driver_conf.noise_intensity = 5.0
+
+            driver_conf.parking_position_file = None
+            driver_conf.extra_explore_prob = 1.0
+            driver_conf.extra_explore_position_file = "town03_intersections/position_file_Exp_Town.shoulder.v4.merge.txt"
+        else:
+            raise ValueError()
+
+        if not os.path.exists(driver_conf.path):
+            os.makedirs(driver_conf.path)
+
 
         # experiment_name & memory not used for human
 
@@ -91,6 +138,7 @@ def process_collect(list_of_configs, port, gpu,
                 print("before spawnling")
                 t = threading.Thread(target=lambda: os.system(" ".join(cmd)))
                 t.start()
+                threads.append(t)
 
                 time.sleep(60)
 
@@ -102,6 +150,7 @@ def process_collect(list_of_configs, port, gpu,
         print("finished one setting, sleep for 3 seconds")
         time.sleep(3)
 
+    os.system('pkill -f -9 "CarlaU.*port=%d"' % port)
 
 if __name__ == "__main__":
     generated_config_cache_path = "./drive_interfaces/carla/auto_gen_configs/"
@@ -119,7 +168,7 @@ if __name__ == "__main__":
                ("PositionZ", "1.4"),
                ("PositionZ", "1.8")]
 
-    if TownName == "Exp_Town":
+    if TownName.startswith("Exp_Town"):
         weather_range = [1, 3, 8, 10]
     else:
         weather_range = range(1, 15)

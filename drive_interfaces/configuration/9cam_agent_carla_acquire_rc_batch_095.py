@@ -9,8 +9,6 @@ class configDrive:
         self.host = "127.0.0.1"
         self.port = 2000
         self.path = "/scratch/yang/aws_data/carla_collect/exptown_v26_shoulderu5_curve/"  # If path is set go for it , if not expect a name set
-        if not os.path.exists(self.path):
-            os.makedirs(self.path)
 
         # data collection related
         self.city_name = 'Exp_Town'

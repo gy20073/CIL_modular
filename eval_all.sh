@@ -2,7 +2,7 @@
 
 expid="mm45_v4_SqnoiseShoulder_exptownv9v25v26_notown0102"
 OFFSET=10
-declare -a GPU=(2 3 4)
+declare -a GPU=(5 6 7)
 
 # setting output related
 output_prefix="/home/yang/data/aws_data/CIL_modular_data/benchmark_all/"

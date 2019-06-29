@@ -101,7 +101,16 @@ class mapping_helper:
             im = (np.array(im) > 100)
             im = im.astype(np.uint8)
             return im
+        elif self.version == "v3":
+            im = (np.array(im) > 100)
+            im = im.astype(np.uint8)
 
+            sz = 1
+            h0 = im.shape[0] * 3 // 2 // 2
+            h1 = im.shape[1] // 2
+            im[h0 - sz: h0 + sz, h1 - sz: h1 + sz, :] = np.array([0, 1, 0])
+
+            return im
 
     def ori_to_yaw(self, ori, town_id):
         if town_id == "rfs":
@@ -152,10 +161,11 @@ class mapping_helper:
         else:
             im = map
         im = im * 255
-        sz = 2
-        h0 = im.shape[0] * 3 // 2 // 2
-        h1 = im.shape[1] // 2
-        im[h0-sz: h0+sz, h1-sz: h1+sz, :] = np.array([38, 239, 232])
+        if self.version != "v3":
+            sz = 2
+            h0 = im.shape[0] * 3 // 2 // 2
+            h1 = im.shape[1] // 2
+            im[h0-sz: h0+sz, h1-sz: h1+sz, :] = np.array([38, 239, 232])
         return im
 
 

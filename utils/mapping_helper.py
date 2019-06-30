@@ -97,19 +97,9 @@ class mapping_helper:
             bin = (bin > 0)
             bin = bin.astype(np.uint8)
             return bin
-        elif self.version == "v2":
+        elif self.version == "v2" or self.version == "v3":
             im = (np.array(im) > 100)
             im = im.astype(np.uint8)
-            return im
-        elif self.version == "v3":
-            im = (np.array(im) > 100)
-            im = im.astype(np.uint8)
-
-            sz = 1
-            h0 = im.shape[0] * 3 // 2 // 2
-            h1 = im.shape[1] // 2
-            im[h0 - sz: h0 + sz, h1 - sz: h1 + sz, :] = np.array([0, 1, 0])
-
             return im
 
     def ori_to_yaw(self, ori, town_id):
@@ -153,6 +143,13 @@ class mapping_helper:
         dst = cv2.resize(dst, (int(self.output_height_pix * 1.0 / dst.shape[0] * dst.shape[1]),
                                self.output_height_pix))
         # here dst has dimension 2, if the last channel is 1.
+
+        if self.version == "v3":
+            sz = 1
+            h0 = dst.shape[0] * 3 // 2 // 2
+            h1 = dst.shape[1] // 2
+            dst[h0 - sz: h0 + sz, h1 - sz: h1 + sz, :] = np.array([0, 1, 0])
+
         return dst
 
     def map_to_debug_image(self, map):

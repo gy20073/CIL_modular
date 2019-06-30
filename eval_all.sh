@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-expid="mm45_v4_SqnoiseShoulder_exptownv9v25v26_notown0102"
+expid="mm45_v4_SqnoiseShoulder_exptownv9v25v26_notown0102_mapv3"
 OFFSET=10
 declare -a GPU=(5 6 7)
 

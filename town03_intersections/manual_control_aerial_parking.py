@@ -90,8 +90,8 @@ if save_map_mode:
     WINDOW_WIDTH = 5000
     WINDOW_HEIGHT = 5000
 else:
-    WINDOW_WIDTH = 1000
-    WINDOW_HEIGHT =800
+    WINDOW_WIDTH = 5000
+    WINDOW_HEIGHT = 5000
 
 CAMERA_FOV = 120.0
 CAMERA_POSITION = carla.Transform(location=carla.Location(x=0.5, z=30), rotation=carla.Rotation(roll=0, yaw=0, pitch=-90))

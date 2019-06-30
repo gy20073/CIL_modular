@@ -62,7 +62,7 @@ def create_structure(tf, input_image, input_data, input_size, dropout, config):
     # now have shape batchsize*(50*75)
     map_n_channel = 1
     if hasattr(config, "mapping_version"):
-        if config.mapping_version == "v2":
+        if config.mapping_version == "v2" or config.mapping_version == "v3":
             map_n_channel = 3
 
     mapping = tf.reshape(mapping, [-1, config.map_height, config.map_height * 3 // 2, map_n_channel])

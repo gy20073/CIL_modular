@@ -24,10 +24,23 @@ STARTING in a moment...
 from __future__ import print_function
 
 import sys
-import math
+import math, os
 
-sys.path.append('../drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')
+__CARLA_BASE__ = os.getenv('CARLA_BASE', '/home/yang/Downloads/carla_ablate/')
+#sys.path.append('../drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')
 #sys.path.append('../drive_interfaces/carla/carla_client_095/carla-0.9.5-py2.7-linux-x86_64.egg')
+
+import glob
+expr = os.path.join(__CARLA_BASE__, "PythonAPI/carla/dist/carla-*-py2.7-linux-x86_64.egg")
+eggfile = glob.glob(expr)
+assert(len(eggfile) == 1)
+print(eggfile[0], "is the new egg that I am going to use")
+sys.path.insert(0, eggfile[0])
+sys.path=['/home/yang/Downloads/carla_ablate/PythonAPI/carla/dist/carla-0.9.5-py2.7-linux-x86_64.egg', '/usr/lib/python2.7', '/usr/lib/python2.7/plat-x86_64-linux-gnu', '/usr/lib/python2.7/lib-tk', '/usr/lib/python2.7/lib-old', '/usr/lib/python2.7/lib-dynload', '/home/yang/.local/lib/python2.7/site-packages', '/usr/local/lib/python2.7/dist-packages', '/usr/lib/python2.7/dist-packages']
+print(sys.path)
+
+
+
 '''
 sys.path.append(
     'PythonAPI/carla-0.9.0-py%d.%d-linux-x86_64.egg' % (sys.version_info.major,

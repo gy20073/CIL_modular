@@ -12,23 +12,23 @@ import numpy as np
 import math as m
 from collections import namedtuple
 
+def get_file_real_path():
+    abspath = os.path.abspath(inspect.getfile(inspect.currentframe()))
+    return os.path.realpath(abspath)
+dirname = os.path.dirname(get_file_real_path())
+
+sys.path.append(os.path.join(dirname, "../../../utils"))
+import common_util
+
 __CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.8.X')
+common_util.add_carla_egg_to_path(__CARLA_VERSION__)
+
 if __CARLA_VERSION__ == '0.8.X':
     from carla.planner.planner import Planner
     from carla.client import VehicleControl
     #from carla.client import make_carla_client
     from carla.client import CarlaClient
 else:
-    if __CARLA_VERSION__ == '0.9.X':
-        sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')
-    elif __CARLA_VERSION__ == '0.9.5':
-        sys.path.append('drive_interfaces/carla/carla_client_095/carla-0.9.5-py2.7-linux-x86_64.egg')
-        sys.path.append('drive_interfaces/carla/carla_client_095/carla')
-        #from agents.navigation.basic_agent import BasicAgent
-        #from agents.navigation.roaming_agent import RoamingAgent
-    else:
-        sys.path[0:0]=['/scratch/yang/aws_data/carla_auto2/PythonAPI/carla-0.9.1-py2.7-linux-x86_64.egg']
-        print(sys.path)
     import carla
     from carla import Client as CarlaClient
     from carla import VehicleControl as VehicleControl

@@ -73,19 +73,19 @@ is_noisy = False
 # ==============================================================================
 try:
     __CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.9.5')
-    if __CARLA_VERSION__ == '0.9.X':
-        sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')
-    elif __CARLA_VERSION__ == '0.9.5':
-        sys.path.append('drive_interfaces/carla/carla_client_095/carla-0.9.5-py2.7-linux-x86_64.egg')
-        sys.path.append('drive_interfaces/carla/carla_client_095/carla')
-        #from agents.navigation.basic_agent import BasicAgent
-        #from agents.navigation.roaming_agent import RoamingAgent
-        from Navigation.roaming_agent import *
-    else:
-        sys.path[0:0]=['/home/yang/Downloads/carla_rfs/PythonAPI/carla-0.9.1-py2.7-linux-x86_64.egg']
+    import inspect, os
 
+    def get_file_real_path():
+        abspath = os.path.abspath(inspect.getfile(inspect.currentframe()))
+        return os.path.realpath(abspath)
+    dirname = os.path.dirname(get_file_real_path())
+
+    sys.path.append(os.path.join(dirname, "../../../utils"))
+    import common_util
+    common_util.add_carla_egg_to_path(__CARLA_VERSION__, "/home/yang/Downloads/")
+    from Navigation.roaming_agent import *
 except IndexError:
-    pass
+    print("something happend")
 
 sys.path.append('drive_interfaces')
 from noiser import Noiser

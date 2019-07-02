@@ -1,4 +1,5 @@
 import sys, os, time, threading, argparse
+from utils.common_util import add_carla_egg_to_path
 
 parser = argparse.ArgumentParser(description='collect a dataset')
 parser.add_argument('-t', '--townname', default="Exp_Town", help="which town to collect data in")
@@ -17,27 +18,25 @@ driver_config = "9cam_agent_carla_acquire_rc_batch_095"
 # 9cam_agent_carla_acquire_rc_batch_090, change its contents
 nightly = False
 
-
-if TownName == "Exp_Town" and nightly:
-    CARLA_PATH = "/scratch/yang/aws_data/carla_095_nightly/CarlaUE4.sh"
-    os.environ['CARLA_VERSION'] = '0.9.5'
+if TownName == "Exp_Town02" or TownName == "Exp_Town01_01CrossWalk" or TownName == "Exp_Town01_02Shoulder" or TownName == "Exp_Town01_03Parking":
+    ver = '0.9.5.208'
     docker_path = None
     town_within_path = TownName
 elif TownName == "Exp_Town" or TownName == "Town05":
-    CARLA_PATH = "/scratch/yang/aws_data/carla_095/CarlaUE4.sh"
-    os.environ['CARLA_VERSION'] = '0.9.5'
+    ver = '0.9.5'
     docker_path = None
     town_within_path = TownName
 elif TownName == "Town03" or TownName == "Town04" or TownName == "RFS_MAP":
-    CARLA_PATH = "/scratch/yang/aws_data/carla_auto2/CarlaUE4.sh"
-    os.environ['CARLA_VERSION'] = '0.9.auto2'
+    ver = "0.9.auto2"
     docker_path = "gy20073/carla_auto2:latest"
     town_within_path = "/Game/Carla/Maps/" + TownName
 else:
-    CARLA_PATH = "/scratch/yang/aws_data/carla_0.8.4/CarlaUE4.sh"
+    ver = "0.8.4"
     docker_path = "gy20073/carla_084:latest"
     town_within_path = "/Game/Maps/" + TownName
 
+CARLA_PATH = add_carla_egg_to_path(ver)
+CARLA_PATH = os.path.join(CARLA_PATH, "CarlaUE4.sh")
 
 from configparser import ConfigParser
 from drive import drive

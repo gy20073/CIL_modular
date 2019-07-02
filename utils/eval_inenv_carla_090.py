@@ -1,4 +1,5 @@
 import os, sys, argparse
+import common_util
 
 # use ./CarlaUE4.sh  Exp_Town -benchmark -fps=5 to start a server first
 # todo set the CARLA_VERSION in bash
@@ -19,11 +20,7 @@ args = parser.parse_args()
 
 __CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.9.5')
 print(__CARLA_VERSION__, "in side the program")
-if __CARLA_VERSION__ == '0.9.X':
-    sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')
-elif __CARLA_VERSION__ == '0.9.5':
-    sys.path.append('drive_interfaces/carla/carla_client_095/carla-0.9.5-py2.7-linux-x86_64.egg')
-    sys.path.append('drive_interfaces/carla/carla_client_095/carla')
+common_util.add_carla_egg_to_path(__CARLA_VERSION__)
 
 import inspect, os, sys
 
@@ -151,7 +148,7 @@ class Carla090Eval():
         self._client.set_timeout(2.0)
         self._world = self._client.get_world()
 
-        if __CARLA_VERSION__ == '0.9.5':
+        if __CARLA_VERSION__.startswith('0.9.5'):
             settings = self._world.get_settings()
             settings.synchronous_mode = True
             self._world.apply_settings(settings)
@@ -237,7 +234,7 @@ class Carla090Eval():
 
     def run(self, condition):
         for i in range(test_steps):
-            if __CARLA_VERSION__ == '0.9.5':
+            if __CARLA_VERSION__.startswith('0.9.5'):
                 self._world.tick()
             self._world.wait_for_tick(10.0)
             data_buffer_lock.acquire()

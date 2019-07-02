@@ -184,3 +184,52 @@ def point_to_2d(depth, horizontal, vertical, half_width_fov=math.radians(103.0)/
     h = horizontal / depth * 0.5 / math.tan(half_width_fov)
     v = vertical   / depth * 0.5 / math.tan(half_height_fov)
     return h, v
+
+import glob, sys, os, inspect
+
+def get_file_real_path():
+    abspath = os.path.abspath(inspect.getfile(inspect.currentframe()))
+    return os.path.realpath(abspath)
+
+
+def add_carla_egg_to_path(carla_version_original, install_base="/home/yang/data/aws_data/"):
+    # from a version:
+    # 1. output carla base path, and
+    # 2. add the carla egg to path
+    # 3. set the CARLA_VERSION environment variable
+
+    carla_version = carla_version_original
+    if carla_version == "0.8.X":
+        carla_version = "0.8.4"
+
+    util_dir = os.path.dirname(get_file_real_path())
+    cil_dir = os.path.dirname(util_dir)
+    base = os.path.join(cil_dir, "drive_interfaces/carla/")
+
+    ver2egg={"0.8.4": None,
+              "0.9.5": os.path.join(base, 'carla_client_095/carla-0.9.5-py2.7-linux-x86_64.egg'),
+              "0.9.5.208": os.path.join(base, 'carla_client_095_208/carla-0.9.5-py2.7-linux-x86_64.egg'),
+              "0.9.auto2": os.path.join(base, 'carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')} #rfs
+    if carla_version != "0.8.4":
+        eggfile = ver2egg[carla_version]
+        sys.path.insert(0, eggfile)
+
+    if carla_version == "0.8.4":
+        sys.path.append(os.path.join(base, 'carla_client'))
+    elif carla_version == "0.9.5":
+        sys.path.append(os.path.join(base, 'carla_client_095'))
+        sys.path.append(os.path.join(base, 'carla_client_095/carla'))
+    elif carla_version == "0.9.auto2":
+        sys.path.append(os.path.join(base, 'carla_client_090'))
+    elif carla_version == "0.9.5.208":
+        sys.path.append(os.path.join(base, 'carla_client_095_208'))
+
+    ver2path={"0.9.5.208": "carla_ablate",
+              "0.9.5": "carla_095",
+              "0.9.auto2": "carla_rfs",
+              "0.8.4": "carla_0.8.4"}
+    carla_base = os.path.join(install_base, ver2path[carla_version])
+
+    os.environ['CARLA_VERSION'] = carla_version_original
+
+    return carla_base

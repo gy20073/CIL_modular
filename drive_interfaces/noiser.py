@@ -1,19 +1,15 @@
-import copy, random, time, os, sys
+import copy, random, time, os, sys, inspect
+def get_file_real_path():
+    abspath = os.path.abspath(inspect.getfile(inspect.currentframe()))
+    return os.path.realpath(abspath)
+
+sys.path.append(os.path.join(os.path.dirname(get_file_real_path()), "../utils"))
+import common_util
 
 __CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.8.X')
-if __CARLA_VERSION__ == '0.9.X':
-    sys.path.append('drive_interfaces/carla/carla_client_090/carla-0.9.1-py2.7-linux-x86_64.egg')
-    import carla
-    from carla import VehicleControl as VehicleControl
-elif __CARLA_VERSION__ == '0.9.5':
-    sys.path.append('drive_interfaces/carla/carla_client_095/carla-0.9.5-py2.7-linux-x86_64.egg')
-    import carla
-    from carla import VehicleControl as VehicleControl
-elif __CARLA_VERSION__.startswith("0.9"):
-    sys.path[0:0]=['/scratch/yang/aws_data/carla_auto2/PythonAPI/carla-0.9.1-py2.7-linux-x86_64.egg']
-    import carla
-    from carla import VehicleControl as VehicleControl
-
+common_util.add_carla_egg_to_path(__CARLA_VERSION__)
+import carla
+from carla import VehicleControl as VehicleControl
 
 class Noiser(object):
     # define frequency into noise events per minute

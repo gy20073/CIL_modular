@@ -9,9 +9,9 @@ parser.add_argument('-m', '--mode', default="normal", help="normal / park_withca
 args = parser.parse_args()
 
 TownName = args.townname
-start_port=args.port
+start_port=int(args.port)
 available_gpus = [0]
-num_processes = args.parallel
+num_processes = int(args.parallel)
 use_docker = False
 driver_config = "9cam_agent_carla_acquire_rc_batch_095"
 #driver_config = "9cam_agent_carla_acquire_rc_batch_090"

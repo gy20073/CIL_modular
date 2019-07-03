@@ -10,7 +10,8 @@ townid="11"
 outputds=$inputds"_way"
 
 # TODO modify drive_multi_config, 9cam_agent_carla_acquire_rc_batch_095 and then
-python drive_multi_config.py
+#python drive_multi_config.py
+python drive_multi_config.py --townname "Exp_Town02" --port 2400 --parallel 1 --mode "park_withcar"
 
 #pkill -f -9 CarlaUE4
 

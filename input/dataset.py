@@ -309,7 +309,7 @@ class Dataset(object):
                             yaw = np.arctan2(-ori[1], ori[0]) + np.random.normal(scale=np.deg2rad(self._config.map_yaw_noise_std))
                             ori[0] = np.cos(yaw)
                             ori[1] = - np.sin(yaw)
-                        elif town_id == "10" or town_id == "11":
+                        elif town_id == "10" or town_id == "11" or town_id == "13":
                             ori[2] += np.rad2deg(np.random.normal(scale=np.deg2rad(self._config.map_yaw_noise_std)))
                         else:
                             raise ValueError()

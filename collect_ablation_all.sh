@@ -5,18 +5,18 @@ TownName="Exp_Town01_01CrossWalk"
 townid="12"
 
 port=2400
-declare -a stages=("park_withcar" "park_nocar" "shoulder" "normal")
+declare -a stages=("normal" "park_withcar" "park_nocar" "shoulder")
 
-par_level=1
+par_level=4
 # config ends
 
 TownName="Exp_Town01_02Shoulder"
 townid="13"
 
 port=2500
-declare -a stages=("park_withcar" "park_nocar" "normal")
+declare -a stages=("normal")
 
-par_level=1
+par_level=2
 # config ends
 
 

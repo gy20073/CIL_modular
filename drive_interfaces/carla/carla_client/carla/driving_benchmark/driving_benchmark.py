@@ -232,7 +232,9 @@ class DrivingBenchmark(object):
         city_name = {"Town01": "01",
                      "Town02": "02",
                      "RFS_MAP": "10",
-                     "Exp_Town": "11"}[self._city_name]
+                     "Exp_Town": "11",
+                     "Exp_Town02": "11",
+                     "Exp_Town01_02Shoulder": "13"}[self._city_name]
         return {"town_id": city_name, "pos": pos, "ori": ori}
 
     def _run_navigation_episode(

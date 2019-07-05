@@ -229,6 +229,7 @@ class CarlaHuman(Driver):
             self.carla = CarlaClient(self._host, int(self._port))
             self.carla.set_timeout(5000)
             wd = self.carla.get_world()
+            self.wd = wd
             settings = wd.get_settings()
             settings.synchronous_mode = True
             wd.apply_settings(settings)
@@ -246,34 +247,52 @@ class CarlaHuman(Driver):
             self.joystick = pygame.joystick.Joystick(0)
             self.joystick.init()
 
+    def test_alive(self):
+        if not hasattr(self, "wd"):
+            return False
+        wd = self.wd
+        wd.tick()
+        try:
+            wd.wait_for_tick(5.0)
+        except:
+            return False
+        return True
+
     def __del__(self):
         if hasattr(self, 'carla'):
             print("destructing the connection")
             if __CARLA_VERSION__ == '0.8.X':
                 self.carla.disconnect()
             else:
+                alive = self.test_alive()
                 # destroy old actors
                 print('destroying actors')
-                if len(self._actor_list) > 0:
-                    for actor in self._actor_list:
-                        actor.destroy()
+                if alive:
+                    if len(self._actor_list) > 0:
+                        for actor in self._actor_list:
+                            actor.destroy()
                 self._actor_list = []
                 print('done.')
 
                 if self._vehicle is not None:
-                    self._vehicle.destroy()
+                    if alive:
+                        self._vehicle.destroy()
                     self._vehicle = None
                 if self._camera_center is not None:
-                    self._camera_center.destroy()
+                    if alive:
+                        self._camera_center.destroy()
                     self._camera_center = None
                 if self._camera_left is not None:
-                    self._camera_left.destroy()
+                    if alive:
+                        self._camera_left.destroy()
                     self._camera_left = None
                 if self._camera_right is not None:
-                    self._camera_right.destroy()
+                    if alive:
+                        self._camera_right.destroy()
                     self._camera_right = None
                 if self.collision_sensor is not None:
-                    self.collision_sensor.sensor.destroy()
+                    if alive:
+                        self.collision_sensor.sensor.destroy()
                     self.collision_sensor = None
 
 

@@ -126,7 +126,7 @@ def process_collect(list_of_configs, port, gpu,
 
         while True:
             count += 1
-            if count >= 5:
+            if count >= 2:
                 count = 0
                 if use_docker:
                     cmd = ["docker run -p %d-%d:%d-%d --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=%d %s /bin/bash CarlaUE4.sh %s -carla-server -benchmark -fps=5 -carla-world-port=%d" % (port, port+2, port, port+2, gpu, docker_path, town_within_path, port)]

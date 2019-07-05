@@ -223,7 +223,9 @@ def drive(experiment_name, drive_config, name=None, memory_use=1.0):
         return True
 
     except:
+        print("something exceptional happens")
         traceback.print_exc()
+        print("before returning")
         return False
     finally:
         print("in finally")

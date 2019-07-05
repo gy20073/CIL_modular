@@ -32,11 +32,12 @@ __CARLA_BASE__ = os.getenv('CARLA_BASE', '/home/yang/Downloads/carla_ablate/')
 
 import glob
 expr = os.path.join(__CARLA_BASE__, "PythonAPI/carla/dist/carla-*-py2.7-linux-x86_64.egg")
+#expr = "/mnt/hgfs/Data/Berkeley/code_and_data/code/aws/CIL_modular/drive_interfaces/carla/carla_client_095_208/carla-*-py2.7-linux-x86_64.egg"
 eggfile = glob.glob(expr)
 assert(len(eggfile) == 1)
 print(eggfile[0], "is the new egg that I am going to use")
 sys.path.insert(0, eggfile[0])
-sys.path=['/home/yang/Downloads/carla_ablate/PythonAPI/carla/dist/carla-0.9.5-py2.7-linux-x86_64.egg', '/usr/lib/python2.7', '/usr/lib/python2.7/plat-x86_64-linux-gnu', '/usr/lib/python2.7/lib-tk', '/usr/lib/python2.7/lib-old', '/usr/lib/python2.7/lib-dynload', '/home/yang/.local/lib/python2.7/site-packages', '/usr/local/lib/python2.7/dist-packages', '/usr/lib/python2.7/dist-packages']
+#sys.path=['/home/yang/Downloads/carla_ablate/PythonAPI/carla/dist/carla-0.9.5-py2.7-linux-x86_64.egg', '/usr/lib/python2.7', '/usr/lib/python2.7/plat-x86_64-linux-gnu', '/usr/lib/python2.7/lib-tk', '/usr/lib/python2.7/lib-old', '/usr/lib/python2.7/lib-dynload', '/home/yang/.local/lib/python2.7/site-packages', '/usr/local/lib/python2.7/dist-packages', '/usr/lib/python2.7/dist-packages']
 print(sys.path)
 
 
@@ -99,6 +100,7 @@ last_recorded_position = None
 DELTA_POS = 1
 save_map_mode = False
 
+# The larger the map, the smaller chance your key will be captured, but the up down keys are much more likely to be captured.
 if save_map_mode:
     WINDOW_WIDTH = 5000
     WINDOW_HEIGHT = 5000
@@ -142,10 +144,9 @@ class CallBack():
         array[sp[0] // 2 - width:sp[0]//2 + width, sp[1] // 2 - large:sp[1] // 2 + large, :] = 255
 
         if save_map_mode:
-            cv2.imwrite("map.png", array)
-            print("image write done")
-            time.sleep(10)
-            print("leaving the parsing function")
+            if not os.path.exists("map.png"):
+                cv2.imwrite("map.png", array)
+                print("image write done")
 
         self._obj._data_buffers[self._tag] = array
         global updated
@@ -203,6 +204,10 @@ class CarlaGame(object):
                 for event in events:
                     if event.type == pygame.QUIT:
                         return
+                if np.sum(keys_pressed) >0:
+                    print(keys_pressed)
+                    print(np.where(keys_pressed), "those keys are pressed")
+
                 self._on_loop(events, keys_pressed)
                 self._on_render()
                 now = time.time()
@@ -353,7 +358,8 @@ class CarlaGame(object):
                 if event.key == K_z:
                     self.register_position_aerial()
                 if event.key == K_m:
-                    self._vehicle_yaw = (self._vehicle_yaw + 90.0) % 360
+                    pass
+                    #self._vehicle_yaw = (self._vehicle_yaw + 90.0) % 360
                 if event.key == K_SPACE:
                     self._spawn_new_car = True
                 if event.key == K_TAB:

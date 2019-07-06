@@ -70,6 +70,62 @@ def split_original(controls, steers, labels_per_division, steering_bins_perc):
 split = split_original
 
 
+import glob, sys, os, inspect, cv2
+
+def get_file_real_path():
+    abspath = os.path.abspath(inspect.getfile(inspect.currentframe()))
+    return os.path.realpath(abspath)
+
+class MapFilter():
+    def __init__(self):
+        path = os.path.dirname(get_file_real_path())
+        cil = os.path.dirname(path)
+        self.map = os.path.join(cil, "drive_interfaces/carla/comercial_cars/maps_demo_area/exptown_no_T_inter.png")
+        self.map = cv2.imread(self.map)
+
+    def loc_to_pix_exptown(self, loc):
+        u = 6.848364717542121 * loc[1] + 1267.9073339940535
+        v = -6.851075806443265 * loc[0] + 2504.8267451634106
+        return [int(v), int(u)]
+
+    def is_valid(self, town_name, locx, locy):
+        if int(town_name) != 11:
+            return False
+        else:
+            uv = self.loc_to_pix_exptown([locx, locy])
+            if self.map[uv[0], uv[1], 0] > 0:
+                return False
+            else:
+                return True
+
+def filter_with_map(splited_keys, locx, locy, townid, images):
+    output = []
+    mf = MapFilter()
+    for i in range(len(splited_keys)):
+        this = splited_keys[i][0]
+        tempout = []
+        for id in this:
+            validness = mf.is_valid(townid[id], locx[id], locy[id])
+            if validness:
+                tempout.append(id)
+
+            # for debug purpose
+            if np.random.rand()<0.001:
+                per_h5_len = images[1][0].shape[0]
+                ibatch = id // per_h5_len
+                iinbatch = id % per_h5_len
+                imencoded = images[1][ibatch][iinbatch]
+                if validness:
+                    name = "debug_valid_%d.png"
+                else:
+                    name = "debug_not_valid_%d.png"
+                with open(name % id, "wb") as f:
+                    f.write(imencoded)
+
+        output.append([tempout])
+    return output
+
+
 class DatasetManager(object):
     def __init__(self, config, perception_interface=None):
         # self._datasets_train is a list of totNum* dim, no transposed
@@ -93,6 +149,13 @@ class DatasetManager(object):
                                    labels_per_division=config.labels_per_division,
                                    steering_bins_perc=config.steering_bins_perc)
 
+        if hasattr(config, "no_T_junction") and config.no_T_junction:
+            splited_keys_train = filter_with_map(splited_keys_train,
+                                                 self._datasets_train[0][:, config.variable_names.index("Pos_X")],
+                                                 self._datasets_train[0][:, config.variable_names.index("Pos_Y")],
+                                                 self._datasets_train[0][:, config.variable_names.index("town_id")],
+                                                 self._images_train)
+
         self.train = Dataset(splited_keys_train,
                              self._images_train,
                              self._datasets_train, config, config.augment,
@@ -102,6 +165,13 @@ class DatasetManager(object):
                                    steers=self._datasets_val[0][:, config.variable_names.index("Steer")],
                                    labels_per_division=config.labels_per_division,
                                    steering_bins_perc=config.steering_bins_perc)
+
+        if hasattr(config, "no_T_junction") and config.no_T_junction:
+            splited_keys_val = filter_with_map(splited_keys_val,
+                                                 self._datasets_val[0][:, config.variable_names.index("Pos_X")],
+                                                 self._datasets_val[0][:, config.variable_names.index("Pos_Y")],
+                                                 self._datasets_val[0][:, config.variable_names.index("town_id")],
+                                                 self._images_val)
 
         self.validation = Dataset(splited_keys_val,
                                   self._images_val,

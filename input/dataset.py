@@ -363,6 +363,29 @@ class Dataset(object):
                     # add a flattened operator, to make it compatible with the original format, remember to reshape it back
                     inputs[iinput][ibatch] = self.mapping_helper.is_on_road(map)
                     #again
+                elif this_name == "is_onshoulder":
+                    pos_x = self._config.variable_names.index("Pos_X")
+                    pos_y = self._config.variable_names.index("Pos_Y")
+                    ori_x = self._config.variable_names.index("Ori_X")
+                    ori_y = self._config.variable_names.index("Ori_Y")
+                    ori_z = self._config.variable_names.index("Ori_Z")
+                    town_id = self._config.variable_names.index("town_id")
+
+                    pos = [target_selected[pos_x, ibatch], target_selected[pos_y, ibatch]]
+                    ori = [target_selected[ori_x, ibatch], target_selected[ori_y, ibatch],
+                           target_selected[ori_z, ibatch]]
+                    town_id = int(target_selected[town_id, ibatch])
+                    town_id = str(town_id).zfill(2)
+                    map = self.mapping_helper.get_map(town_id, pos, ori)
+
+                    color = map[map.shape[0]*3//4, map.shape[1]//2, :]
+                    # TODO: it has to use map v2, not v3
+                    assert self.mapping_helper.version == "v2"
+                    if color[0] == 1 and color[1] == 0 and color[2] == 0:
+                        on_shoulder = 1
+                    else:
+                        on_shoulder = 0
+                    inputs[iinput][ibatch] = on_shoulder
                 else:
                     k = self._config.variable_names.index(self._config.inputs_names[iinput])
                     if this_name == "Control":

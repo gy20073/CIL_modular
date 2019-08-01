@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-expid="mm45_v4_SqnoiseShoulder_exptownv9v25v26_notown0102_mapv3_fixed"
-OFFSET=10
+expid="mm45_v4_SqnoiseShoulder_rfsv6_notown0102_mergefollowstraight"
+OFFSET=20
 declare -a GPU=(5 6 7)
 
 # setting output related
@@ -22,7 +22,7 @@ this_output=$output_prefix$"RFS_parked_car/"
 mkdir $this_output
 this_output=$this_output$"video"
 /home/yang/data/aws_data/carla_rfs/CarlaUE4.sh -benchmark -fps=5 -carla-world-port=$((2600 + OFFSET)) &
-export CARLA_VERSION="0.9.X"
+export CARLA_VERSION="0.9.auto2"
 sleep 25
 python utils/eval_inenv_carla_090.py \
     --gpu ${GPU[0]} \
@@ -39,7 +39,7 @@ this_output=$output_prefix$"RFS_shoulder/"
 mkdir $this_output
 this_output=$this_output$"video"
 /home/yang/data/aws_data/carla_rfs/CarlaUE4.sh -benchmark -fps=5 -carla-world-port=$((2700 + OFFSET)) &
-export CARLA_VERSION="0.9.X"
+export CARLA_VERSION="0.9.auto2"
 sleep 25
 python utils/eval_inenv_carla_090.py \
     --gpu ${GPU[1]} \

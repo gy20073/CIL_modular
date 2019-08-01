@@ -39,7 +39,21 @@ def mse_branched(network_outputs, ground_truths, control_input, config, **kwargs
             error_branch.append(dist)
 
             energy_branch.append(square_dist)
-            loss_function = loss_function + square_dist * \
+
+            if hasattr(config, "loss_onshoulder") and target_name == "Steer":
+                print("the onshoulder loss")
+                all_inputs = kwargs["all_inputs"]
+                onshoulder = all_inputs[config.inputs_names.index('is_onshoulder')]
+                right_level = tf.maximum(network_outputs_split[i_within_branch], 0)
+                loss_shoulder = tf.reshape(onshoulder, [-1]) * tf.reshape(right_level, [-1])
+                tf.summary.scalar("loss_onshoulder", tf.reduce_mean(loss_shoulder))
+
+                loss_shoulder = tf.reshape(loss_shoulder, (-1, 1))
+                loss_shoulder *= config.loss_onshoulder
+            else:
+                loss_shoulder = 0.0
+
+            loss_function = loss_function + (square_dist + loss_shoulder) * \
                                             config.branch_loss_weight[ibranch] * \
                                             config.variable_weight[target_name]
 

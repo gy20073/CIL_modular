@@ -31,6 +31,12 @@ list_of_xy= list_of_xy[:14] + list_of_xy[15:16] + list_of_xy[18:29] + list_of_xy
 #list_of_xy = [[1011, 541, -90], [1317, 1926, 90], [424, 2588, 60], [804, 3006, 30], [1138, 2741, -90], [1164, 3024, 179], [2125, 1652, 0], [1908, 3664, -45]]
 list_of_xy = [[1071, 551, -90], [1262, 1921, 90], [365, 2605, 60], [754, 3043, 45], [1163, 2742, -90], [1164, 2942, 179], [2141, 1675, 20], [1946, 3686, -60]]
 
+# this is a list of xy for the zebra crossing testings
+#              right turns      left            right           right           left               left and right     right         left               left         right
+list_of_xy = [[811, 580, -90], [505, 616, 45], [252, 1098, 0], [597, 3835, 0], [904, 3518, -90], [571, 3845, 179], [256, 4173, 0], [224, 3609, 179], [940, 4484, 0], [1063, 3836, -135]]
+
+# for T junctions, just use
+
 for item in list_of_xy:
     x, y, yaw = item
     loc = uv_to_loc([x, y])

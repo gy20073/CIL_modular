@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-expid="mm45_v4_SqnoiseShoulder_rfsv6_notown0102_mergefollowstraight"
-OFFSET=20
-declare -a GPU=(5 6 7)
+expid="mm45_v4_SqnoiseShoulder_rfsv6_mergefollowstraight"
+OFFSET=70
+declare -a GPU=(7 7 7)
 
 # setting output related
 output_prefix="/home/yang/data/aws_data/CIL_modular_data/benchmark_all/"

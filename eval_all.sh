@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-expid="mm45_v4_SqnoiseShoulder_rfsv6_mergefollowstraight"
-OFFSET=70
+expid="mm45_v4_SqnoiseShoulder_rfsv6_withTL_lessmap"
+OFFSET=90
 declare -a GPU=(7 7 7)
 
 # setting output related

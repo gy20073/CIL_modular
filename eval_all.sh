@@ -2,7 +2,7 @@
 
 expid="mm45_v4_SqnoiseShoulder_rfsv6_withTL_lessmap"
 OFFSET=90
-declare -a GPU=(7 7 7)
+declare -a GPU=(1 1 1)
 
 # setting output related
 output_prefix="/home/yang/data/aws_data/CIL_modular_data/benchmark_all/"

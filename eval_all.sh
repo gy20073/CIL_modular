@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-expid="mm45_v4_SqnoiseShoulder_rfsv6_withTL_lessmap"
+expid="mm45_v4_SqnoiseShoulder_rfsv6_withTL_fixTL"
 OFFSET=90
-declare -a GPU=(1 1 1)
+declare -a GPU=(2 2 2)
 
 # setting output related
 output_prefix="/home/yang/data/aws_data/CIL_modular_data/benchmark_all/"
@@ -14,6 +14,7 @@ output_folder="/home/yang/data/aws_data/CIL_modular_data/_benchmarks_results/"$e
 ln -s $output_folder $output_prefix"Town01"
 gpu_str="["${GPU[0]}","${GPU[1]}","${GPU[2]}"]"
 # this has the form of "[2,3,4]"
+#python eval_par.py -gpu $gpu_str -expid $expid --weathers "13,14" &
 python eval_par.py -gpu $gpu_str -expid $expid &
 
 

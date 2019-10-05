@@ -18,13 +18,14 @@ def get_driver_config():
     return driver_conf
 
 # TODO begin the configs
-exp_id = "mm45_v4_SqnoiseShoulder_rfsv6_goodv2map_lessmap"
-short_id = "v2lessmap"
+exp_id = "mm45_v4_SqnoiseShoulder_rfsv6_withTL_fixTL"
+short_id = "fixTL"
 use_left_right = True
-video_path = "/data1/yang/aws_data/mkz/2019-05-05_23-09-19/video_enable.mp4"
-pickle_path = "/data1/yang/aws_data/mkz/2019-05-05_23-09-19/video_enable.pkl"
+video_path = "/home/yang/data/aws_data/mkz/2019-06-18_18-06-23/video_enable.avi"
+pickle_path = "/home/yang/data/aws_data/mkz/2019-06-18_18-06-23/video_enable.pkl"
 gpu = [0]
 offset = 0 # actually around 82 to 84
+merge_follow_straight = True
 # TODO end of the config
 
 # The color encoding is: blue predicted, green ground truth, red approximated ground truth
@@ -83,6 +84,8 @@ def loop_over_video(path, func, temp_down_factor=1, batch_size=1, output_name="o
 
 def key_to_value(key):
     mapping = {"s": 5.0, "a": 3.0, "d": 4.0, "w": 2.0}
+    if merge_follow_straight:
+        mapping["s"]=2.0
     if key in mapping:
         return mapping[key]
     else:

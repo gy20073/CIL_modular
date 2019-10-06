@@ -7,3 +7,4 @@ from .planner_debug_exp import PlannerDebugExp
 from .yang_exp_3cam import YangExp3cam
 from .yang_exp_3cam_fov90 import YangExp3camFov90
 from .yang_exp_3cam_gta import YangExp3camGTA
+from .yang_exp_3cam_more_agents import YangExp3camMoreAgents

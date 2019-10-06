@@ -25,12 +25,13 @@ if __name__ == "__main__":
             weather_set.append(int(item.strip()))
     weather_batch_size = len(weather_set)  # 7
     test_name = "YangExp3cam"
+    test_name = "YangExp3camMoreAgents"
     town_list = eval(args.townid) #["Town01", "Town02"]
     #test_name = "YangExp3camFov90"
     #test_name = "YangExp3camGTA"
     # TODO make a new test setting to mimic the camera locations
     # num par = 14/3 * 2
-    #weather_batch_size = 1
+    weather_batch_size = 1
 
 
     processes = []

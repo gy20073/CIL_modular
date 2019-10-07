@@ -9,7 +9,8 @@ import common_util
 __CARLA_VERSION__ = os.getenv('CARLA_VERSION', '0.8.X')
 common_util.add_carla_egg_to_path(__CARLA_VERSION__)
 import carla
-from carla import VehicleControl as VehicleControl
+if __CARLA_VERSION__.startswith("0.9"):
+    from carla import VehicleControl as VehicleControl
 
 class Noiser(object):
     # define frequency into noise events per minute

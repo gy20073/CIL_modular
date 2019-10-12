@@ -78,6 +78,9 @@ class mapping_helper:
         return [relx, rely]
 
     def loc_to_pix_01_02(self, location, town_name):
+        if location[0] == "debug_direct_pixel":
+            return location[1:]
+
         if self.carla_map is None:
             from carla.planner.map import CarlaMap
             self.carla_map = {"01": CarlaMap("Town01", 0.1643, 50.0),

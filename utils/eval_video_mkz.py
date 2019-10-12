@@ -3,6 +3,7 @@ import numpy as np
 from common_util import plot_waypoints_on_image
 from subprocess import call
 from PIL import Image, ImageDraw, ImageFont
+import argparse
 
 def get_file_real_path():
     abspath = os.path.abspath(inspect.getfile(inspect.currentframe()))
@@ -17,15 +18,27 @@ def get_driver_config():
     driver_conf.carla_config = None  # This is not used by CarlaMachine but it's required
     return driver_conf
 
+parser = argparse.ArgumentParser(description='evaluation on a video')
+parser.add_argument('-exp_id', '--exp_id', default="mm45_v4_SqnoiseShoulder_rfsv6_withTL_fixTL", help="")
+parser.add_argument('-short_id', '--short_id', default="fixTL", help="")
+parser.add_argument('-video_path', '--video_path', default="/home/yang/data/aws_data/mkz/2019-06-18_18-06-23/video_enable.avi", help="")
+parser.add_argument('-pickle_path', '--pickle_path', default="/home/yang/data/aws_data/mkz/2019-06-18_18-06-23/video_enable.pkl", help="")
+parser.add_argument('-gpu', '--gpu', default=0, help="")
+parser.add_argument('-townid', '--townid', default="rfs", help="")
+parser.add_argument('-middle_already_zoomed', '--middle_already_zoomed', default=False, help="")
+args = parser.parse_args()
+
 # TODO begin the configs
-exp_id = "mm45_v4_SqnoiseShoulder_rfsv6_withTL_fixTL"
-short_id = "fixTL"
+exp_id = args.exp_id
+short_id = args.short_id
+video_path = args.video_path
+pickle_path = args.pickle_path
+gpu = [args.gpu]
+townid= args.townid #"rfs"
+
 use_left_right = True
-video_path = "/home/yang/data/aws_data/mkz/2019-06-18_18-06-23/video_enable.avi"
-pickle_path = "/home/yang/data/aws_data/mkz/2019-06-18_18-06-23/video_enable.pkl"
-gpu = [0]
-offset = 0 # actually around 82 to 84
 merge_follow_straight = True
+offset = 0 # actually around 82 to 84
 # TODO end of the config
 
 # The color encoding is: blue predicted, green ground truth, red approximated ground truth
@@ -100,6 +113,10 @@ def callback(frames, extra_info):
         H, W, C = frame.shape
         assert(W % 3 == 0)
         sensors = [frame[:, 0:W//3,:], frame[:, W//3:W*2//3,:], frame[:, W*2//3:, :]]
+        if args.middle_already_zoomed:
+            f = sensors[1]
+            sensors[1] = np.zeros((f.shape[0]*2, f.shape[1]*2, 3), dtype=np.uint8)
+            sensors[1][f.shape[0]//2:f.shape[0]*3//2, f.shape[1]//2:f.shape[1]*3//2, :] = f
     else:
         sensors = [frame]
     if len(extra_info) == 2:
@@ -118,7 +135,7 @@ def callback(frames, extra_info):
                                                                save_image_to_disk=False,
                                                                return_vis=True,
                                                                return_extra=False,
-                                                               mapping_support={"town_id": "rfs", "pos": pos, "ori": ori})
+                                                               mapping_support={"town_id": townid, "pos": pos, "ori": ori})
     # TODO: temporally disable the waypoint saving mechanism
     #wps.append(waypoints)
     path = video_path+"."+short_id+".pkl"

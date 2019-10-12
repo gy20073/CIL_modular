@@ -1,0 +1,3 @@
+IMAGE_NAME=$1
+
+ffmpeg -i $IMAGE_NAME $IMAGE_NAME".mp4"
